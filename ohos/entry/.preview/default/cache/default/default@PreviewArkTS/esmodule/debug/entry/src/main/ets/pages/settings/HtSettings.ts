@@ -87,7 +87,7 @@ class HtSettings extends ViewPU {
     }
     initialRender() {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/settings/HtSettings.ets(25:5)", "entry");
             Column.width('100%');
             Column.height('100%');
@@ -105,7 +105,7 @@ class HtSettings extends ViewPU {
             Text.create('<');
             Text.debugLine("entry/src/main/ets/pages/settings/HtSettings.ets(27:9)", "entry");
             Text.fontSize(20);
-            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
+            Text.fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF');
             Text.onClick(() => { router.back(); });
         }, Text);
         Text.pop();
@@ -114,7 +114,7 @@ class HtSettings extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/settings/HtSettings.ets(29:9)", "entry");
             Text.fontSize(18);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.margin({ left: 16 });
         }, Text);
         Text.pop();
@@ -125,14 +125,14 @@ class HtSettings extends ViewPU {
             Scroll.layoutWeight(1);
         }, Scroll);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/settings/HtSettings.ets(35:9)", "entry");
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create('当前域名');
             Text.debugLine("entry/src/main/ets/pages/settings/HtSettings.ets(36:11)", "entry");
             Text.fontSize(13);
-            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
             Text.width('100%');
             Text.padding({ left: 16, top: 56, bottom: 8 });
         }, Text);
@@ -141,7 +141,7 @@ class HtSettings extends ViewPU {
             Text.create(this.currentDomain);
             Text.debugLine("entry/src/main/ets/pages/settings/HtSettings.ets(38:11)", "entry");
             Text.fontSize(15);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.width('100%');
             Text.padding({ left: 16, bottom: 16 });
         }, Text);
@@ -161,7 +161,7 @@ class HtSettings extends ViewPU {
             // Fetch remote domains
             Button.fontColor('#FFFFFF');
             // Fetch remote domains
-            Button.backgroundColor(this.isLoading ? '#999999' : this.isDarkMode ? '#FFB340' : '#FF9500');
+            Button.backgroundColor(this.isLoading ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#FFB340' : '#FF9500');
             // Fetch remote domains
             Button.onClick(() => { this.fetchDomains(); });
         }, Button);
@@ -176,7 +176,7 @@ class HtSettings extends ViewPU {
                         Text.create('可用域名');
                         Text.debugLine("entry/src/main/ets/pages/settings/HtSettings.ets(50:13)", "entry");
                         Text.fontSize(13);
-                        Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+                        Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
                         Text.width('100%');
                         Text.padding({ left: 16, top: 24, bottom: 8 });
                     }, Text);
@@ -192,7 +192,7 @@ class HtSettings extends ViewPU {
                                 Row.height(52);
                                 Row.padding({ left: 16, right: 16 });
                                 Row.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
-                                Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' });
+                                Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' });
                                 Row.onClick(() => {
                                     AppData.htBaseUrl = domain;
                                     this.currentDomain = domain;
@@ -202,7 +202,7 @@ class HtSettings extends ViewPU {
                                 Text.create(domain);
                                 Text.debugLine("entry/src/main/ets/pages/settings/HtSettings.ets(55:17)", "entry");
                                 Text.fontSize(14);
-                                Text.fontColor(domain === this.currentDomain ? this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : '#000000');
+                                Text.fontColor(domain === this.currentDomain ? this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
                                 Text.layoutWeight(1);
                             }, Text);
                             Text.pop();
@@ -214,7 +214,7 @@ class HtSettings extends ViewPU {
                                             Text.create('●');
                                             Text.debugLine("entry/src/main/ets/pages/settings/HtSettings.ets(59:19)", "entry");
                                             Text.fontSize(16);
-                                            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
+                                            Text.fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF');
                                         }, Text);
                                         Text.pop();
                                     });

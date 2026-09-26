@@ -9,6 +9,7 @@ interface ReaderPage_Params {
     isDarkMode?: boolean;
 }
 import router from "@ohos:router";
+import { Logger } from "@bundle:com.picacomic.harmony/entry/ets/common/Logger";
 class ReaderPage extends ViewPU {
     constructor(parent, params, __localStorage, elmtId = -1, paramsLambda = undefined, extraInfo) {
         super(parent, __localStorage, elmtId, extraInfo);
@@ -94,31 +95,31 @@ class ReaderPage extends ViewPU {
         const params = router.getParams() as Record<string, string>;
         if (params !== null && params !== undefined) {
             this.comicId = params['comicId'] ?? '';
+            const imagesStr = params['images'] ?? '';
+            if (imagesStr.length > 0) {
+                this.images = imagesStr.split(',');
+            }
         }
     }
     initialRender() {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Stack.create();
-            Stack.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(22:5)", "entry");
+            Stack.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(27:5)", "entry");
             Stack.width('100%');
             Stack.height('100%');
-            Stack.backgroundColor('#000000');
-            Stack.onClick(() => {
-                this.showToolbar = !this.showToolbar;
-            });
+            Stack.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
+            Stack.onClick(() => { this.showToolbar = !this.showToolbar; });
         }, Stack);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             // Image swiper
             Swiper.create();
-            Swiper.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(24:7)", "entry");
+            Swiper.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(29:7)", "entry");
             // Image swiper
             Swiper.index(this.currentIndex);
             // Image swiper
             Swiper.indicator(false);
             // Image swiper
-            Swiper.onChange((index: number) => {
-                this.currentIndex = index;
-            });
+            Swiper.onChange((index: number) => { this.currentIndex = index; });
             // Image swiper
             Swiper.width('100%');
             // Image swiper
@@ -134,27 +135,28 @@ class ReaderPage extends ViewPU {
                         this.ifElseBranchUpdateFunction(0, () => {
                             this.observeComponentCreation2((elmtId, isInitialRender) => {
                                 Image.create(url);
-                                Image.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(27:13)", "entry");
+                                Image.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(32:13)", "entry");
                                 Image.width('100%');
                                 Image.height('100%');
                                 Image.objectFit(ImageFit.Contain);
-                                Image.backgroundColor('#000000');
+                                Image.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
+                                Image.onError(() => { Logger.debug('ReaderPage', `Image load failed: ${url}`); });
                             }, Image);
                         });
                     }
                     else {
                         this.ifElseBranchUpdateFunction(1, () => {
                             this.observeComponentCreation2((elmtId, isInitialRender) => {
-                                Column.create();
-                                Column.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(33:13)", "entry");
+                                Column.create({ space: 8 });
+                                Column.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(38:13)", "entry");
                                 Column.width('100%');
                                 Column.height('100%');
                                 Column.justifyContent(FlexAlign.Center);
-                                Column.backgroundColor('#000000');
+                                Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
                             }, Column);
                             this.observeComponentCreation2((elmtId, isInitialRender) => {
-                                Text.create('Loading...');
-                                Text.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(34:15)", "entry");
+                                Text.create('...');
+                                Text.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(38:36)", "entry");
                                 Text.fontSize(16);
                                 Text.fontColor('#FFFFFF');
                             }, Text);
@@ -176,37 +178,31 @@ class ReaderPage extends ViewPU {
             if (this.showToolbar) {
                 this.ifElseBranchUpdateFunction(0, () => {
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
-                        Column.create();
-                        Column.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(55:9)", "entry");
+                        Column.create({ space: 8 });
+                        Column.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(50:9)", "entry");
                         Column.width('100%');
                         Column.height('100%');
                     }, Column);
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
-                        // Top bar
                         Row.create();
-                        Row.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(57:11)", "entry");
-                        // Top bar
+                        Row.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(51:11)", "entry");
                         Row.width('100%');
-                        // Top bar
                         Row.height(56);
-                        // Top bar
                         Row.padding({ left: 16, right: 16 });
-                        // Top bar
                         Row.backgroundColor('rgba(0,0,0,0.6)');
-                        // Top bar
                         Row.alignItems(VerticalAlign.Center);
                     }, Row);
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
-                        Text.create('<');
-                        Text.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(58:13)", "entry");
-                        Text.fontSize(24);
-                        Text.fontColor('#FFFFFF');
-                        Text.onClick(() => { router.back(); });
-                    }, Text);
-                    Text.pop();
+                        Image.create({ "id": 0, "type": 30000, params: ['icons/ic_back.svg'], "bundleName": "com.picacomic.harmony", "moduleName": "entry" });
+                        Image.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(52:13)", "entry");
+                        Image.width(24);
+                        Image.height(24);
+                        Image.objectFit(ImageFit.Contain);
+                        Image.onClick(() => { router.back(); });
+                    }, Image);
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
-                        Text.create(`${this.currentIndex + 1}/${this.images.length}`);
-                        Text.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(62:13)", "entry");
+                        Text.create(`${this.currentIndex + 1} / ${this.images.length}`);
+                        Text.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(54:13)", "entry");
                         Text.fontSize(14);
                         Text.fontColor('#FFFFFF');
                         Text.layoutWeight(1);
@@ -215,39 +211,32 @@ class ReaderPage extends ViewPU {
                     Text.pop();
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
                         Text.create(' ');
-                        Text.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(67:13)", "entry");
+                        Text.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(55:13)", "entry");
                         Text.width(24);
                     }, Text);
                     Text.pop();
-                    // Top bar
                     Row.pop();
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
                         Blank.create();
-                        Blank.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(76:11)", "entry");
+                        Blank.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(57:11)", "entry");
                         Blank.layoutWeight(1);
                     }, Blank);
                     Blank.pop();
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
-                        // Bottom bar
                         Row.create();
-                        Row.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(80:11)", "entry");
-                        // Bottom bar
+                        Row.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(58:11)", "entry");
                         Row.width('100%');
-                        // Bottom bar
                         Row.height(48);
-                        // Bottom bar
                         Row.backgroundColor('rgba(0,0,0,0.6)');
-                        // Bottom bar
                         Row.justifyContent(FlexAlign.Center);
                     }, Row);
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
                         Text.create(`${this.currentIndex + 1} / ${this.images.length}`);
-                        Text.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(81:13)", "entry");
+                        Text.debugLine("entry/src/main/ets/pages/reader/ReaderPage.ets(58:19)", "entry");
                         Text.fontSize(14);
                         Text.fontColor('#FFFFFF');
                     }, Text);
                     Text.pop();
-                    // Bottom bar
                     Row.pop();
                     Column.pop();
                 });

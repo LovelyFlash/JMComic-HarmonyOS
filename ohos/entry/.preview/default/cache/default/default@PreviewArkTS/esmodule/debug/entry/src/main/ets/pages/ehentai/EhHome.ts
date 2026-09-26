@@ -4,10 +4,13 @@ if (!("finalizeConstruction" in ViewPU.prototype)) {
 interface EhHome_Params {
     isDarkMode?: boolean;
     comics?: Comic[];
+    loading?: boolean;
+    error?: string;
 }
 import router from "@ohos:router";
 import { Comic } from "@bundle:com.picacomic.harmony/entry/ets/data/model/Comic";
-import { NetworkImage } from "@bundle:com.picacomic.harmony/entry/ets/components/NetworkImage";
+import type { ComicBrief } from "@bundle:com.picacomic.harmony/entry/ets/data/model/Comic";
+import { EhentaiApi } from "@bundle:com.picacomic.harmony/entry/ets/data/api/EhentaiApi";
 class EhHome extends ViewPU {
     constructor(parent, params, __localStorage, elmtId = -1, paramsLambda = undefined, extraInfo) {
         super(parent, __localStorage, elmtId, extraInfo);
@@ -16,6 +19,8 @@ class EhHome extends ViewPU {
         }
         this.__isDarkMode = this.createStorageLink('isDarkMode', false, "isDarkMode");
         this.__comics = new ObservedPropertyObjectPU([], this, "comics");
+        this.__loading = new ObservedPropertySimplePU(true, this, "loading");
+        this.__error = new ObservedPropertySimplePU('', this, "error");
         this.setInitiallyProvidedValue(params);
         this.finalizeConstruction();
     }
@@ -23,16 +28,26 @@ class EhHome extends ViewPU {
         if (params.comics !== undefined) {
             this.comics = params.comics;
         }
+        if (params.loading !== undefined) {
+            this.loading = params.loading;
+        }
+        if (params.error !== undefined) {
+            this.error = params.error;
+        }
     }
     updateStateVars(params: EhHome_Params) {
     }
     purgeVariableDependenciesOnElmtId(rmElmtId) {
         this.__isDarkMode.purgeDependencyOnElmtId(rmElmtId);
         this.__comics.purgeDependencyOnElmtId(rmElmtId);
+        this.__loading.purgeDependencyOnElmtId(rmElmtId);
+        this.__error.purgeDependencyOnElmtId(rmElmtId);
     }
     aboutToBeDeleted() {
         this.__isDarkMode.aboutToBeDeleted();
         this.__comics.aboutToBeDeleted();
+        this.__loading.aboutToBeDeleted();
+        this.__error.aboutToBeDeleted();
         SubscriberManager.Get().delete(this.id__());
         this.aboutToBeDeletedInternal();
     }
@@ -50,174 +65,185 @@ class EhHome extends ViewPU {
     set comics(newValue: Comic[]) {
         this.__comics.set(newValue);
     }
-    aboutToAppear(): void {
-        this.comics = this.buildPlaceholderComics();
+    private __loading: ObservedPropertySimplePU<boolean>;
+    get loading() {
+        return this.__loading.get();
+    }
+    set loading(newValue: boolean) {
+        this.__loading.set(newValue);
+    }
+    private __error: ObservedPropertySimplePU<string>;
+    get error() {
+        return this.__error.get();
+    }
+    set error(newValue: string) {
+        this.__error.set(newValue);
+    }
+    aboutToAppear(): void { this.loadData(); }
+    async loadData(): Promise<void> {
+        this.loading = true;
+        try {
+            const result = await EhentaiApi.getGalleries(1);
+            this.comics = result.comics.map((b: ComicBrief) => {
+                const c = new Comic();
+                c.id = b.id;
+                c.title = b.title;
+                c.coverUrl = b.cover;
+                c.source = 'ehentai';
+                c.author = b.author;
+                c.tags = b.tags;
+                return c;
+            });
+        }
+        catch (e) {
+            this.error = String(e);
+        }
+        this.loading = false;
     }
     initialRender() {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
-            Column.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(18:5)", "entry");
+            Column.create({ space: 8 });
+            Column.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(31:5)", "entry");
             Column.width('100%');
             Column.height('100%');
             Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            // Header
             Row.create();
-            Row.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(20:7)", "entry");
-            // Header
+            Row.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(32:7)", "entry");
             Row.width('100%');
-            // Header
-            Row.padding({ left: 16, right: 16, top: 56, bottom: 12 });
+            Row.height(64);
+            Row.padding({ left: 16, right: 16 });
+            Row.alignItems(VerticalAlign.Center);
         }, Row);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Text.create('<');
-            Text.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(21:9)", "entry");
-            Text.fontSize(20);
-            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
-            Text.margin({ right: 12 });
-            Text.onClick(() => { router.back(); });
-        }, Text);
-        Text.pop();
+            Image.create({ "id": 0, "type": 30000, params: ['icons/ic_back.svg'], "bundleName": "com.picacomic.harmony", "moduleName": "entry" });
+            Image.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(33:9)", "entry");
+            Image.width(24);
+            Image.height(24);
+            Image.objectFit(ImageFit.Contain);
+            Image.onClick(() => { router.back(); });
+        }, Image);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create('EHentai');
-            Text.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(26:9)", "entry");
+            Text.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(34:9)", "entry");
             Text.fontSize(22);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
+            Text.margin({ left: 12 });
         }, Text);
         Text.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Blank.create();
-            Blank.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(30:9)", "entry");
+            Blank.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(35:9)", "entry");
         }, Blank);
         Blank.pop();
-        // Header
         Row.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Divider.create();
-            Divider.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(35:7)", "entry");
-            Divider.color(this.isDarkMode ? '#333333' : '#E5E5EA');
-            Divider.width('100%');
-        }, Divider);
-        this.observeComponentCreation2((elmtId, isInitialRender) => {
-            // Comic Grid
-            Grid.create();
-            Grid.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(40:7)", "entry");
-            // Comic Grid
-            Grid.columnsTemplate('1fr 1fr 1fr');
-            // Comic Grid
-            Grid.columnsGap(8);
-            // Comic Grid
-            Grid.rowsGap(10);
-            // Comic Grid
-            Grid.width('100%');
-            // Comic Grid
-            Grid.padding(12);
-            // Comic Grid
-            Grid.layoutWeight(1);
-        }, Grid);
-        this.observeComponentCreation2((elmtId, isInitialRender) => {
-            ForEach.create();
-            const forEachItemGenFunction = _item => {
-                const comic = _item;
-                {
-                    const itemCreation2 = (elmtId, isInitialRender) => {
-                        GridItem.create(() => { }, false);
-                        GridItem.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(42:11)", "entry");
-                    };
-                    const observedDeepRender = () => {
-                        this.observeComponentCreation2(itemCreation2, GridItem);
-                        this.observeComponentCreation2((elmtId, isInitialRender) => {
-                            Column.create();
-                            Column.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(43:13)", "entry");
-                            Column.width('100%');
-                            Column.padding(6);
-                            Column.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
-                            Column.borderRadius(8);
-                            Column.onClick(() => {
-                                router.pushUrl({ url: 'pages/ComicDetailPage' });
-                            });
-                        }, Column);
-                        {
-                            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                                if (isInitialRender) {
-                                    let componentCall = new NetworkImage(this, {
-                                        url: comic.coverUrl,
-                                        imgWidth: 100,
-                                        imgHeight: 180,
-                                        imgBorderRadius: 8
-                                    }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/ehentai/EhHome.ets", line: 44, col: 15 });
-                                    ViewPU.create(componentCall);
-                                    let paramsLambda = () => {
-                                        return {
-                                            url: comic.coverUrl,
-                                            imgWidth: 100,
-                                            imgHeight: 180,
-                                            imgBorderRadius: 8
-                                        };
-                                    };
-                                    componentCall.paramsGenerator_ = paramsLambda;
-                                }
-                                else {
-                                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                                        url: comic.coverUrl,
-                                        imgWidth: 100,
-                                        imgHeight: 180,
-                                        imgBorderRadius: 8
-                                    });
-                                }
-                            }, { name: "NetworkImage" });
-                        }
-                        this.observeComponentCreation2((elmtId, isInitialRender) => {
-                            Text.create(comic.title);
-                            Text.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(50:15)", "entry");
-                            Text.fontSize(12);
-                            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
-                            Text.maxLines(2);
-                            Text.textOverflow({ overflow: TextOverflow.Ellipsis });
-                            Text.width('100%');
-                            Text.margin({ top: 6 });
-                        }, Text);
-                        Text.pop();
-                        this.observeComponentCreation2((elmtId, isInitialRender) => {
-                            Text.create(comic.subTitle);
-                            Text.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(57:15)", "entry");
-                            Text.fontSize(10);
-                            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
-                            Text.maxLines(1);
-                            Text.width('100%');
-                            Text.margin({ top: 2 });
-                        }, Text);
-                        Text.pop();
-                        Column.pop();
-                        GridItem.pop();
-                    };
-                    observedDeepRender();
-                }
-            };
-            this.forEachUpdateFunction(elmtId, this.comics, forEachItemGenFunction);
-        }, ForEach);
-        ForEach.pop();
-        // Comic Grid
-        Grid.pop();
+            If.create();
+            if (this.loading) {
+                this.ifElseBranchUpdateFunction(0, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Column.create({ space: 8 });
+                        Column.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(38:27)", "entry");
+                        Column.layoutWeight(1);
+                        Column.justifyContent(FlexAlign.Center);
+                    }, Column);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        LoadingProgress.create();
+                        LoadingProgress.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(38:50)", "entry");
+                        LoadingProgress.width(48);
+                        LoadingProgress.height(48);
+                    }, LoadingProgress);
+                    Column.pop();
+                });
+            }
+            else if (this.error.length > 0) {
+                this.ifElseBranchUpdateFunction(1, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Column.create({ space: 8 });
+                        Column.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(39:41)", "entry");
+                        Column.layoutWeight(1);
+                        Column.justifyContent(FlexAlign.Center);
+                    }, Column);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create(this.error);
+                        Text.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(39:64)", "entry");
+                        Text.fontSize(14);
+                        Text.fontColor('#FF3B30');
+                    }, Text);
+                    Text.pop();
+                    Column.pop();
+                });
+            }
+            else {
+                this.ifElseBranchUpdateFunction(2, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Grid.create();
+                        Grid.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(41:9)", "entry");
+                        Grid.columnsTemplate('1fr 1fr 1fr');
+                        Grid.columnsGap(8);
+                        Grid.rowsGap(10);
+                        Grid.width('100%');
+                        Grid.padding(12);
+                        Grid.layoutWeight(1);
+                    }, Grid);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        ForEach.create();
+                        const forEachItemGenFunction = _item => {
+                            const comic = _item;
+                            {
+                                const itemCreation2 = (elmtId, isInitialRender) => {
+                                    GridItem.create(() => { }, false);
+                                    GridItem.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(43:13)", "entry");
+                                };
+                                const observedDeepRender = () => {
+                                    this.observeComponentCreation2(itemCreation2, GridItem);
+                                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                        Column.create({ space: 8 });
+                                        Column.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(44:15)", "entry");
+                                        Column.width('100%');
+                                        Column.padding(6);
+                                        Column.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
+                                        Column.borderRadius(8);
+                                        Column.shadow({ radius: 8, color: this.isDarkMode ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)', offsetX: 0, offsetY: 2 });
+                                        Column.onClick(() => { router.pushUrl({ url: 'pages/ComicDetailPage', params: { comicId: comic.id, title: comic.title, source: 'ehentai' } }); });
+                                    }, Column);
+                                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                        Image.create(comic.coverUrl);
+                                        Image.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(45:17)", "entry");
+                                        Image.width('100%');
+                                        Image.height(180);
+                                        Image.objectFit(ImageFit.Cover);
+                                        Image.borderRadius(6);
+                                        Image.backgroundColor('#F0F0F0');
+                                    }, Image);
+                                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                        Text.create(comic.title);
+                                        Text.debugLine("entry/src/main/ets/pages/ehentai/EhHome.ets(46:17)", "entry");
+                                        Text.fontSize(12);
+                                        Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
+                                        Text.maxLines(2);
+                                        Text.textOverflow({ overflow: TextOverflow.Ellipsis });
+                                        Text.width('100%');
+                                        Text.margin({ top: 6 });
+                                    }, Text);
+                                    Text.pop();
+                                    Column.pop();
+                                    GridItem.pop();
+                                };
+                                observedDeepRender();
+                            }
+                        };
+                        this.forEachUpdateFunction(elmtId, this.comics, forEachItemGenFunction);
+                    }, ForEach);
+                    ForEach.pop();
+                    Grid.pop();
+                });
+            }
+        }, If);
+        If.pop();
         Column.pop();
-    }
-    private buildPlaceholderComics(): Comic[] {
-        const items: Comic[] = [];
-        for (let i = 1; i <= 6; i++) {
-            const comic: Comic = new Comic();
-            comic.id = `eh_${i}`;
-            comic.title = `EHentai Gallery ${i}`;
-            comic.subTitle = 'Gallery';
-            comic.author = 'Artist';
-            comic.coverUrl = '';
-            comic.source = 'ehentai';
-            comic.language = 'Japanese';
-            comic.tags = ['Manga', 'Gallery'];
-            items.push(comic);
-        }
-        return items;
     }
     rerender() {
         this.updateDirtyElements();

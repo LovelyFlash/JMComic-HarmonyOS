@@ -107,7 +107,7 @@ export class SettingItem extends ViewPU {
             Row.height(56);
             Row.padding({ left: 16, right: 16 });
             Row.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
-            Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' });
+            Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' });
             Row.onClick(() => { this.onTap(); });
         }, Row);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
@@ -131,9 +131,9 @@ export class SettingItem extends ViewPU {
         If.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create(this.title);
-            Text.debugLine("entry/src/main/ets/components/SettingItem.ets(18:7)", "entry");
+            Text.debugLine("entry/src/main/ets/components/SettingItem.ets(16:7)", "entry");
             Text.fontSize(16);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.layoutWeight(1);
         }, Text);
         Text.pop();
@@ -143,9 +143,9 @@ export class SettingItem extends ViewPU {
                 this.ifElseBranchUpdateFunction(0, () => {
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
                         Text.create(this.value);
-                        Text.debugLine("entry/src/main/ets/components/SettingItem.ets(23:9)", "entry");
+                        Text.debugLine("entry/src/main/ets/components/SettingItem.ets(21:9)", "entry");
                         Text.fontSize(14);
-                        Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+                        Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
                         Text.margin({ right: 4 });
                     }, Text);
                     Text.pop();
@@ -163,7 +163,7 @@ export class SettingItem extends ViewPU {
                 this.ifElseBranchUpdateFunction(0, () => {
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
                         Image.create({ "id": 0, "type": 30000, params: ['icons/ic_arrow_right.svg'], "bundleName": "com.picacomic.harmony", "moduleName": "entry" });
-                        Image.debugLine("entry/src/main/ets/components/SettingItem.ets(29:9)", "entry");
+                        Image.debugLine("entry/src/main/ets/components/SettingItem.ets(27:9)", "entry");
                         Image.width(16);
                         Image.height(16);
                         Image.objectFit(ImageFit.Contain);

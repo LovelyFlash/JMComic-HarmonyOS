@@ -105,7 +105,7 @@ class JmSettings extends ViewPU {
     }
     initialRender() {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(30:5)", "entry");
             Column.width('100%');
             Column.height('100%');
@@ -123,7 +123,7 @@ class JmSettings extends ViewPU {
             Text.create('<');
             Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(32:9)", "entry");
             Text.fontSize(20);
-            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
+            Text.fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF');
             Text.onClick(() => { router.back(); });
         }, Text);
         Text.pop();
@@ -132,7 +132,7 @@ class JmSettings extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(34:9)", "entry");
             Text.fontSize(18);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.margin({ left: 16 });
         }, Text);
         Text.pop();
@@ -143,7 +143,7 @@ class JmSettings extends ViewPU {
             Scroll.layoutWeight(1);
         }, Scroll);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(40:9)", "entry");
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
@@ -153,7 +153,7 @@ class JmSettings extends ViewPU {
             // Current domain
             Text.fontSize(13);
             // Current domain
-            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
             // Current domain
             Text.width('100%');
             // Current domain
@@ -165,7 +165,7 @@ class JmSettings extends ViewPU {
             Text.create(this.currentDomain);
             Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(44:11)", "entry");
             Text.fontSize(15);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.width('100%');
             Text.padding({ left: 16, bottom: 16 });
         }, Text);
@@ -177,7 +177,7 @@ class JmSettings extends ViewPU {
             // Domain list
             Text.fontSize(13);
             // Domain list
-            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
             // Domain list
             Text.width('100%');
             // Domain list
@@ -196,14 +196,14 @@ class JmSettings extends ViewPU {
                     Row.height(56);
                     Row.padding({ left: 16, right: 16 });
                     Row.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
-                    Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' });
+                    Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' });
                     Row.onClick(() => {
                         AppData.jmDomainIndex = index;
                         this.currentDomain = domain;
                     });
                 }, Row);
                 this.observeComponentCreation2((elmtId, isInitialRender) => {
-                    Column.create();
+                    Column.create({ space: 8 });
                     Column.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(53:15)", "entry");
                     Column.alignItems(HorizontalAlign.Start);
                     Column.layoutWeight(1);
@@ -212,7 +212,7 @@ class JmSettings extends ViewPU {
                     Text.create(domain);
                     Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(54:17)", "entry");
                     Text.fontSize(14);
-                    Text.fontColor(domain === this.currentDomain ? this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : '#000000');
+                    Text.fontColor(domain === this.currentDomain ? this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
                 }, Text);
                 Text.pop();
                 this.observeComponentCreation2((elmtId, isInitialRender) => {
@@ -254,7 +254,7 @@ class JmSettings extends ViewPU {
                                 Text.create('●');
                                 Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(64:17)", "entry");
                                 Text.fontSize(16);
-                                Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
+                                Text.fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF');
                             }, Text);
                             Text.pop();
                         });
@@ -285,7 +285,7 @@ class JmSettings extends ViewPU {
             // Health check button
             Button.fontColor('#FFFFFF');
             // Health check button
-            Button.backgroundColor(this.isChecking ? '#999999' : this.isDarkMode ? '#4DA6FF' : '#007AFF');
+            Button.backgroundColor(this.isChecking ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF');
             // Health check button
             Button.onClick(() => { this.checkHealth(); });
         }, Button);

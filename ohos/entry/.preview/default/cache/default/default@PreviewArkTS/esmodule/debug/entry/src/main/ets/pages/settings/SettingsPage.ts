@@ -5,10 +5,9 @@ interface SettingsPage_Params {
     isDarkMode?: boolean;
 }
 import router from "@ohos:router";
+import promptAction from "@ohos:promptAction";
 import { ThemeManager } from "@bundle:com.picacomic.harmony/entry/ets/common/ThemeManager";
 import { Translations } from "@bundle:com.picacomic.harmony/entry/ets/common/Translations";
-import { SettingItem } from "@bundle:com.picacomic.harmony/entry/ets/components/SettingItem";
-import { SettingSection } from "@bundle:com.picacomic.harmony/entry/ets/components/SettingSection";
 class SettingsPage extends ViewPU {
     constructor(parent, params, __localStorage, elmtId = -1, paramsLambda = undefined, extraInfo) {
         super(parent, __localStorage, elmtId, extraInfo);
@@ -40,28 +39,23 @@ class SettingsPage extends ViewPU {
     }
     initialRender() {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
-            Column.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(14:5)", "entry");
+            Column.create({ space: 8 });
+            Column.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(12:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5');
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            // Header
             Row.create();
-            Row.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(16:7)", "entry");
-            // Header
+            Row.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(13:7)", "entry");
             Row.width('100%');
-            // Header
             Row.height(64);
-            // Header
             Row.padding({ left: 16, right: 16 });
-            // Header
             Row.alignItems(VerticalAlign.Center);
         }, Row);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Image.create({ "id": 0, "type": 30000, params: ['icons/ic_back.svg'], "bundleName": "com.picacomic.harmony", "moduleName": "entry" });
-            Image.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(17:9)", "entry");
+            Image.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(14:9)", "entry");
             Image.width(24);
             Image.height(24);
             Image.objectFit(ImageFit.Contain);
@@ -69,828 +63,108 @@ class SettingsPage extends ViewPU {
         }, Image);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create(Translations.t('tab_settings'));
-            Text.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(20:9)", "entry");
+            Text.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(17:9)", "entry");
             Text.fontSize(22);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.margin({ left: 12 });
         }, Text);
         Text.pop();
-        // Header
         Row.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Scroll.create();
-            Scroll.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(30:7)", "entry");
+            Scroll.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(23:7)", "entry");
             Scroll.layoutWeight(1);
         }, Scroll);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
-            Column.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(31:9)", "entry");
+            Column.create({ space: 8 });
+            Column.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(24:9)", "entry");
             Column.width('100%');
         }, Column);
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new 
-                    // === 浏览 ===
-                    SettingSection(this, { title: '浏览' }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 33, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            title: '浏览'
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        title: '浏览'
-                    });
-                }
-            }, { name: "SettingSection" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🔍', title: '初始页面', value: '主页', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 34, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🔍',
-                            title: '初始页面',
-                            value: '主页',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🔍', title: '初始页面', value: '主页'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '📋', title: '探索页面配置', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 35, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '📋',
-                            title: '探索页面配置',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '📋', title: '探索页面配置'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🚫', title: '关键词屏蔽', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 36, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🚫',
-                            title: '关键词屏蔽',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🚫', title: '关键词屏蔽'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🔎', title: '默认搜索源', value: 'NHentai', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 37, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🔎',
-                            title: '默认搜索源',
-                            value: 'NHentai',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🔎', title: '默认搜索源', value: 'NHentai'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '📱', title: '漫画列表显示', value: '连续模式', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 38, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '📱',
-                            title: '漫画列表显示',
-                            value: '连续模式',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '📱', title: '漫画列表显示', value: '连续模式'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new 
-                    // === 阅读 ===
-                    SettingSection(this, { title: '阅读' }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 41, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            title: '阅读'
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        title: '阅读'
-                    });
-                }
-            }, { name: "SettingSection" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '📖', title: '阅读模式', value: '从上至下', onTap: () => {
-                            router.pushUrl({ url: 'pages/settings/ReadingSettings' });
-                        } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 42, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '📖',
-                            title: '阅读模式',
-                            value: '从上至下',
-                            onTap: () => {
-                                router.pushUrl({ url: 'pages/settings/ReadingSettings' });
-                            }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '📖', title: '阅读模式', value: '从上至下'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '👆', title: '点按翻页', value: 'ON', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 45, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '👆',
-                            title: '点按翻页',
-                            value: 'ON',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '👆', title: '点按翻页', value: 'ON'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🔊', title: '音量键翻页', value: 'ON', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 46, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🔊',
-                            title: '音量键翻页',
-                            value: 'ON',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🔊', title: '音量键翻页', value: 'ON'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🔆', title: '屏幕常亮', value: 'ON', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 47, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🔆',
-                            title: '屏幕常亮',
-                            value: 'ON',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🔆', title: '屏幕常亮', value: 'ON'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '📝', title: '显示章节评论', value: 'ON', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 48, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '📝',
-                            title: '显示章节评论',
-                            value: 'ON',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '📝', title: '显示章节评论', value: 'ON'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '💾', title: '图片质量', value: 'Original', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 49, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '💾',
-                            title: '图片质量',
-                            value: 'Original',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '💾', title: '图片质量', value: 'Original'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🔤', title: '字体大小', value: '16', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 50, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🔤',
-                            title: '字体大小',
-                            value: '16',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🔤', title: '字体大小', value: '16'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new 
-                    // === 外观 ===
-                    SettingSection(this, { title: '外观' }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 53, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            title: '外观'
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        title: '外观'
-                    });
-                }
-            }, { name: "SettingSection" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🌙', title: Translations.t('dark_mode'), value: this.getDarkModeLabel(), onTap: () => {
-                            this.cycleDarkMode();
-                        } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 54, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🌙',
-                            title: Translations.t('dark_mode'),
-                            value: this.getDarkModeLabel(),
-                            onTap: () => {
-                                this.cycleDarkMode();
-                            }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🌙', title: Translations.t('dark_mode'), value: this.getDarkModeLabel()
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🎨', title: Translations.t('theme_color'), value: '', onTap: () => {
-                            this.cycleThemeColor();
-                        } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 57, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🎨',
-                            title: Translations.t('theme_color'),
-                            value: '',
-                            onTap: () => {
-                                this.cycleThemeColor();
-                            }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🎨', title: Translations.t('theme_color'), value: ''
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new 
-                    // === 本地收藏 ===
-                    SettingSection(this, { title: '本地收藏' }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 62, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            title: '本地收藏'
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        title: '本地收藏'
-                    });
-                }
-            }, { name: "SettingSection" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '⭐', title: '收藏夹设置', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 63, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '⭐',
-                            title: '收藏夹设置',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '⭐', title: '收藏夹设置'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new 
-                    // === APP ===
-                    SettingSection(this, { title: 'APP' }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 66, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            title: 'APP'
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        title: 'APP'
-                    });
-                }
-            }, { name: "SettingSection" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '📂', title: '下载路径', value: '默认', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 67, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '📂',
-                            title: '下载路径',
-                            value: '默认',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '📂', title: '下载路径', value: '默认'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🗑️', title: '清除缓存', value: '', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 68, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🗑️',
-                            title: '清除缓存',
-                            value: '',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🗑️', title: '清除缓存', value: ''
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🔄', title: '检查更新', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 69, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🔄',
-                            title: '检查更新',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🔄', title: '检查更新'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new 
-                    // === 漫画源 ===
-                    SettingSection(this, { title: '漫画源' }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 72, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            title: '漫画源'
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        title: '漫画源'
-                    });
-                }
-            }, { name: "SettingSection" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '📕', title: 'JM 禁漫', value: '→', onTap: () => {
-                            router.pushUrl({ url: 'pages/settings/JmSettings' });
-                        } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 73, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '📕',
-                            title: 'JM 禁漫',
-                            value: '→',
-                            onTap: () => {
-                                router.pushUrl({ url: 'pages/settings/JmSettings' });
-                            }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '📕', title: 'JM 禁漫', value: '→'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '📚', title: 'HT 绅士漫画', value: '→', onTap: () => {
-                            router.pushUrl({ url: 'pages/settings/HtSettings' });
-                        } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 76, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '📚',
-                            title: 'HT 绅士漫画',
-                            value: '→',
-                            onTap: () => {
-                                router.pushUrl({ url: 'pages/settings/HtSettings' });
-                            }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '📚', title: 'HT 绅士漫画', value: '→'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '📘', title: 'NHentai 设置', value: '→', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 79, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '📘',
-                            title: 'NHentai 设置',
-                            value: '→',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '📘', title: 'NHentai 设置', value: '→'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '📖', title: 'EHentai 设置', value: '→', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 80, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '📖',
-                            title: 'EHentai 设置',
-                            value: '→',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '📖', title: 'EHentai 设置', value: '→'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🐱', title: 'Picacg 设置', value: '→', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 81, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🐱',
-                            title: 'Picacg 设置',
-                            value: '→',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🐱', title: 'Picacg 设置', value: '→'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🎨', title: 'Hitomi 设置', value: '→', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 82, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🎨',
-                            title: 'Hitomi 设置',
-                            value: '→',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🎨', title: 'Hitomi 设置', value: '→'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new 
-                    // === 网络 ===
-                    SettingSection(this, { title: '网络' }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 85, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            title: '网络'
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        title: '网络'
-                    });
-                }
-            }, { name: "SettingSection" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '🌐', title: '代理设置', value: '系统代理', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 86, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '🌐',
-                            title: '代理设置',
-                            value: '系统代理',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '🌐', title: '代理设置', value: '系统代理'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: '☁️', title: 'WebDAV 同步', value: '未配置', onTap: () => { } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 87, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: '☁️',
-                            title: 'WebDAV 同步',
-                            value: '未配置',
-                            onTap: () => { }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: '☁️', title: 'WebDAV 同步', value: '未配置'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new 
-                    // === 关于 ===
-                    SettingSection(this, { title: '关于' }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 90, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            title: '关于'
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        title: '关于'
-                    });
-                }
-            }, { name: "SettingSection" });
-        }
-        {
-            this.observeComponentCreation2((elmtId, isInitialRender) => {
-                if (isInitialRender) {
-                    let componentCall = new SettingItem(this, { icon: 'ℹ️', title: Translations.t('about'), value: 'v' + '1.0.0', onTap: () => {
-                            router.pushUrl({ url: 'pages/settings/AboutPage' });
-                        } }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/settings/SettingsPage.ets", line: 91, col: 11 });
-                    ViewPU.create(componentCall);
-                    let paramsLambda = () => {
-                        return {
-                            icon: 'ℹ️',
-                            title: Translations.t('about'),
-                            value: 'v' + '1.0.0',
-                            onTap: () => {
-                                router.pushUrl({ url: 'pages/settings/AboutPage' });
-                            }
-                        };
-                    };
-                    componentCall.paramsGenerator_ = paramsLambda;
-                }
-                else {
-                    this.updateStateVarsOfChildByElmtId(elmtId, {
-                        icon: 'ℹ️', title: Translations.t('about'), value: 'v' + '1.0.0'
-                    });
-                }
-            }, { name: "SettingItem" });
-        }
+        this.section.bind(this)('外观');
+        this.item.bind(this)(Translations.t('dark_mode'), ThemeManager.isDark ? '开启' : '关闭', () => {
+            ThemeManager.setDarkMode(!ThemeManager.isDark);
+            promptAction.showToast({ message: this.isDarkMode ? '已切换深色模式' : '已切换浅色模式', duration: 2000 });
+        });
+        this.item.bind(this)(Translations.t('theme_color'), '', () => {
+            const colors = ThemeManager.themePresets;
+            const cur = ThemeManager.themeColor;
+            let idx = 0;
+            for (let i = 0; i < colors.length; i++) {
+                if (colors[i] === cur) {
+                    idx = i;
+                    break;
+                }
+            }
+            ThemeManager.setThemeColor(colors[(idx + 1) % colors.length]);
+        });
+        this.section.bind(this)('漫画源');
+        this.item.bind(this)('JM 禁漫 域名更新', '→', () => { router.pushUrl({ url: 'pages/settings/JmSettings' }); });
+        this.item.bind(this)('HT 绅士漫画 域名更新', '→', () => { router.pushUrl({ url: 'pages/settings/HtSettings' }); });
+        this.section.bind(this)('系统');
+        this.item.bind(this)(Translations.t('about'), 'v' + '1.0.0', () => { router.pushUrl({ url: 'pages/settings/AboutPage' }); });
         Column.pop();
         Scroll.pop();
         Column.pop();
     }
-    private getDarkModeLabel(): string {
-        return ThemeManager.isDark ? '开启' : '关闭';
+    section(title: string, parent = null) {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create(title);
+            Text.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(50:5)", "entry");
+            Text.fontSize(13);
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
+            Text.width('100%');
+            Text.padding({ left: 16, top: 24, bottom: 8 });
+        }, Text);
+        Text.pop();
     }
-    private cycleDarkMode(): void {
-        ThemeManager.setDarkMode(!ThemeManager.isDark);
-    }
-    private cycleThemeColor(): void {
-        const colors = ThemeManager.themePresets;
-        const current = ThemeManager.themeColor;
-        let idx = 0;
-        for (let i = 0; i < colors.length; i++) {
-            if (colors[i] === current) {
-                idx = i;
-                break;
+    item(label: string, value: string, action: () => void, parent = null) {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Row.create();
+            Row.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(54:5)", "entry");
+            Row.width('100%');
+            Row.height(56);
+            Row.padding({ left: 16, right: 16 });
+            Row.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
+            Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' });
+            Row.onClick(action);
+        }, Row);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create(label);
+            Text.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(55:7)", "entry");
+            Text.fontSize(16);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.layoutWeight(1);
+        }, Text);
+        Text.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            If.create();
+            if (value.length > 0) {
+                this.ifElseBranchUpdateFunction(0, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create(value);
+                        Text.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(56:31)", "entry");
+                        Text.fontSize(14);
+                        Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
+                        Text.margin({ right: 4 });
+                    }, Text);
+                    Text.pop();
+                });
             }
-        }
-        ThemeManager.setThemeColor(colors[(idx + 1) % colors.length]);
+            else {
+                this.ifElseBranchUpdateFunction(1, () => {
+                });
+            }
+        }, If);
+        If.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Image.create({ "id": 0, "type": 30000, params: ['icons/ic_arrow_right.svg'], "bundleName": "com.picacomic.harmony", "moduleName": "entry" });
+            Image.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(57:7)", "entry");
+            Image.width(16);
+            Image.height(16);
+            Image.objectFit(ImageFit.Contain);
+        }, Image);
+        Row.pop();
     }
     rerender() {
         this.updateDirtyElements();

@@ -42,7 +42,7 @@ struct HtSettings {
           Button(this.isLoading ? '加载中...' : '获取远程域名列表')
             .width('90%').height(44).margin({ top: 12 })
             .fontSize(14).fontColor('#FFFFFF')
-            .backgroundColor(this.isLoading ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#FFB340' : '#FF9500')
+            .backgroundColor(this.isLoading ? '#8E8E93' : (this.isDarkMode ? '#FFB340' : '#FF9500'))
             .onClick(() => { this.fetchDomains(); })
 
           // Available domains

@@ -296,11 +296,11 @@ class ReadingSettings extends ViewPU {
     private autoPageTimes: number[];
     initialRender() {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(36:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5');
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Row.create();
@@ -323,7 +323,7 @@ class ReadingSettings extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(41:9)", "entry");
             Text.fontSize(22);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.margin({ left: 12 });
         }, Text);
         Text.pop();
@@ -334,7 +334,7 @@ class ReadingSettings extends ViewPU {
             Scroll.layoutWeight(1);
         }, Scroll);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(49:9)", "entry");
             Column.width('100%');
         }, Column);
@@ -796,7 +796,7 @@ class ReadingSettings extends ViewPU {
             Text.create('A');
             Text.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(84:13)", "entry");
             Text.fontSize(12);
-            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
         }, Text);
         Text.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
@@ -815,7 +815,7 @@ class ReadingSettings extends ViewPU {
             Text.create('A');
             Text.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(94:13)", "entry");
             Text.fontSize(24);
-            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
         }, Text);
         Text.pop();
         Row.pop();

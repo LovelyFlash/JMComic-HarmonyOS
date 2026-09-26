@@ -10,9 +10,7 @@ export struct SearchBar {
 
   build() {
     Row() {
-      Text('🔍')
-        .fontSize(16)
-        .margin({ right: 8 })
+      Image($rawfile('icons/ic_search.svg')).width(20).height(20).objectFit(ImageFit.Contain)
       TextInput({ placeholder: this.placeholder, controller: this.inputController })
         .layoutWeight(1)
         .height(36)

@@ -53,7 +53,7 @@ export class SettingSection extends ViewPU {
             Text.create(this.title);
             Text.debugLine("entry/src/main/ets/components/SettingSection.ets(8:5)", "entry");
             Text.fontSize(13);
-            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
             Text.width('100%');
             Text.padding({ left: 16, top: 24, bottom: 8 });
         }, Text);

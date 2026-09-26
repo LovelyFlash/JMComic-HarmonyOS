@@ -19,8 +19,7 @@ struct AboutPage {
       }.width('100%').height(56).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       Column({ space: 8 }) {
-        Text('📚')
-          .fontSize(64)
+        Image($rawfile('icons/ic_explore.svg')).width(64).height(64).objectFit(ImageFit.Contain)
         Text(ApiConstants.APP_NAME)
           .fontSize(24)
           .fontWeight(FontWeight.Bold)

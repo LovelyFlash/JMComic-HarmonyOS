@@ -92,7 +92,7 @@ export class SettingSwitch extends ViewPU {
             Row.height(56);
             Row.padding({ left: 16, right: 16 });
             Row.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
-            Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' });
+            Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' });
         }, Row);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             If.create();
@@ -115,16 +115,16 @@ export class SettingSwitch extends ViewPU {
         If.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create(this.title);
-            Text.debugLine("entry/src/main/ets/components/SettingSwitch.ets(17:7)", "entry");
+            Text.debugLine("entry/src/main/ets/components/SettingSwitch.ets(15:7)", "entry");
             Text.fontSize(16);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.layoutWeight(1);
         }, Text);
         Text.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Toggle.create({ type: ToggleType.Switch, isOn: this.isOn });
-            Toggle.debugLine("entry/src/main/ets/components/SettingSwitch.ets(21:7)", "entry");
-            Toggle.selectedColor('#007AFF');
+            Toggle.debugLine("entry/src/main/ets/components/SettingSwitch.ets(19:7)", "entry");
+            Toggle.selectedColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
             Toggle.switchPointColor('#FFFFFF');
             Toggle.onChange((isOn: boolean) => {
                 this.onToggle(isOn);

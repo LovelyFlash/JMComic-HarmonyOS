@@ -57,7 +57,7 @@ class MainPage extends ViewPU {
     }
     tabBuilder(title: string, iconRes: string, iconSelectedRes: string, index: number, parent = null) {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/MainPage.ets(21:5)", "entry");
             Column.width('100%');
             Column.height('100%');
@@ -83,7 +83,7 @@ class MainPage extends ViewPU {
     }
     initialRender() {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/MainPage.ets(40:5)", "entry");
             Column.width('100%');
             Column.height('100%');
@@ -142,18 +142,18 @@ class MainPage extends ViewPU {
     }
     buildExplorePage(parent = null) {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/MainPage.ets(66:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5');
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create(Translations.t('app_name'));
             Text.debugLine("entry/src/main/ets/pages/MainPage.ets(67:7)", "entry");
             Text.fontSize(28);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.width('100%');
             Text.textAlign(TextAlign.Start);
             Text.padding({ left: 24, top: 64, bottom: 4 });
@@ -163,7 +163,7 @@ class MainPage extends ViewPU {
             Text.create(Translations.t('tab_explore'));
             Text.debugLine("entry/src/main/ets/pages/MainPage.ets(75:7)", "entry");
             Text.fontSize(14);
-            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
             Text.width('100%');
             Text.padding({ left: 24, bottom: 20 });
         }, Text);
@@ -189,7 +189,7 @@ class MainPage extends ViewPU {
     }
     sourceItem(label: string, source: string, parent = null) {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/MainPage.ets(103:5)", "entry");
             Column.width('100%');
             Column.height(80);
@@ -205,31 +205,31 @@ class MainPage extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/MainPage.ets(104:7)", "entry");
             Text.fontSize(15);
             Text.fontWeight(FontWeight.Medium);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Text);
         Text.pop();
         Column.pop();
     }
     buildHistoryPage(parent = null) {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/MainPage.ets(121:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5');
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create(Translations.t('tab_history'));
             Text.debugLine("entry/src/main/ets/pages/MainPage.ets(122:7)", "entry");
             Text.fontSize(28);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.width('100%');
             Text.padding({ left: 24, top: 64, bottom: 8 });
         }, Text);
         Text.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/MainPage.ets(128:7)", "entry");
             Column.layoutWeight(1);
             Column.justifyContent(FlexAlign.Center);
@@ -239,7 +239,7 @@ class MainPage extends ViewPU {
             Text.create(Translations.t('no_data'));
             Text.debugLine("entry/src/main/ets/pages/MainPage.ets(129:9)", "entry");
             Text.fontSize(14);
-            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
         }, Text);
         Text.pop();
         Column.pop();
@@ -247,24 +247,24 @@ class MainPage extends ViewPU {
     }
     buildFavoritesPage(parent = null) {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/MainPage.ets(144:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5');
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create(Translations.t('tab_favorites'));
             Text.debugLine("entry/src/main/ets/pages/MainPage.ets(145:7)", "entry");
             Text.fontSize(28);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.width('100%');
             Text.padding({ left: 24, top: 64, bottom: 8 });
         }, Text);
         Text.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/MainPage.ets(151:7)", "entry");
             Column.layoutWeight(1);
             Column.justifyContent(FlexAlign.Center);
@@ -274,7 +274,7 @@ class MainPage extends ViewPU {
             Text.create(Translations.t('no_data'));
             Text.debugLine("entry/src/main/ets/pages/MainPage.ets(152:9)", "entry");
             Text.fontSize(14);
-            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
         }, Text);
         Text.pop();
         Column.pop();
@@ -282,18 +282,18 @@ class MainPage extends ViewPU {
     }
     buildSettingsPage(parent = null) {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/MainPage.ets(167:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5');
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create(Translations.t('tab_settings'));
             Text.debugLine("entry/src/main/ets/pages/MainPage.ets(168:7)", "entry");
             Text.fontSize(28);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.width('100%');
             Text.padding({ left: 24, top: 64, bottom: 16 });
         }, Text);
@@ -304,7 +304,7 @@ class MainPage extends ViewPU {
             Scroll.layoutWeight(1);
         }, Scroll);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            Column.create();
+            Column.create({ space: 8 });
             Column.debugLine("entry/src/main/ets/pages/MainPage.ets(176:9)", "entry");
             Column.width('100%');
         }, Column);
@@ -336,7 +336,7 @@ class MainPage extends ViewPU {
             Text.create(title);
             Text.debugLine("entry/src/main/ets/pages/MainPage.ets(204:5)", "entry");
             Text.fontSize(13);
-            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
+            Text.fontColor(this.isDarkMode ? '#8E8E93' : '#666666');
             Text.width('100%');
             Text.padding({ left: 16, top: 24, bottom: 8 });
         }, Text);
@@ -350,14 +350,14 @@ class MainPage extends ViewPU {
             Row.height(56);
             Row.padding({ left: 16, right: 16 });
             Row.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
-            Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' });
+            Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' });
             Row.onClick(action);
         }, Row);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create(label);
             Text.debugLine("entry/src/main/ets/pages/MainPage.ets(214:7)", "entry");
             Text.fontSize(16);
-            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF');
             Text.layoutWeight(1);
         }, Text);
         Text.pop();
