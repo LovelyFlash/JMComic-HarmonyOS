@@ -7,6 +7,11 @@ import { Logger } from '../../common/Logger';
 @Component
 struct ReaderPage {
   @State comicId: string = ''
+
+  pageTransition() {
+    PageTransitionEnter({ duration: 300, curve: Curve.FastOutSlowIn })
+    PageTransitionExit({ duration: 250, curve: Curve.FastOutSlowIn })
+  }
   @State images: string[] = []
   @State currentIndex: number = 0
   @State showToolbar: boolean = false

@@ -9,6 +9,11 @@ import { Database, DownloadItem } from '../data/database/Database';
 struct DownloadPage {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
   @State items: DownloadItem[] = []
+
+  pageTransition() {
+    PageTransitionEnter({ duration: 250, curve: Curve.FastOutSlowIn })
+    PageTransitionExit({ duration: 200, curve: Curve.FastOutSlowIn })
+  }
   @State loading: boolean = true
 
   aboutToAppear(): void { this.loadData(); }

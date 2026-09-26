@@ -10,6 +10,11 @@ import { NhentaiApi } from '../../data/api/NhentaiApi';
 struct NhHome {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
   @State comics: Comic[] = []
+
+  pageTransition() {
+    PageTransitionEnter({ duration: 250, curve: Curve.FastOutSlowIn })
+    PageTransitionExit({ duration: 200, curve: Curve.FastOutSlowIn })
+  }
   @State loading: boolean = true
   @State error: string = ''
   @State page: number = 1

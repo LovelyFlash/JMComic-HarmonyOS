@@ -9,6 +9,11 @@ import { Database, HistoryItem } from '../data/database/Database';
 struct HistoryPage {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
   @State items: HistoryItem[] = []
+
+  pageTransition() {
+    PageTransitionEnter({ duration: 250, curve: Curve.FastOutSlowIn })
+    PageTransitionExit({ duration: 200, curve: Curve.FastOutSlowIn })
+  }
   @State loading: boolean = true
 
   aboutToAppear(): void { this.loadData(); }

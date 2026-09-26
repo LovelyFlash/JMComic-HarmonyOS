@@ -14,6 +14,11 @@ import { HitomiApi } from '../data/api/HitomiApi';
 @Component
 struct ComicDetailPage {
   @State comicId: string = ''
+
+  pageTransition() {
+    PageTransitionEnter({ duration: 250, curve: Curve.FastOutSlowIn })
+    PageTransitionExit({ duration: 200, curve: Curve.FastOutSlowIn })
+  }
   @State title: string = ''
   @State source: string = ''
   @State comic: Comic = new Comic()

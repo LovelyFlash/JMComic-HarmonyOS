@@ -13,6 +13,11 @@ struct SearchPage {
   @State keyword: string = ''
   @State comics: Comic[] = []
   @State loading: boolean = false
+
+  pageTransition() {
+    PageTransitionEnter({ duration: 250, curve: Curve.FastOutSlowIn })
+    PageTransitionExit({ duration: 200, curve: Curve.FastOutSlowIn })
+  }
   @State error: string = ''
   @State selectedSource: number = 0
   @StorageLink('isDarkMode') isDarkMode: boolean = false

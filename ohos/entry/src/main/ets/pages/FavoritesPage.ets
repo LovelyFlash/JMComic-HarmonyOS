@@ -11,12 +11,38 @@ struct FavoritesPage {
   @State items: FavoriteItem[] = []
   @State loading: boolean = true
 
+  pageTransition() {
+    PageTransitionEnter({ duration: 250, curve: Curve.FastOutSlowIn })
+    PageTransitionExit({ duration: 200, curve: Curve.FastOutSlowIn })
+  }
+
   aboutToAppear(): void { this.loadData(); }
 
   async loadData(): Promise<void> {
     this.loading = true;
     this.items = await Database.queryFavorites();
     this.loading = false;
+  }
+
+  private showDeleteConfirm(item: FavoriteItem): void {
+    promptAction.showDialog({
+      title: '取消收藏',
+      message: `确认取消收藏「${item.title}」吗？`,
+      buttons: [
+        { text: '取消', color: '#666666' },
+        { text: '确认', color: '#FF3B30' }
+      ]
+    }).then((result: promptAction.ShowDialogSuccessResponse) => {
+      if (result.index === 1) {
+        this.confirmDelete(item);
+      }
+    });
+  }
+
+  private async confirmDelete(item: FavoriteItem): Promise<void> {
+    await Database.removeFavorite(item.id, item.source);
+    promptAction.showToast({ message: '已取消收藏', duration: 2000 });
+    this.loadData();
   }
 
   build() {
@@ -40,11 +66,7 @@ struct FavoritesPage {
                   Text(item.source).fontSize(11).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF').margin({ top: 4 })
                 }.layoutWeight(1).alignItems(HorizontalAlign.Start).margin({ left: 12 })
                 Image($rawfile('icons/ic_close.svg')).width(20).height(20).objectFit(ImageFit.Contain)
-                  .onClick(async () => {
-                    await Database.removeFavorite(item.id, item.source);
-                    promptAction.showToast({ message: '已取消收藏', duration: 2000 });
-                    this.loadData();
-                  })
+                  .onClick(() => { this.showDeleteConfirm(item); })
               }.width('100%').padding(12)
             }
           })
