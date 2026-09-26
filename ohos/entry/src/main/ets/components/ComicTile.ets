@@ -20,7 +20,7 @@ export struct ComicTile {
         if (this.comic.author.length > 0) {
           Text(this.comic.author)
             .fontSize(12)
-            .fontColor('#999999')
+            .fontColor(this.isDarkMode ? '#999999' : this.isDarkMode ? '#999999' : '#666666')
             .margin({ top: 4 })
             .maxLines(1)
         }
@@ -29,8 +29,8 @@ export struct ComicTile {
             ForEach(this.comic.tags.slice(0, 3), (tag: string) => {
               Text(tag)
                 .fontSize(10)
-                .fontColor('#007AFF')
-                .backgroundColor('#F0F8FF')
+                .fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
+                .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#F0F8FF')
                 .borderRadius(4)
                 .padding({ left: 6, right: 6, top: 2, bottom: 2 })
                 .margin({ right: 4 })

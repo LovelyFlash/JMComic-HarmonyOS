@@ -18,12 +18,12 @@ struct SearchPage {
       Row() {
         Text('<')
           .fontSize(20)
-          .fontColor(ThemeManager.colors.primary)
+          .fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
           .onClick(() => { router.back(); })
         Text('搜索')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
-          .fontColor(ThemeManager.colors.textPrimary)
+          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
           .margin({ left: 16 })
       }
       .width('100%')
@@ -44,7 +44,7 @@ struct SearchPage {
         Column() {
           Text('输入关键词搜索漫画')
             .fontSize(14)
-            .fontColor(ThemeManager.colors.textSecondary)
+            .fontColor(this.isDarkMode ? '#999999' : '#666666')
         }
         .layoutWeight(1)
         .justifyContent(FlexAlign.Center)
@@ -54,6 +54,6 @@ struct SearchPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(ThemeManager.colors.background)
+    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 }

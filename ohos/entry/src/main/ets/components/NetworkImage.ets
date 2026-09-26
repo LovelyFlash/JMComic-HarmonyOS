@@ -10,6 +10,7 @@ export struct NetworkImage {
   @Prop imgHeight: number = 160
   @Prop imgBorderRadius: number = 8
   @Prop fit: ImageFit = ImageFit.Cover
+  @StorageLink('isDarkMode') isDarkMode: boolean = false
 
   build() {
     if (this.url.length > 0) {
@@ -18,7 +19,7 @@ export struct NetworkImage {
         .height(this.imgHeight)
         .borderRadius(this.imgBorderRadius)
         .objectFit(this.fit)
-        .backgroundColor('#F0F0F0')
+        .backgroundColor(this.isDarkMode ? '#2C2C2E' : '#F0F0F0')
         .onError(() => {
           Logger.debug(TAG, `Image load failed: ${this.url}`);
         })
@@ -26,12 +27,12 @@ export struct NetworkImage {
       Column() {
         Text('No Image')
           .fontSize(12)
-          .fontColor('#CCCCCC')
+          .fontColor(this.isDarkMode ? '#666666' : '#CCCCCC')
       }
       .width(this.imgWidth)
       .height(this.imgHeight)
       .borderRadius(this.imgBorderRadius)
-      .backgroundColor('#F0F0F0')
+      .backgroundColor(this.isDarkMode ? '#2C2C2E' : '#F0F0F0')
       .justifyContent(FlexAlign.Center)
       .alignItems(HorizontalAlign.Center)
     }

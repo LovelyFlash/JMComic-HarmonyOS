@@ -20,20 +20,20 @@ struct HtHome {
       Row() {
         Text('<')
           .fontSize(20)
-          .fontColor(ThemeManager.colors.primary)
+          .fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
           .margin({ right: 12 })
           .onClick(() => { router.back(); })
         Text('缁呭＋婕敾')
           .fontSize(22)
           .fontWeight(FontWeight.Bold)
-          .fontColor(ThemeManager.colors.textPrimary)
+          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
         Blank()
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 56, bottom: 12 })
 
       Divider()
-        .color(ThemeManager.colors.border)
+        .color(this.isDarkMode ? '#333333' : '#E5E5EA')
         .width('100%')
 
       // Comic Grid
@@ -49,21 +49,21 @@ struct HtHome {
               })
               Text(comic.title)
                 .fontSize(12)
-                .fontColor(ThemeManager.colors.textPrimary)
+                .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
                 .maxLines(2)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
                 .width('100%')
                 .margin({ top: 6 })
               Text(comic.subTitle)
                 .fontSize(10)
-                .fontColor(ThemeManager.colors.textSecondary)
+                .fontColor(this.isDarkMode ? '#999999' : '#666666')
                 .maxLines(1)
                 .width('100%')
                 .margin({ top: 2 })
             }
             .width('100%')
             .padding(6)
-            .backgroundColor(ThemeManager.colors.surface)
+            .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
             .borderRadius(8)
             .onClick(() => {
               router.pushUrl({ url: 'pages/htcomic/HtDetail' });
@@ -80,7 +80,7 @@ struct HtHome {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(ThemeManager.colors.background)
+    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 
   private buildPlaceholderComics(): Comic[] {

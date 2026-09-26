@@ -56,7 +56,7 @@ class SettingsPage extends ViewPU {
             Column.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(14:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(ThemeManager.colors.background);
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Row.create();
@@ -70,7 +70,7 @@ class SettingsPage extends ViewPU {
             Text.create('<');
             Text.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(16:9)", "entry");
             Text.fontSize(20);
-            Text.fontColor(ThemeManager.colors.primary);
+            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
             Text.onClick(() => { router.back(); });
         }, Text);
         Text.pop();
@@ -79,7 +79,7 @@ class SettingsPage extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(18:9)", "entry");
             Text.fontSize(18);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             Text.margin({ left: 16 });
         }, Text);
         Text.pop();
@@ -100,7 +100,7 @@ class SettingsPage extends ViewPU {
             // Appearance section
             Text.fontSize(13);
             // Appearance section
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             // Appearance section
             Text.width('100%');
             // Appearance section
@@ -121,7 +121,7 @@ class SettingsPage extends ViewPU {
             // Reading section
             Text.fontSize(13);
             // Reading section
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             // Reading section
             Text.width('100%');
             // Reading section
@@ -138,7 +138,7 @@ class SettingsPage extends ViewPU {
             // Comic source section
             Text.fontSize(13);
             // Comic source section
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             // Comic source section
             Text.width('100%');
             // Comic source section
@@ -159,7 +159,7 @@ class SettingsPage extends ViewPU {
             // System section
             Text.fontSize(13);
             // System section
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             // System section
             Text.width('100%');
             // System section
@@ -184,15 +184,15 @@ class SettingsPage extends ViewPU {
             Row.width('100%');
             Row.height(52);
             Row.padding({ left: 16, right: 16 });
-            Row.backgroundColor(ThemeManager.colors.surface);
-            Row.border({ width: { bottom: 0.5 }, color: ThemeManager.colors.divider });
+            Row.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
+            Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' });
             Row.onClick(action);
         }, Row);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create(label);
             Text.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(81:7)", "entry");
             Text.fontSize(15);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             Text.layoutWeight(1);
         }, Text);
         Text.pop();
@@ -200,7 +200,7 @@ class SettingsPage extends ViewPU {
             Text.create(value);
             Text.debugLine("entry/src/main/ets/pages/settings/SettingsPage.ets(82:7)", "entry");
             Text.fontSize(14);
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
         }, Text);
         Text.pop();
         Row.pop();

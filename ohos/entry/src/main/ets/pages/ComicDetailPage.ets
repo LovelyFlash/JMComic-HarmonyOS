@@ -27,12 +27,12 @@ struct ComicDetailPage {
       Row() {
         Text('<')
           .fontSize(20)
-          .fontColor(ThemeManager.colors.primary)
+          .fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
           .onClick(() => { router.back(); })
         Text(this.comic.title)
           .fontSize(16)
           .fontWeight(FontWeight.Bold)
-          .fontColor(ThemeManager.colors.textPrimary)
+          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
           .layoutWeight(1)
           .margin({ left: 12 })
           .maxLines(1)
@@ -52,13 +52,13 @@ struct ComicDetailPage {
               Text(this.comic.title)
                 .fontSize(18)
                 .fontWeight(FontWeight.Bold)
-                .fontColor(ThemeManager.colors.textPrimary)
+                .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
                 .maxLines(3)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
               if (this.comic.author.length > 0) {
                 Text('作者: ' + this.comic.author)
                   .fontSize(13)
-                  .fontColor(ThemeManager.colors.textSecondary)
+                  .fontColor(this.isDarkMode ? '#999999' : '#666666')
                   .margin({ top: 8 })
               }
               if (this.comic.likes > 0) {
@@ -79,7 +79,7 @@ struct ComicDetailPage {
           if (this.comic.description.length > 0) {
             Text(this.comic.description)
               .fontSize(14)
-              .fontColor(ThemeManager.colors.textPrimary)
+              .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
               .width('100%')
               .padding({ left: 16, right: 16, bottom: 16 })
           }
@@ -88,13 +88,13 @@ struct ComicDetailPage {
           Text('章节列表')
             .fontSize(16)
             .fontWeight(FontWeight.Medium)
-            .fontColor(ThemeManager.colors.textPrimary)
+            .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
             .width('100%')
             .padding({ left: 16, top: 56, bottom: 8 })
 
           Text('暂无章节数据')
             .fontSize(14)
-            .fontColor(ThemeManager.colors.textSecondary)
+            .fontColor(this.isDarkMode ? '#999999' : '#666666')
             .width('100%')
             .padding({ left: 16, bottom: 16 })
         }
@@ -103,6 +103,6 @@ struct ComicDetailPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(ThemeManager.colors.background)
+    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 }

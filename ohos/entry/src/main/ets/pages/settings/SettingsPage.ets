@@ -13,17 +13,17 @@ struct SettingsPage {
   build() {
     Column() {
       Row() {
-        Text('<').fontSize(20).fontColor(ThemeManager.colors.primary)
+        Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
           .onClick(() => { router.back(); })
         Text(Translations.t('tab_settings')).fontSize(18).fontWeight(FontWeight.Bold)
-          .fontColor(ThemeManager.colors.textPrimary).margin({ left: 16 })
+          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').margin({ left: 16 })
       }.width('100%').height(56).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       Scroll() {
         Column() {
           // Appearance section
           Text(Translations.t('settings_appearance')).fontSize(13)
-            .fontColor(ThemeManager.colors.textSecondary).width('100%')
+            .fontColor(this.isDarkMode ? '#999999' : '#666666').width('100%')
             .padding({ left: 16, top: 56, bottom: 8 })
 
           this.settingItem(Translations.t('dark_mode'), this.getDarkModeLabel(), () => {
@@ -36,7 +36,7 @@ struct SettingsPage {
 
           // Reading section
           Text(Translations.t('settings_reading')).fontSize(13)
-            .fontColor(ThemeManager.colors.textSecondary).width('100%')
+            .fontColor(this.isDarkMode ? '#999999' : '#666666').width('100%')
             .padding({ left: 16, top: 24, bottom: 8 })
 
           this.settingItem(Translations.t('volume_key'), 'ON', () => {})
@@ -45,7 +45,7 @@ struct SettingsPage {
 
           // Comic source section
           Text(Translations.t('settings_comic_source')).fontSize(13)
-            .fontColor(ThemeManager.colors.textSecondary).width('100%')
+            .fontColor(this.isDarkMode ? '#999999' : '#666666').width('100%')
             .padding({ left: 16, top: 24, bottom: 8 })
 
           this.settingItem('JM ' + Translations.t('jm_domain_update'), '→', () => {
@@ -58,7 +58,7 @@ struct SettingsPage {
 
           // System section
           Text(Translations.t('settings_system')).fontSize(13)
-            .fontColor(ThemeManager.colors.textSecondary).width('100%')
+            .fontColor(this.isDarkMode ? '#999999' : '#666666').width('100%')
             .padding({ left: 16, top: 24, bottom: 8 })
 
           this.settingItem(Translations.t('download'), '→', () => {
@@ -72,18 +72,18 @@ struct SettingsPage {
       }
       .layoutWeight(1)
     }
-    .width('100%').height('100%').backgroundColor(ThemeManager.colors.background)
+    .width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 
   @Builder
   settingItem(label: string, value: string, action: () => void) {
     Row() {
-      Text(label).fontSize(15).fontColor(ThemeManager.colors.textPrimary).layoutWeight(1)
-      Text(value).fontSize(14).fontColor(ThemeManager.colors.textSecondary)
+      Text(label).fontSize(15).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').layoutWeight(1)
+      Text(value).fontSize(14).fontColor(this.isDarkMode ? '#999999' : '#666666')
     }
     .width('100%').height(52).padding({ left: 16, right: 16 })
-    .backgroundColor(ThemeManager.colors.surface)
-    .border({ width: { bottom: 0.5 }, color: ThemeManager.colors.divider })
+    .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
+    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' })
     .onClick(action)
   }
 

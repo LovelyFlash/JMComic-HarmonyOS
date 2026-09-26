@@ -7,7 +7,6 @@ interface SearchPage_Params {
     isDarkMode?: boolean;
 }
 import router from "@ohos:router";
-import { ThemeManager } from "@bundle:com.picacomic.harmony/entry/ets/common/ThemeManager";
 import type { Comic } from '../data/model/Comic';
 import { SearchBar } from "@bundle:com.picacomic.harmony/entry/ets/components/SearchBar";
 import { ComicGrid } from "@bundle:com.picacomic.harmony/entry/ets/components/ComicGrid";
@@ -72,7 +71,7 @@ class SearchPage extends ViewPU {
             Column.debugLine("entry/src/main/ets/pages/SearchPage.ets(16:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(ThemeManager.colors.background);
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             // Top bar
@@ -91,7 +90,7 @@ class SearchPage extends ViewPU {
             Text.create('<');
             Text.debugLine("entry/src/main/ets/pages/SearchPage.ets(19:9)", "entry");
             Text.fontSize(20);
-            Text.fontColor(ThemeManager.colors.primary);
+            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
             Text.onClick(() => { router.back(); });
         }, Text);
         Text.pop();
@@ -100,7 +99,7 @@ class SearchPage extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/SearchPage.ets(23:9)", "entry");
             Text.fontSize(18);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             Text.margin({ left: 16 });
         }, Text);
         Text.pop();
@@ -153,7 +152,7 @@ class SearchPage extends ViewPU {
                         Text.create('输入关键词搜索漫画');
                         Text.debugLine("entry/src/main/ets/pages/SearchPage.ets(45:11)", "entry");
                         Text.fontSize(14);
-                        Text.fontColor(ThemeManager.colors.textSecondary);
+                        Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
                     }, Text);
                     Text.pop();
                     Column.pop();

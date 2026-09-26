@@ -7,7 +7,6 @@ interface ReadingSettings_Params {
     imageQuality?: number;
 }
 import router from "@ohos:router";
-import { ThemeManager } from "@bundle:com.picacomic.harmony/entry/ets/common/ThemeManager";
 import { Translations } from "@bundle:com.picacomic.harmony/entry/ets/common/Translations";
 class ReadingSettings extends ViewPU {
     constructor(parent, params, __localStorage, elmtId = -1, paramsLambda = undefined, extraInfo) {
@@ -70,7 +69,7 @@ class ReadingSettings extends ViewPU {
             Column.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(14:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(ThemeManager.colors.background);
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Row.create();
@@ -84,7 +83,7 @@ class ReadingSettings extends ViewPU {
             Text.create('<');
             Text.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(16:9)", "entry");
             Text.fontSize(20);
-            Text.fontColor(ThemeManager.colors.primary);
+            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
             Text.onClick(() => { router.back(); });
         }, Text);
         Text.pop();
@@ -93,7 +92,7 @@ class ReadingSettings extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(18:9)", "entry");
             Text.fontSize(18);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             Text.margin({ left: 16 });
         }, Text);
         Text.pop();
@@ -107,7 +106,7 @@ class ReadingSettings extends ViewPU {
             Text.create(Translations.t('font_size'));
             Text.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(24:9)", "entry");
             Text.fontSize(13);
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             Text.width('100%');
             Text.padding({ left: 16, top: 56, bottom: 8 });
         }, Text);
@@ -126,7 +125,7 @@ class ReadingSettings extends ViewPU {
                     Text.create(size.toString());
                     Text.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(29:13)", "entry");
                     Text.fontSize(size);
-                    Text.fontColor(size === this.fontSize ? ThemeManager.colors.primary : ThemeManager.colors.textPrimary);
+                    Text.fontColor(size === this.fontSize ? this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : '#000000');
                     Text.padding({ left: 12, right: 12, top: 8, bottom: 8 });
                     Text.borderRadius(8);
                     Text.backgroundColor(size === this.fontSize ? '#F0F8FF' : 'transparent');
@@ -142,7 +141,7 @@ class ReadingSettings extends ViewPU {
             Text.create(Translations.t('image_quality'));
             Text.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(39:9)", "entry");
             Text.fontSize(13);
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             Text.width('100%');
             Text.padding({ left: 16, top: 24, bottom: 8 });
         }, Text);
@@ -161,7 +160,7 @@ class ReadingSettings extends ViewPU {
                     Text.create(quality);
                     Text.debugLine("entry/src/main/ets/pages/settings/ReadingSettings.ets(44:13)", "entry");
                     Text.fontSize(14);
-                    Text.fontColor(index === this.imageQuality ? ThemeManager.colors.primary : ThemeManager.colors.textPrimary);
+                    Text.fontColor(index === this.imageQuality ? this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : '#000000');
                     Text.padding({ left: 12, right: 12, top: 8, bottom: 8 });
                     Text.borderRadius(8);
                     Text.backgroundColor(index === this.imageQuality ? '#F0F8FF' : 'transparent');

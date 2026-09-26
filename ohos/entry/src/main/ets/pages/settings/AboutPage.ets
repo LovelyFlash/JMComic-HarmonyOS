@@ -12,10 +12,10 @@ struct AboutPage {
   build() {
     Column() {
       Row() {
-        Text('<').fontSize(20).fontColor(ThemeManager.colors.primary)
+        Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
           .onClick(() => { router.back(); })
         Text(Translations.t('about')).fontSize(18).fontWeight(FontWeight.Bold)
-          .fontColor(ThemeManager.colors.textPrimary).margin({ left: 16 })
+          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').margin({ left: 16 })
       }.width('100%').height(56).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       Column() {
@@ -24,29 +24,29 @@ struct AboutPage {
         Text(ApiConstants.APP_NAME)
           .fontSize(24)
           .fontWeight(FontWeight.Bold)
-          .fontColor(ThemeManager.colors.textPrimary)
+          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
           .margin({ top: 56 })
         Text('HarmonyOS Version')
           .fontSize(14)
-          .fontColor(ThemeManager.colors.textSecondary)
+          .fontColor(this.isDarkMode ? '#999999' : '#666666')
           .margin({ top: 4 })
         Text('v' + ApiConstants.APP_VERSION)
           .fontSize(14)
-          .fontColor(ThemeManager.colors.textSecondary)
+          .fontColor(this.isDarkMode ? '#999999' : '#666666')
           .margin({ top: 4 })
         Text('基于 ArkTS/ArkUI 开发')
           .fontSize(13)
-          .fontColor(ThemeManager.colors.textSecondary)
+          .fontColor(this.isDarkMode ? '#999999' : '#666666')
           .margin({ top: 56 })
         Text('原项目: ccbkv/PicaComic')
           .fontSize(13)
-          .fontColor(ThemeManager.colors.textSecondary)
+          .fontColor(this.isDarkMode ? '#999999' : '#666666')
           .margin({ top: 8 })
       }
       .layoutWeight(1)
       .justifyContent(FlexAlign.Center)
       .alignItems(HorizontalAlign.Center)
     }
-    .width('100%').height('100%').backgroundColor(ThemeManager.colors.background)
+    .width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 }

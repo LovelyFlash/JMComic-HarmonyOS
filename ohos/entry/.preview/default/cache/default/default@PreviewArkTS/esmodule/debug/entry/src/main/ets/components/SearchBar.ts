@@ -4,6 +4,7 @@ if (!("finalizeConstruction" in ViewPU.prototype)) {
 interface SearchBar_Params {
     placeholder?: string;
     keyword?: string;
+    isDarkMode?: boolean;
     onSearch?: (keyword: string) => void;
     onTextChanged?: (text: string) => void;
     inputController?: TextInputController;
@@ -16,6 +17,7 @@ export class SearchBar extends ViewPU {
         }
         this.__placeholder = new SynchedPropertySimpleOneWayPU(params.placeholder, this, "placeholder");
         this.__keyword = new SynchedPropertySimpleOneWayPU(params.keyword, this, "keyword");
+        this.__isDarkMode = this.createStorageLink('isDarkMode', false, "isDarkMode");
         this.onSearch = () => { };
         this.onTextChanged = () => { };
         this.inputController = new TextInputController();
@@ -46,10 +48,12 @@ export class SearchBar extends ViewPU {
     purgeVariableDependenciesOnElmtId(rmElmtId) {
         this.__placeholder.purgeDependencyOnElmtId(rmElmtId);
         this.__keyword.purgeDependencyOnElmtId(rmElmtId);
+        this.__isDarkMode.purgeDependencyOnElmtId(rmElmtId);
     }
     aboutToBeDeleted() {
         this.__placeholder.aboutToBeDeleted();
         this.__keyword.aboutToBeDeleted();
+        this.__isDarkMode.aboutToBeDeleted();
         SubscriberManager.Get().delete(this.id__());
         this.aboutToBeDeletedInternal();
     }
@@ -67,29 +71,36 @@ export class SearchBar extends ViewPU {
     set keyword(newValue: string) {
         this.__keyword.set(newValue);
     }
+    private __isDarkMode: ObservedPropertyAbstractPU<boolean>;
+    get isDarkMode() {
+        return this.__isDarkMode.get();
+    }
+    set isDarkMode(newValue: boolean) {
+        this.__isDarkMode.set(newValue);
+    }
     private onSearch: (keyword: string) => void;
     private onTextChanged: (text: string) => void;
     private inputController: TextInputController;
     initialRender() {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Row.create();
-            Row.debugLine("entry/src/main/ets/components/SearchBar.ets(11:5)", "entry");
+            Row.debugLine("entry/src/main/ets/components/SearchBar.ets(12:5)", "entry");
             Row.width('100%');
             Row.height(44);
             Row.padding({ left: 12, right: 12 });
-            Row.backgroundColor('#F5F5F5');
+            Row.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#F5F5F5');
             Row.borderRadius(22);
         }, Row);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create('🔍');
-            Text.debugLine("entry/src/main/ets/components/SearchBar.ets(12:7)", "entry");
+            Text.debugLine("entry/src/main/ets/components/SearchBar.ets(13:7)", "entry");
             Text.fontSize(16);
             Text.margin({ right: 8 });
         }, Text);
         Text.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             TextInput.create({ placeholder: this.placeholder, controller: this.inputController });
-            TextInput.debugLine("entry/src/main/ets/components/SearchBar.ets(15:7)", "entry");
+            TextInput.debugLine("entry/src/main/ets/components/SearchBar.ets(16:7)", "entry");
             TextInput.layoutWeight(1);
             TextInput.height(36);
             TextInput.fontSize(14);
@@ -107,9 +118,9 @@ export class SearchBar extends ViewPU {
                 this.ifElseBranchUpdateFunction(0, () => {
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
                         Text.create('×');
-                        Text.debugLine("entry/src/main/ets/components/SearchBar.ets(27:9)", "entry");
+                        Text.debugLine("entry/src/main/ets/components/SearchBar.ets(28:9)", "entry");
                         Text.fontSize(18);
-                        Text.fontColor('#999999');
+                        Text.fontColor(this.isDarkMode ? '#999999' : this.isDarkMode ? '#999999' : '#666666');
                         Text.margin({ left: 8 });
                     }, Text);
                     Text.pop();

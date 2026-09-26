@@ -9,7 +9,6 @@ interface JmSettings_Params {
     isDarkMode?: boolean;
 }
 import router from "@ohos:router";
-import { ThemeManager } from "@bundle:com.picacomic.harmony/entry/ets/common/ThemeManager";
 import { Translations } from "@bundle:com.picacomic.harmony/entry/ets/common/Translations";
 import { ApiConstants } from "@bundle:com.picacomic.harmony/entry/ets/common/Constants";
 import { AppData } from "@bundle:com.picacomic.harmony/entry/ets/viewmodel/AppData";
@@ -110,7 +109,7 @@ class JmSettings extends ViewPU {
             Column.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(30:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(ThemeManager.colors.background);
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Row.create();
@@ -124,7 +123,7 @@ class JmSettings extends ViewPU {
             Text.create('<');
             Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(32:9)", "entry");
             Text.fontSize(20);
-            Text.fontColor(ThemeManager.colors.primary);
+            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
             Text.onClick(() => { router.back(); });
         }, Text);
         Text.pop();
@@ -133,7 +132,7 @@ class JmSettings extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(34:9)", "entry");
             Text.fontSize(18);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             Text.margin({ left: 16 });
         }, Text);
         Text.pop();
@@ -154,7 +153,7 @@ class JmSettings extends ViewPU {
             // Current domain
             Text.fontSize(13);
             // Current domain
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             // Current domain
             Text.width('100%');
             // Current domain
@@ -166,7 +165,7 @@ class JmSettings extends ViewPU {
             Text.create(this.currentDomain);
             Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(44:11)", "entry");
             Text.fontSize(15);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             Text.width('100%');
             Text.padding({ left: 16, bottom: 16 });
         }, Text);
@@ -178,7 +177,7 @@ class JmSettings extends ViewPU {
             // Domain list
             Text.fontSize(13);
             // Domain list
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             // Domain list
             Text.width('100%');
             // Domain list
@@ -196,8 +195,8 @@ class JmSettings extends ViewPU {
                     Row.width('100%');
                     Row.height(56);
                     Row.padding({ left: 16, right: 16 });
-                    Row.backgroundColor(ThemeManager.colors.surface);
-                    Row.border({ width: { bottom: 0.5 }, color: ThemeManager.colors.divider });
+                    Row.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
+                    Row.border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' });
                     Row.onClick(() => {
                         AppData.jmDomainIndex = index;
                         this.currentDomain = domain;
@@ -213,7 +212,7 @@ class JmSettings extends ViewPU {
                     Text.create(domain);
                     Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(54:17)", "entry");
                     Text.fontSize(14);
-                    Text.fontColor(domain === this.currentDomain ? ThemeManager.colors.primary : ThemeManager.colors.textPrimary);
+                    Text.fontColor(domain === this.currentDomain ? this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : '#000000');
                 }, Text);
                 Text.pop();
                 this.observeComponentCreation2((elmtId, isInitialRender) => {
@@ -224,7 +223,7 @@ class JmSettings extends ViewPU {
                                 Text.create('✓ 可用');
                                 Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(57:19)", "entry");
                                 Text.fontSize(11);
-                                Text.fontColor('#34C759');
+                                Text.fontColor(this.isDarkMode ? '#30D158' : '#34C759');
                             }, Text);
                             Text.pop();
                         });
@@ -255,7 +254,7 @@ class JmSettings extends ViewPU {
                                 Text.create('●');
                                 Text.debugLine("entry/src/main/ets/pages/settings/JmSettings.ets(64:17)", "entry");
                                 Text.fontSize(16);
-                                Text.fontColor(ThemeManager.colors.primary);
+                                Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
                             }, Text);
                             Text.pop();
                         });
@@ -286,7 +285,7 @@ class JmSettings extends ViewPU {
             // Health check button
             Button.fontColor('#FFFFFF');
             // Health check button
-            Button.backgroundColor(this.isChecking ? '#999999' : ThemeManager.colors.primary);
+            Button.backgroundColor(this.isChecking ? '#999999' : this.isDarkMode ? '#4DA6FF' : '#007AFF');
             // Health check button
             Button.onClick(() => { this.checkHealth(); });
         }, Button);
@@ -307,7 +306,7 @@ class JmSettings extends ViewPU {
             // Refresh from remote
             Button.fontColor('#FFFFFF');
             // Refresh from remote
-            Button.backgroundColor('#FF9500');
+            Button.backgroundColor(this.isDarkMode ? '#FFB340' : '#FF9500');
             // Refresh from remote
             Button.onClick(() => { this.refreshDomains(); });
         }, Button);

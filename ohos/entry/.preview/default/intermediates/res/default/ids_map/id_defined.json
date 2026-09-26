@@ -35,5 +35,37 @@
 			"type":	"string",
 			"name":	"entry_desc",
 			"id":	"0x01000008"
+		}, {
+			"type":	"media",
+			"name":	"ic_settings",
+			"id":	"0x01000009"
+		}, {
+			"type":	"media",
+			"name":	"ic_explore_selected",
+			"id":	"0x0100000A"
+		}, {
+			"type":	"media",
+			"name":	"ic_history_selected",
+			"id":	"0x0100000B"
+		}, {
+			"type":	"media",
+			"name":	"ic_history",
+			"id":	"0x0100000C"
+		}, {
+			"type":	"media",
+			"name":	"ic_explore",
+			"id":	"0x0100000D"
+		}, {
+			"type":	"media",
+			"name":	"ic_favorites_selected",
+			"id":	"0x0100000E"
+		}, {
+			"type":	"media",
+			"name":	"ic_favorites",
+			"id":	"0x0100000F"
+		}, {
+			"type":	"media",
+			"name":	"ic_settings_selected",
+			"id":	"0x01000010"
 		}]
 }

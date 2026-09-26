@@ -7,7 +7,6 @@ interface ComicDetailPage_Params {
     isDarkMode?: boolean;
 }
 import router from "@ohos:router";
-import { ThemeManager } from "@bundle:com.picacomic.harmony/entry/ets/common/ThemeManager";
 import { Comic } from "@bundle:com.picacomic.harmony/entry/ets/data/model/Comic";
 import { NetworkImage } from "@bundle:com.picacomic.harmony/entry/ets/components/NetworkImage";
 class ComicDetailPage extends ViewPU {
@@ -80,7 +79,7 @@ class ComicDetailPage extends ViewPU {
             Column.debugLine("entry/src/main/ets/pages/ComicDetailPage.ets(25:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(ThemeManager.colors.background);
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             // Top bar
@@ -99,7 +98,7 @@ class ComicDetailPage extends ViewPU {
             Text.create('<');
             Text.debugLine("entry/src/main/ets/pages/ComicDetailPage.ets(28:9)", "entry");
             Text.fontSize(20);
-            Text.fontColor(ThemeManager.colors.primary);
+            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
             Text.onClick(() => { router.back(); });
         }, Text);
         Text.pop();
@@ -108,7 +107,7 @@ class ComicDetailPage extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/ComicDetailPage.ets(32:9)", "entry");
             Text.fontSize(16);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             Text.layoutWeight(1);
             Text.margin({ left: 12 });
             Text.maxLines(1);
@@ -169,7 +168,7 @@ class ComicDetailPage extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/ComicDetailPage.ets(52:15)", "entry");
             Text.fontSize(18);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             Text.maxLines(3);
             Text.textOverflow({ overflow: TextOverflow.Ellipsis });
         }, Text);
@@ -182,7 +181,7 @@ class ComicDetailPage extends ViewPU {
                         Text.create('作者: ' + this.comic.author);
                         Text.debugLine("entry/src/main/ets/pages/ComicDetailPage.ets(59:17)", "entry");
                         Text.fontSize(13);
-                        Text.fontColor(ThemeManager.colors.textSecondary);
+                        Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
                         Text.margin({ top: 8 });
                     }, Text);
                     Text.pop();
@@ -226,7 +225,7 @@ class ComicDetailPage extends ViewPU {
                         Text.create(this.comic.description);
                         Text.debugLine("entry/src/main/ets/pages/ComicDetailPage.ets(80:13)", "entry");
                         Text.fontSize(14);
-                        Text.fontColor(ThemeManager.colors.textPrimary);
+                        Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
                         Text.width('100%');
                         Text.padding({ left: 16, right: 16, bottom: 16 });
                     }, Text);
@@ -249,7 +248,7 @@ class ComicDetailPage extends ViewPU {
             // Chapters placeholder
             Text.fontWeight(FontWeight.Medium);
             // Chapters placeholder
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             // Chapters placeholder
             Text.width('100%');
             // Chapters placeholder
@@ -261,7 +260,7 @@ class ComicDetailPage extends ViewPU {
             Text.create('暂无章节数据');
             Text.debugLine("entry/src/main/ets/pages/ComicDetailPage.ets(95:11)", "entry");
             Text.fontSize(14);
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             Text.width('100%');
             Text.padding({ left: 16, bottom: 16 });
         }, Text);

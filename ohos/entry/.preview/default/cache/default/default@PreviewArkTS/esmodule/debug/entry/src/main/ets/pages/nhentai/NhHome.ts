@@ -6,7 +6,6 @@ interface NhHome_Params {
     comics?: Comic[];
 }
 import router from "@ohos:router";
-import { ThemeManager } from "@bundle:com.picacomic.harmony/entry/ets/common/ThemeManager";
 import { Comic } from "@bundle:com.picacomic.harmony/entry/ets/data/model/Comic";
 import { NetworkImage } from "@bundle:com.picacomic.harmony/entry/ets/components/NetworkImage";
 class NhHome extends ViewPU {
@@ -60,7 +59,7 @@ class NhHome extends ViewPU {
             Column.debugLine("entry/src/main/ets/pages/nhentai/NhHome.ets(18:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(ThemeManager.colors.background);
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             // Header
@@ -75,7 +74,7 @@ class NhHome extends ViewPU {
             Text.create('<');
             Text.debugLine("entry/src/main/ets/pages/nhentai/NhHome.ets(21:9)", "entry");
             Text.fontSize(20);
-            Text.fontColor(ThemeManager.colors.primary);
+            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
             Text.margin({ right: 12 });
             Text.onClick(() => { router.back(); });
         }, Text);
@@ -85,7 +84,7 @@ class NhHome extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/nhentai/NhHome.ets(26:9)", "entry");
             Text.fontSize(22);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
         }, Text);
         Text.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
@@ -98,7 +97,7 @@ class NhHome extends ViewPU {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Divider.create();
             Divider.debugLine("entry/src/main/ets/pages/nhentai/NhHome.ets(35:7)", "entry");
-            Divider.color(ThemeManager.colors.border);
+            Divider.color(this.isDarkMode ? '#333333' : '#E5E5EA');
             Divider.width('100%');
         }, Divider);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
@@ -134,7 +133,7 @@ class NhHome extends ViewPU {
                             Column.debugLine("entry/src/main/ets/pages/nhentai/NhHome.ets(43:13)", "entry");
                             Column.width('100%');
                             Column.padding(6);
-                            Column.backgroundColor(ThemeManager.colors.surface);
+                            Column.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
                             Column.borderRadius(8);
                             Column.onClick(() => {
                                 router.pushUrl({ url: 'pages/nhentai/NhDetail' });
@@ -174,7 +173,7 @@ class NhHome extends ViewPU {
                             Text.create(comic.title);
                             Text.debugLine("entry/src/main/ets/pages/nhentai/NhHome.ets(50:15)", "entry");
                             Text.fontSize(12);
-                            Text.fontColor(ThemeManager.colors.textPrimary);
+                            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
                             Text.maxLines(2);
                             Text.textOverflow({ overflow: TextOverflow.Ellipsis });
                             Text.width('100%');
@@ -185,7 +184,7 @@ class NhHome extends ViewPU {
                             Text.create(comic.subTitle);
                             Text.debugLine("entry/src/main/ets/pages/nhentai/NhHome.ets(57:15)", "entry");
                             Text.fontSize(10);
-                            Text.fontColor(ThemeManager.colors.textSecondary);
+                            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
                             Text.maxLines(1);
                             Text.width('100%');
                             Text.margin({ top: 2 });

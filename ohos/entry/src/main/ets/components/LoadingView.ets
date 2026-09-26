@@ -8,11 +8,11 @@ export struct LoadingView {
       LoadingProgress()
         .width(48)
         .height(48)
-        .color('#007AFF')
+        .color(this.isDarkMode ? '#4DA6FF' : '#007AFF')
       if (this.message.length > 0) {
         Text(this.message)
           .fontSize(14)
-          .fontColor('#999999')
+          .fontColor(this.isDarkMode ? '#999999' : this.isDarkMode ? '#999999' : '#666666')
           .margin({ top: 12 })
       }
     }

@@ -7,6 +7,7 @@ interface NetworkImage_Params {
     imgHeight?: number;
     imgBorderRadius?: number;
     fit?: ImageFit;
+    isDarkMode?: boolean;
 }
 import { Logger } from "@bundle:com.picacomic.harmony/entry/ets/common/Logger";
 const TAG = 'NetworkImage';
@@ -21,6 +22,7 @@ export class NetworkImage extends ViewPU {
         this.__imgHeight = new SynchedPropertySimpleOneWayPU(params.imgHeight, this, "imgHeight");
         this.__imgBorderRadius = new SynchedPropertySimpleOneWayPU(params.imgBorderRadius, this, "imgBorderRadius");
         this.__fit = new SynchedPropertySimpleOneWayPU(params.fit, this, "fit");
+        this.__isDarkMode = this.createStorageLink('isDarkMode', false, "isDarkMode");
         this.setInitiallyProvidedValue(params);
         this.finalizeConstruction();
     }
@@ -54,6 +56,7 @@ export class NetworkImage extends ViewPU {
         this.__imgHeight.purgeDependencyOnElmtId(rmElmtId);
         this.__imgBorderRadius.purgeDependencyOnElmtId(rmElmtId);
         this.__fit.purgeDependencyOnElmtId(rmElmtId);
+        this.__isDarkMode.purgeDependencyOnElmtId(rmElmtId);
     }
     aboutToBeDeleted() {
         this.__url.aboutToBeDeleted();
@@ -61,6 +64,7 @@ export class NetworkImage extends ViewPU {
         this.__imgHeight.aboutToBeDeleted();
         this.__imgBorderRadius.aboutToBeDeleted();
         this.__fit.aboutToBeDeleted();
+        this.__isDarkMode.aboutToBeDeleted();
         SubscriberManager.Get().delete(this.id__());
         this.aboutToBeDeletedInternal();
     }
@@ -99,6 +103,13 @@ export class NetworkImage extends ViewPU {
     set fit(newValue: ImageFit) {
         this.__fit.set(newValue);
     }
+    private __isDarkMode: ObservedPropertyAbstractPU<boolean>;
+    get isDarkMode() {
+        return this.__isDarkMode.get();
+    }
+    set isDarkMode(newValue: boolean) {
+        this.__isDarkMode.set(newValue);
+    }
     initialRender() {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             If.create();
@@ -106,12 +117,12 @@ export class NetworkImage extends ViewPU {
                 this.ifElseBranchUpdateFunction(0, () => {
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
                         Image.create(this.url);
-                        Image.debugLine("entry/src/main/ets/components/NetworkImage.ets(16:7)", "entry");
+                        Image.debugLine("entry/src/main/ets/components/NetworkImage.ets(17:7)", "entry");
                         Image.width(this.imgWidth);
                         Image.height(this.imgHeight);
                         Image.borderRadius(this.imgBorderRadius);
                         Image.objectFit(this.fit);
-                        Image.backgroundColor('#F0F0F0');
+                        Image.backgroundColor(this.isDarkMode ? '#2C2C2E' : '#F0F0F0');
                         Image.onError(() => {
                             Logger.debug(TAG, `Image load failed: ${this.url}`);
                         });
@@ -122,19 +133,19 @@ export class NetworkImage extends ViewPU {
                 this.ifElseBranchUpdateFunction(1, () => {
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
                         Column.create();
-                        Column.debugLine("entry/src/main/ets/components/NetworkImage.ets(26:7)", "entry");
+                        Column.debugLine("entry/src/main/ets/components/NetworkImage.ets(27:7)", "entry");
                         Column.width(this.imgWidth);
                         Column.height(this.imgHeight);
                         Column.borderRadius(this.imgBorderRadius);
-                        Column.backgroundColor('#F0F0F0');
+                        Column.backgroundColor(this.isDarkMode ? '#2C2C2E' : '#F0F0F0');
                         Column.justifyContent(FlexAlign.Center);
                         Column.alignItems(HorizontalAlign.Center);
                     }, Column);
                     this.observeComponentCreation2((elmtId, isInitialRender) => {
                         Text.create('No Image');
-                        Text.debugLine("entry/src/main/ets/components/NetworkImage.ets(27:9)", "entry");
+                        Text.debugLine("entry/src/main/ets/components/NetworkImage.ets(28:9)", "entry");
                         Text.fontSize(12);
-                        Text.fontColor('#CCCCCC');
+                        Text.fontColor(this.isDarkMode ? '#666666' : '#CCCCCC');
                     }, Text);
                     Text.pop();
                     Column.pop();

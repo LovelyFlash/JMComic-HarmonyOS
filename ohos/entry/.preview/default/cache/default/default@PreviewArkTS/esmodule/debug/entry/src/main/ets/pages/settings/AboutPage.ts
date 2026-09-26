@@ -5,7 +5,6 @@ interface AboutPage_Params {
     isDarkMode?: boolean;
 }
 import router from "@ohos:router";
-import { ThemeManager } from "@bundle:com.picacomic.harmony/entry/ets/common/ThemeManager";
 import { Translations } from "@bundle:com.picacomic.harmony/entry/ets/common/Translations";
 import { ApiConstants } from "@bundle:com.picacomic.harmony/entry/ets/common/Constants";
 class AboutPage extends ViewPU {
@@ -43,7 +42,7 @@ class AboutPage extends ViewPU {
             Column.debugLine("entry/src/main/ets/pages/settings/AboutPage.ets(13:5)", "entry");
             Column.width('100%');
             Column.height('100%');
-            Column.backgroundColor(ThemeManager.colors.background);
+            Column.backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF');
         }, Column);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Row.create();
@@ -57,7 +56,7 @@ class AboutPage extends ViewPU {
             Text.create('<');
             Text.debugLine("entry/src/main/ets/pages/settings/AboutPage.ets(15:9)", "entry");
             Text.fontSize(20);
-            Text.fontColor(ThemeManager.colors.primary);
+            Text.fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF');
             Text.onClick(() => { router.back(); });
         }, Text);
         Text.pop();
@@ -66,7 +65,7 @@ class AboutPage extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/settings/AboutPage.ets(17:9)", "entry");
             Text.fontSize(18);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             Text.margin({ left: 16 });
         }, Text);
         Text.pop();
@@ -89,7 +88,7 @@ class AboutPage extends ViewPU {
             Text.debugLine("entry/src/main/ets/pages/settings/AboutPage.ets(24:9)", "entry");
             Text.fontSize(24);
             Text.fontWeight(FontWeight.Bold);
-            Text.fontColor(ThemeManager.colors.textPrimary);
+            Text.fontColor(this.isDarkMode ? '#FFFFFF' : '#000000');
             Text.margin({ top: 56 });
         }, Text);
         Text.pop();
@@ -97,7 +96,7 @@ class AboutPage extends ViewPU {
             Text.create('HarmonyOS Version');
             Text.debugLine("entry/src/main/ets/pages/settings/AboutPage.ets(29:9)", "entry");
             Text.fontSize(14);
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             Text.margin({ top: 4 });
         }, Text);
         Text.pop();
@@ -105,7 +104,7 @@ class AboutPage extends ViewPU {
             Text.create('v' + ApiConstants.APP_VERSION);
             Text.debugLine("entry/src/main/ets/pages/settings/AboutPage.ets(33:9)", "entry");
             Text.fontSize(14);
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             Text.margin({ top: 4 });
         }, Text);
         Text.pop();
@@ -113,7 +112,7 @@ class AboutPage extends ViewPU {
             Text.create('基于 ArkTS/ArkUI 开发');
             Text.debugLine("entry/src/main/ets/pages/settings/AboutPage.ets(37:9)", "entry");
             Text.fontSize(13);
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             Text.margin({ top: 56 });
         }, Text);
         Text.pop();
@@ -121,7 +120,7 @@ class AboutPage extends ViewPU {
             Text.create('原项目: ccbkv/PicaComic');
             Text.debugLine("entry/src/main/ets/pages/settings/AboutPage.ets(41:9)", "entry");
             Text.fontSize(13);
-            Text.fontColor(ThemeManager.colors.textSecondary);
+            Text.fontColor(this.isDarkMode ? '#999999' : '#666666');
             Text.margin({ top: 8 });
         }, Text);
         Text.pop();
