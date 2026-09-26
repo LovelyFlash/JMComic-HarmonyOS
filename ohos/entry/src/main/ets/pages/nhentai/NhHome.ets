@@ -1,102 +1,59 @@
-// pages/nhentai/NhHome.ets - NHentai 首页
+// pages/nhentai/NhHome.ets - NHentai 首页（真实 API）
 import { router } from '@kit.ArkUI';
 import { ThemeManager } from '../../common/ThemeManager';
 import { Comic } from '../../data/model/Comic';
-import { NetworkImage } from '../../components/NetworkImage';
+import { ComicBrief } from '../../data/model/Comic';
+import { NhentaiApi } from '../../data/api/NhentaiApi';
 
 @Entry
 @Component
 struct NhHome {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
   @State comics: Comic[] = []
+  @State loading: boolean = true
+  @State error: string = ''
+  @State page: number = 1
 
-  aboutToAppear(): void {
-    this.comics = this.buildPlaceholderComics();
+  aboutToAppear(): void { this.loadData(); }
+
+  async loadData(): Promise<void> {
+    this.loading = true;
+    this.error = '';
+    try {
+      const result = await NhentaiApi.getHomePage(this.page);
+      this.comics = result.comics.map((b: ComicBrief) => { const c = new Comic(); c.id = b.id; c.title = b.title; c.coverUrl = b.cover; c.source = 'nhentai'; return c; });
+    } catch (e) { this.error = String(e); }
+    this.loading = false;
   }
 
   build() {
     Column() {
-      // Header
       Row() {
-        Text('<')
-          .fontSize(20)
-          .fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
-          .margin({ right: 12 })
+        Image($rawfile('icons/ic_back.svg')).width(24).height(24).objectFit(ImageFit.Contain)
           .onClick(() => { router.back(); })
-        Text('NHentai')
-          .fontSize(22)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+        Text('NHentai').fontSize(22).fontWeight(FontWeight.Bold)
+          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').margin({ left: 12 })
         Blank()
-      }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 56, bottom: 12 })
+      }.width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
-      Divider()
-        .color(this.isDarkMode ? '#333333' : '#E5E5EA')
-        .width('100%')
-
-      // Comic Grid
-      Grid() {
-        ForEach(this.comics, (comic: Comic) => {
-          GridItem() {
-            Column() {
-              NetworkImage({
-                url: comic.coverUrl,
-                imgWidth: 100,
-                imgHeight: 180,
-                imgBorderRadius: 8
-              })
-              Text(comic.title)
-                .fontSize(12)
-                .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
-                .maxLines(2)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-                .width('100%')
-                .margin({ top: 6 })
-              Text(comic.subTitle)
-                .fontSize(10)
-                .fontColor(this.isDarkMode ? '#999999' : '#666666')
-                .maxLines(1)
-                .width('100%')
-                .margin({ top: 2 })
+      if (this.loading) {
+        Column() { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center)
+      } else if (this.error.length > 0) {
+        Column() { Text(this.error).fontSize(14).fontColor('#FF3B30') }.layoutWeight(1).justifyContent(FlexAlign.Center)
+      } else {
+        Grid() {
+          ForEach(this.comics, (comic: Comic) => {
+            GridItem() {
+              Column() {
+                Image(comic.coverUrl).width('100%').height(180).objectFit(ImageFit.Cover).borderRadius(6).backgroundColor('#F0F0F0')
+                Text(comic.title).fontSize(12).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+                  .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%').margin({ top: 6 })
+              }.width('100%').padding(6).backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF').borderRadius(8)
+              .onClick(() => { router.pushUrl({ url: 'pages/ComicDetailPage', params: { comicId: comic.id, title: comic.title, source: 'nhentai' } }); })
             }
-            .width('100%')
-            .padding(6)
-            .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-            .borderRadius(8)
-            .onClick(() => {
-              router.pushUrl({ url: 'pages/ComicDetailPage' });
-            })
-          }
-        })
+          })
+        }.columnsTemplate('1fr 1fr 1fr').columnsGap(8).rowsGap(10).width('100%').padding(12).layoutWeight(1)
       }
-      .columnsTemplate('1fr 1fr 1fr')
-      .columnsGap(8)
-      .rowsGap(10)
-      .width('100%')
-      .padding(12)
-      .layoutWeight(1)
-    }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
-  }
-
-  private buildPlaceholderComics(): Comic[] {
-    const items: Comic[] = [];
-    for (let i = 1; i <= 6; i++) {
-      const comic: Comic = new Comic();
-      comic.id = `nh_${i}`;
-      comic.title = `NHentai Comic ${i}`;
-      comic.subTitle = 'Doujinshi';
-      comic.author = 'Artist';
-      comic.coverUrl = '';
-      comic.source = 'nhentai';
-      comic.language = 'Japanese';
-      comic.tags = ['Manga', 'Doujinshi'];
-      items.push(comic);
-    }
-    return items;
+    }.width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
   }
 }

@@ -71,6 +71,5 @@ export class SettingsKeys {
   static readonly JM_DOMAINS = 'jmDomains';
   static readonly JM_DOMAIN_UPDATE_TIME = 'jmDomainUpdateTime';
   static readonly HT_BASE_URL = 'htBaseUrl';
-  static readonly EH_USE_EX = 'ehUseEx';
   static readonly LAST_VERSION = 'lastVersion';
 }

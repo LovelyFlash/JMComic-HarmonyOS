@@ -6,7 +6,7 @@ import { Chapter } from '../model/Chapter';
 
 const TAG = 'HitomiApi';
 
-interface HitomiGalleryBlock {
+export interface HitomiGalleryBlock {
   id: string;
   title: string;
   thumbUrl: string;

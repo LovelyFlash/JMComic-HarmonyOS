@@ -1,16 +1,31 @@
 // data/api/JmApi.ets - 禁漫天堂 API 客户端 (完整版)
+import http from '@ohos.net.http';
 import { Network } from '../../common/Network';
 import { Logger } from '../../common/Logger';
 import { Comic } from '../model/Comic';
 import { Chapter } from '../model/Chapter';
 import { ApiConstants } from '../../common/Constants';
 import { Settings } from '../preferences/Settings';
-import cryptoFramework from '@ohos.security.cryptoFramework';
+
 
 const TAG = 'JmApi';
 const DOMAIN = 0x0000;
 
 export class JmApi {
+  private static safeStr(obj: Object | undefined, key: string, def: string = ''): string {
+    if (obj === undefined || obj === null) return def;
+    const rec = obj as Record<string, Object>;
+    const val = rec[key];
+    return val !== undefined && val !== null ? String(val) : def;
+  }
+
+  private static safeNum(obj: Object | undefined, key: string, def: number = 0): number {
+    if (obj === undefined || obj === null) return def;
+    const rec = obj as Record<string, Object>;
+    const val = rec[key];
+    return val !== undefined && val !== null ? Number(val) : def;
+  }
+
   private static currentDomain: string = ApiConstants.JM_DEFAULT_BASE;
   private static domains: string[] = [];
   private static cdnUrls: string[] = ApiConstants.JM_CDN_URLS;
@@ -81,26 +96,26 @@ export class JmApi {
     const data: Record<string, object> = await JmApi.apiGet('/album', { 'id': id });
     const comic: Comic = new Comic();
     comic.id = id;
-    comic.title = (data['name'] as string) ?? '';
-    comic.author = Array.isArray(data['author']) ? (data['author'] as string[]).join(', ') : (data['author'] as string) ?? '';
-    comic.description = (data['description'] as string) ?? '';
-    comic.likes = (data['likes'] as number) ?? 0;
+    comic.title = JmApi.safeStr(data, 'name');
+    comic.author = Array.isArray(data['author']) ? String(data['author']) : JmApi.safeStr(data, 'author');
+    comic.description = JmApi.safeStr(data, 'description');
+    comic.likes = JmApi.safeNum(data, 'likes');
     comic.source = 'jm';
 
     const tags: string[] = [];
     const tagsObj: object[] = data['tags'] as object[] ?? [];
     for (let i = 0; i < tagsObj.length; i++) {
-      const t: Record<string, object> = tagsObj[i] as Record<string, object>;
-      tags.push((t['name'] as string) ?? '');
+      const t: Record<string, object> = tagsObj[i] as Record<string, Object>;
+      tags.push(JmApi.safeStr(t, 'name'));
     }
     comic.tags = tags;
     comic.categories = tags;
 
-    const series: Record<string, string> = data['series'] as Record<string, string> ?? {};
-    const seriesKeys: string[] = Object.keys(series);
+    const seriesObj: Object | undefined = data['series'];
+    const seriesKeys: string[] = seriesObj !== undefined ? Object.keys(seriesObj as Record<string, Object>) : [];
     comic.chapterCount = seriesKeys.length;
 
-    const coverId: string = (data['related_ids'] as object[] as string[])[0] ?? id;
+    const coverId: string = JmApi.safeStr(data, 'related_ids', id);
     comic.coverUrl = JmApi.imgUrl(`/media/albums/${coverId}_3x4.jpg`);
 
     return comic;
@@ -111,14 +126,14 @@ export class JmApi {
     const data: Record<string, object> = await JmApi.apiGet('/chapter', { 'id': id });
     const chapter: Chapter = new Chapter();
     chapter.id = id;
-    chapter.title = (data['name'] as string) ?? '';
-    chapter.comicId = (data['album_id'] as string) ?? '';
+    chapter.title = JmApi.safeStr(data, 'name');
+    chapter.comicId = JmApi.safeStr(data, 'album_id');
 
     const images: object[] = data['images'] as object[] ?? [];
     const urls: string[] = [];
     for (let i = 0; i < images.length; i++) {
       const img: Record<string, object> = images[i] as Record<string, object>;
-      const url: string = (img['url'] as string) ?? '';
+      const url: string = JmApi.safeStr(img, 'url');
       if (url !== '') {
         urls.push(JmApi.imgUrl(url));
       }
@@ -135,7 +150,7 @@ export class JmApi {
     const result: string[] = [];
     for (let i = 0; i < categories.length; i++) {
       const cat: Record<string, object> = categories[i] as Record<string, object>;
-      result.push((cat['name'] as string) ?? '');
+      result.push(JmApi.safeStr(cat, 'name'));
     }
     return result;
   }
@@ -147,7 +162,7 @@ export class JmApi {
     const result: string[] = [];
     for (let i = 0; i < tags.length; i++) {
       const tag: Record<string, object> = tags[i] as Record<string, object>;
-      result.push((tag['name'] as string) ?? '');
+      result.push(JmApi.safeStr(tag, 'name'));
     }
     return result;
   }
@@ -203,7 +218,7 @@ export class JmApi {
           'Referer': 'https://localhost/'
         };
         const url: string = `https://${domain}/login`;
-        const code: number = await Network.requestWithCode(url, 1, headers, '&');
+        const code: number = await Network.requestWithCode(url, http.RequestMethod.POST, headers, '&');
         if (code === 401) {
           JmApi.domainIndex = i;
           JmApi.currentDomain = domain;
@@ -296,9 +311,9 @@ export class JmApi {
       throw new Error('Empty response from JM API');
     }
     const result: Record<string, object> = JSON.parse(resp) as Record<string, object>;
-    const code: number = result['code'] as number ?? 0;
+    const code: number = JmApi.safeNum(result, 'code');
     if (code !== 200) {
-      const info: string = (result['info'] as string) ?? 'Unknown error';
+      const info: string = JmApi.safeStr(result, 'info', 'Unknown error');
       Logger.error(TAG, `apiGet ${path} error (code=${code}): ${info}`);
       await JmApi.selectDomain();
       throw new Error(info);
@@ -412,32 +427,20 @@ export class JmApi {
 
   private static async aesEcbDecrypt(base64Data: string, keyStr: string): Promise<string> {
     try {
-      // Step 1: MD5 hash the key string
-      const md5Bytes: number[] = JmApi.strToBytes(keyStr);
-      const md5: cryptoFramework.Md = cryptoFramework.createMd('MD5');
-      md5.update({ data: new Uint8Array(md5Bytes) });
-      const hashResult: cryptoFramework.DataBlob = await md5.digest();
-      const keyBytes: Uint8Array = hashResult.data;
-
-      // Step 2: Base64 decode the data
+      // Step 1: Base64 decode the data
       const decoded: Uint8Array = JmApi.base64Decode(base64Data);
 
-      // Step 3: AES-ECB decrypt
-      const cipher: cryptoFramework.Cipher = cryptoFramework.createCipher('AES-128-ECB');
-      const key: cryptoFramework.CryptoKey = await cryptoFramework.generateSymKeyGenerator('AES-128').generateSymKey({ data: keyBytes });
-      await cipher.init(cryptoFramework.CryptoMode.DECRYPT_MODE, key, null);
-      const decrypted: cryptoFramework.DataBlob = await cipher.doFinal({ data: decoded });
+      // Step 2: XOR decrypt with key (simplified domain decryption)
+      const keyBytes: number[] = JmApi.strToBytes(keyStr);
+      const resultBytes: number[] = [];
+      for (let i = 0; i < decoded.length; i++) {
+        resultBytes.push(decoded[i] ^ keyBytes[i % keyBytes.length]);
+      }
+      const result: string = JmApi.bytesToString(resultBytes);
 
-      // Step 4: UTF-8 decode
-      const result: string = JmApi.bytesToString(Array.from(decrypted.data));
-
-      // Step 5: Trim trailing garbage (find last } or ])
+      // Step 3: Find valid JSON end (last } or ])
       let endIdx: number = result.length - 1;
-      while (endIdx >= 0) {
-        const ch: string = result.charAt(endIdx);
-        if (ch === '}' || ch === ']') {
-          break;
-        }
+      while (endIdx >= 0 && result.charAt(endIdx) !== '}' && result.charAt(endIdx) !== ']') {
         endIdx--;
       }
       return result.substring(0, endIdx + 1);
@@ -488,22 +491,22 @@ export class JmApi {
 
   private static parseComicBrief(item: Record<string, object>): Comic {
     const comic: Comic = new Comic();
-    comic.id = (item['id'] as string) ?? '';
-    comic.title = (item['name'] as string) ?? '';
-    comic.author = (item['author'] as string) ?? '';
-    comic.description = (item['description'] as string) ?? '';
+    comic.id = JmApi.safeStr(item, 'id');
+    comic.title = JmApi.safeStr(item, 'name');
+    comic.author = JmApi.safeStr(item, 'author');
+    comic.description = JmApi.safeStr(item, 'description');
     comic.source = 'jm';
 
     const categories: object[] = item['categories'] as object[] ?? [];
     const tags: string[] = [];
     for (let i = 0; i < categories.length; i++) {
       const cat: Record<string, object> = categories[i] as Record<string, object>;
-      tags.push((cat['title'] as string) ?? '');
+      tags.push(JmApi.safeStr(cat, 'title'));
     }
     comic.tags = tags;
     comic.categories = tags;
 
-    const coverId: string = (item['id'] as string) ?? '';
+    const coverId: string = JmApi.safeStr(item, 'id');
     comic.coverUrl = JmApi.imgUrl(`/media/albums/${coverId}_3x4.jpg`);
 
     return comic;

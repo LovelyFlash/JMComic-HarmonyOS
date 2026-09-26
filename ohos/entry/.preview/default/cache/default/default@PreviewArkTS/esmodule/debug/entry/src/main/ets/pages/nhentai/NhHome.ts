@@ -136,7 +136,7 @@ class NhHome extends ViewPU {
                             Column.backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF');
                             Column.borderRadius(8);
                             Column.onClick(() => {
-                                router.pushUrl({ url: 'pages/nhentai/NhDetail' });
+                                router.pushUrl({ url: 'pages/ComicDetailPage' });
                             });
                         }, Column);
                         {

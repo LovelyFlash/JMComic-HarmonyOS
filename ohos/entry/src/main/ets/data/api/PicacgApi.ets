@@ -37,6 +37,9 @@ interface PicaEpsCount {
 }
 
 export class PicacgApi {
+  private static safeStr(obj: Object | undefined, key: string, def: string = ''): string { if (obj === undefined || obj === null) return def; const rec = obj as Record<string, Object>; const val = rec[key]; return val !== undefined && val !== null ? String(val) : def; }
+  private static safeNum(obj: Object | undefined, key: string, def: number = 0): number { if (obj === undefined || obj === null) return def; const rec = obj as Record<string, Object>; const val = rec[key]; return val !== undefined && val !== null ? Number(val) : def; }
+  private static safeBool(obj: Object | undefined, key: string, def: boolean = false): boolean { if (obj === undefined || obj === null) return def; const rec = obj as Record<string, Object>; const val = rec[key]; return val !== undefined && val !== null ? Boolean(val) : def; }
   private static readonly API_BASE: string = ApiConstants.PICACG_API;
   private static readonly API_KEY: string = ApiConstants.PICACG_API_KEY;
   private static readonly SIGN_KEY: string = ApiConstants.PICACG_SIGN_KEY;
@@ -80,14 +83,14 @@ export class PicacgApi {
     const result: PicaResponse = JSON.parse(resp) as PicaResponse;
     const data: Record<string, object> = result.data;
     const user: User = new User();
-    user.id = (data['id'] as string) ?? '';
-    user.name = (data['name'] as string) ?? '';
+    user.id = PicacgApi.safeStr(data, 'id');
+    user.name = PicacgApi.safeStr(data, 'name');
     const avatar: PicaAvatar = data['avatar'] as PicaAvatar;
     user.avatar = `${avatar.fileServer}/static/${avatar.path}`;
-    user.email = (data['email'] as string) ?? '';
-    user.isPicaPro = (data['isPicaPro'] as boolean) ?? false;
-    user.slogan = (data['slogan'] as string) ?? '';
-    const exp: number = (data['exp'] as number) ?? 0;
+    user.email = PicacgApi.safeStr(data, 'email');
+    user.isPicaPro = PicacgApi.safeBool(data, 'isPicaPro');
+    user.slogan = PicacgApi.safeStr(data, 'slogan');
+    const exp: number = PicacgApi.safeNum(data, 'exp');
     user.exp = exp;
     user.level = PicacgApi.calcLevel(exp);
     return user;
@@ -100,6 +103,23 @@ export class PicacgApi {
     Logger.info(TAG, `search: keyword=${keyword}, page=${page}`);
     const resp: string = await Network.get(url, headers);
     return JSON.parse(resp) as PicaResponse;
+  }
+
+  static async getComics(page: number): Promise<Comic[]> {
+    const apiPath: string = `/comics?page=${page}&s=dd`;
+    const url: string = `${PicacgApi.API_BASE}${apiPath}`;
+    const headers: Record<string, string> = PicacgApi.buildHeaders('GET', apiPath);
+    Logger.info(TAG, `getComics: page=${page}`);
+    const resp: string = await Network.get(url, headers);
+    const result: PicaResponse = JSON.parse(resp) as PicaResponse;
+    const data: Record<string, object> = result.data as Record<string, object>;
+    const comicsData: object[] = data['comics'] as object[] ?? [];
+    const comics: Comic[] = [];
+    for (let i = 0; i < comicsData.length; i++) {
+      const item: Record<string, object> = comicsData[i] as Record<string, object>;
+      comics.push(PicacgApi.parseComic(item));
+    }
+    return comics;
   }
 
   static async getComicInfo(id: string): Promise<Comic> {
@@ -168,10 +188,17 @@ export class PicacgApi {
     return result;
   }
 
+  private static strToBytes(str: string): Uint8Array {
+    const bytes: number[] = [];
+    for (let i = 0; i < str.length; i++) {
+      bytes.push(str.charCodeAt(i) & 0xFF);
+    }
+    return new Uint8Array(bytes);
+  }
+
   private static hmacSha256Hex(message: string): string {
-    const encoder: TextEncoder = new TextEncoder();
-    const keyBytes: Uint8Array = encoder.encode(PicacgApi.SIGN_KEY);
-    const msgBytes: Uint8Array = encoder.encode(message);
+    const keyBytes: Uint8Array = PicacgApi.strToBytes(PicacgApi.SIGN_KEY);
+    const msgBytes: Uint8Array = PicacgApi.strToBytes(message);
 
     const blockSize: number = 64;
     const keyArr: number[] = [];
@@ -304,25 +331,25 @@ export class PicacgApi {
 
   private static parseComic(obj: Record<string, object>): Comic {
     const comic: Comic = new Comic();
-    comic.id = (obj['_id'] as string) ?? '';
-    comic.title = (obj['title'] as string) ?? '';
-    comic.author = (obj['author'] as string) ?? '';
+    comic.id = PicacgApi.safeStr(obj, '_id');
+    comic.title = PicacgApi.safeStr(obj, 'title');
+    comic.author = PicacgApi.safeStr(obj, 'author');
     const categories: string[] = obj['categories'] as string[];
     if (categories !== undefined) {
       comic.categories = categories;
     }
-    comic.description = (obj['description'] as string) ?? '';
-    comic.likes = (obj['totalLikes'] as number) ?? 0;
-    comic.comments = (obj['totalComments'] as number) ?? 0;
-    comic.isFavorite = (obj['isFavorite'] as boolean) ?? false;
-    comic.isLiked = (obj['isLiked'] as boolean) ?? false;
+    comic.description = PicacgApi.safeStr(obj, 'description');
+    comic.likes = PicacgApi.safeNum(obj, 'totalLikes');
+    comic.comments = PicacgApi.safeNum(obj, 'totalComments');
+    comic.isFavorite = PicacgApi.safeBool(obj, 'isFavorite');
+    comic.isLiked = PicacgApi.safeBool(obj, 'isLiked');
     const thumb: PicaThumb = obj['thumb'] as PicaThumb;
     if (thumb !== undefined) {
       comic.coverUrl = `${thumb.fileServer}/static/${thumb.path}`;
     }
     const epsCount: PicaEpsCount = obj['epsCount'] as PicaEpsCount;
     if (epsCount !== undefined) {
-      comic.chaptersCount = epsCount.total ?? 0;
+      comic.chapterCount = epsCount.total ?? 0;
     }
     comic.source = 'picacg';
     return comic;

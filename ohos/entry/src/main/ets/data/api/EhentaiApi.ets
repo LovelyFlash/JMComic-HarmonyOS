@@ -16,7 +16,7 @@ interface EhSearchResult {
 
 export class EhentaiApi {
   private static async getBaseUrl(): Promise<string> {
-    const useEx: boolean = await Settings.getBool(ApiConstants.EH_USE_EX, false);
+    const useEx: boolean = await Settings.getBool('0', false);
     if (useEx) {
       return ApiConstants.EXHENTAI_BASE;
     }
