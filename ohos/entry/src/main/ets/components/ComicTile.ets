@@ -10,7 +10,7 @@ export struct ComicTile {
   build() {
     Row() {
       NetworkImage({ url: this.comic.coverUrl, imgWidth: 90, imgHeight: 120, imgBorderRadius: 6 })
-      Column() {
+      Column({ space: 8 }) {
         Text(this.comic.title)
           .fontSize(15).fontWeight(FontWeight.Medium).maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%')

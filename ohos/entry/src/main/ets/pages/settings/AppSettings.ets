@@ -11,7 +11,7 @@ struct AppSettings {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       Row() {
         Image($rawfile('icons/ic_back.svg'))
           .width(24).height(24).objectFit(ImageFit.Contain)
@@ -24,7 +24,7 @@ struct AppSettings {
       .width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       Scroll() {
-        Column() {
+        Column({ space: 8 }) {
           SettingSection({ title: '数据' })
           SettingItem({ icon: '📂', title: '下载路径', value: '默认存储', onTap: () => {} })
           SettingItem({ icon: '💾', title: '缓存大小', value: '0 MB', onTap: () => {} })

@@ -12,7 +12,7 @@ export struct ComicGrid {
     Grid() {
       ForEach(this.comics, (comic: Comic) => {
         GridItem() {
-          Column() {
+          Column({ space: 8 }) {
             NetworkImage({ url: comic.coverUrl, imgWidth: 100, imgHeight: 140, imgBorderRadius: 6 })
             Text(comic.title)
               .fontSize(12).maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })

@@ -22,7 +22,7 @@ struct ExploreSettings {
   private langFilters: string[] = ['无', 'Chinese', 'English', 'Japanese']
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       Row() {
         Image($rawfile('icons/ic_back.svg'))
           .width(24).height(24).objectFit(ImageFit.Contain)
@@ -35,7 +35,7 @@ struct ExploreSettings {
       .width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       Scroll() {
-        Column() {
+        Column({ space: 8 }) {
           SettingSection({ title: '显示' })
           SettingItem({ icon: '🏠', title: '初始页面', value: this.initialPages[this.initialPage], onTap: () => {
             this.initialPage = (this.initialPage + 1) % this.initialPages.length

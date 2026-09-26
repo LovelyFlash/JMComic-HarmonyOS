@@ -24,7 +24,7 @@ export struct ExplorePage {
   ]
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       // Header
       Text(Translations.t('tab_explore'))
         .fontSize(24)
@@ -43,7 +43,7 @@ export struct ExplorePage {
       Grid() {
         ForEach(this.sources, (entry: SourceEntry) => {
           GridItem() {
-            Column() {
+            Column({ space: 8 }) {
               Text(entry.icon)
                 .fontSize(36)
               Text(entry.label)

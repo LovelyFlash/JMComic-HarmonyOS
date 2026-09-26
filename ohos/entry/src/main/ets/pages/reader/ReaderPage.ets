@@ -35,7 +35,7 @@ struct ReaderPage {
               .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
               .onError(() => { Logger.debug('ReaderPage', `Image load failed: ${url}`); })
           } else {
-            Column() { Text('...').fontSize(16).fontColor('#FFFFFF') }
+            Column({ space: 8 }) { Text('...').fontSize(16).fontColor('#FFFFFF') }
               .width('100%').height('100%').justifyContent(FlexAlign.Center).backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
           }
         })
@@ -47,7 +47,7 @@ struct ReaderPage {
 
       // Toolbar overlay
       if (this.showToolbar) {
-        Column() {
+        Column({ space: 8 }) {
           Row() {
             Image($rawfile('icons/ic_back.svg')).width(24).height(24).objectFit(ImageFit.Contain)
               .onClick(() => { router.back(); })

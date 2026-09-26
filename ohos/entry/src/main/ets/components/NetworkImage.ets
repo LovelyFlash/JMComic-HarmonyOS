@@ -24,7 +24,7 @@ export struct NetworkImage {
           Logger.debug(TAG, `Image load failed: ${this.url}`);
         })
     } else {
-      Column() {
+      Column({ space: 8 }) {
         Text('No Image')
           .fontSize(12)
           .fontColor(this.isDarkMode ? '#8E8E93' : '#CCCCCC')

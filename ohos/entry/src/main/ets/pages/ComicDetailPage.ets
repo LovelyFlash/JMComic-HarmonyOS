@@ -77,7 +77,7 @@ struct ComicDetailPage {
   }
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       Row() {
         Image($rawfile('icons/ic_back.svg')).width(24).height(24).objectFit(ImageFit.Contain).onClick(() => { router.back(); })
         Text(this.title).fontSize(18).fontWeight(FontWeight.Bold).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
@@ -86,15 +86,15 @@ struct ComicDetailPage {
           .onClick(() => { this.toggleFavorite(); })
       }.width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
-      if (this.loading) { Column() { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center) }
-      else if (this.error.length > 0) { Column() { Text(this.error).fontSize(14).fontColor('#FF3B30') }.layoutWeight(1).justifyContent(FlexAlign.Center) }
+      if (this.loading) { Column({ space: 8 }) { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center) }
+      else if (this.error.length > 0) { Column({ space: 8 }) { Text(this.error).fontSize(14).fontColor('#FF3B30') }.layoutWeight(1).justifyContent(FlexAlign.Center) }
       else {
         Scroll() {
-          Column() {
+          Column({ space: 8 }) {
             // Cover + Info
             Row() {
               Image(this.comic.coverUrl).width(130).height(180).objectFit(ImageFit.Cover).borderRadius(8).backgroundColor('#F0F0F0')
-              Column() {
+              Column({ space: 8 }) {
                 Text(this.comic.title).fontSize(18).fontWeight(FontWeight.Bold).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').maxLines(3).textOverflow({ overflow: TextOverflow.Ellipsis })
                 if (this.comic.author.length > 0) { Text('作者: ' + this.comic.author).fontSize(13).fontColor(this.isDarkMode ? '#8E8E93' : '#666666').margin({ top: 8 }) }
                 if (this.comic.likes > 0) { Text('❤ ' + this.comic.likes.toString()).fontSize(13).fontColor('#FF3B30').margin({ top: 4 }) }

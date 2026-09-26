@@ -2,7 +2,7 @@
 @Component
 struct Index {
   build() {
-    Column() {
+    Column({ space: 8 }) {
       Text('PicaComic')
         .fontSize(30)
         .fontWeight(FontWeight.Bold)

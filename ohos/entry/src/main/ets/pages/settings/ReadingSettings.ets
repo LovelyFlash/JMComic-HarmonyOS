@@ -33,7 +33,7 @@ struct ReadingSettings {
   private autoPageTimes: number[] = [3, 5, 8, 10, 15]
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       Row() {
         Image($rawfile('icons/ic_back.svg'))
           .width(24).height(24).objectFit(ImageFit.Contain)
@@ -46,7 +46,7 @@ struct ReadingSettings {
       .width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       Scroll() {
-        Column() {
+        Column({ space: 8 }) {
           SettingSection({ title: '翻页方式' })
           SettingItem({ icon: '📖', title: '阅读模式', value: this.readModes[this.readMode], onTap: () => {
             this.readMode = (this.readMode + 1) % this.readModes.length

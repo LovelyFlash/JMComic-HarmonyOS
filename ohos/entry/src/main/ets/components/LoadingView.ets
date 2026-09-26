@@ -4,7 +4,7 @@ export struct LoadingView {
   @Param message: string = ''
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       LoadingProgress().width(48).height(48).color(this.isDarkMode ? '#4DA6FF' : '#007AFF')
       if (this.message.length > 0) {
         Text(this.message).fontSize(14).fontColor(this.isDarkMode ? '#999999' : '#999999').margin({ top: 12 })

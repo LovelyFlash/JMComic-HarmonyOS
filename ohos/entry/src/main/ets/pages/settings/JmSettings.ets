@@ -27,7 +27,7 @@ struct JmSettings {
   }
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       Row() {
         Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF')
           .onClick(() => { router.back(); })
@@ -37,7 +37,7 @@ struct JmSettings {
       }.width('100%').height(56).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       Scroll() {
-        Column() {
+        Column({ space: 8 }) {
           // Current domain
           Text('当前域名').fontSize(13).fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
             .width('100%').padding({ left: 16, top: 56, bottom: 8 })
@@ -50,7 +50,7 @@ struct JmSettings {
 
           ForEach(this.domains, (domain: string, index: number) => {
             Row() {
-              Column() {
+              Column({ space: 8 }) {
                 Text(domain).fontSize(14).fontColor(
                   domain === this.currentDomain ? this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
                 if (index < this.healthStatus.length && this.healthStatus[index]) {

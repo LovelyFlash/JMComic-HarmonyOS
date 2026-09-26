@@ -23,7 +23,7 @@ export struct FloatingTabBar {
 
   @Builder
   tabItem(index: number, label: string) {
-    Column() {
+    Column({ space: 8 }) {
       Text(label)
         .fontSize(11)
         .fontColor(this.selectedIndex === index ? ThemeManager.colors.primary : ThemeManager.colors.textSecondary)

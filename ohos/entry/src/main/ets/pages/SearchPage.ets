@@ -44,11 +44,11 @@ struct SearchPage {
   @Builder
   results() {
     if (this.loading) {
-      Column() { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center)
+      Column({ space: 8 }) { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center)
     } else if (this.error.length > 0) {
-      Column() { Text(this.error).fontSize(14).fontColor('#FF3B30') }.layoutWeight(1).justifyContent(FlexAlign.Center)
+      Column({ space: 8 }) { Text(this.error).fontSize(14).fontColor('#FF3B30') }.layoutWeight(1).justifyContent(FlexAlign.Center)
     } else if (this.comics.length === 0) {
-      Column() { Text(Translations.t('search_hint')).fontSize(14).fontColor(this.isDarkMode ? '#999999' : '#666666') }
+      Column({ space: 8 }) { Text(Translations.t('search_hint')).fontSize(14).fontColor(this.isDarkMode ? '#999999' : '#666666') }
         .layoutWeight(1).justifyContent(FlexAlign.Center)
     } else {
       List({ space: 1 }) {
@@ -57,7 +57,7 @@ struct SearchPage {
             Row() {
               Image(comic.coverUrl).width(80).height(110).objectFit(ImageFit.Cover)
                 .borderRadius(6).backgroundColor(this.isDarkMode ? '#2C2C2E' : '#F0F0F0')
-              Column() {
+              Column({ space: 8 }) {
                 Text(comic.title).fontSize(15).fontWeight(FontWeight.Medium)
                   .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
                   .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%')
@@ -77,7 +77,7 @@ struct SearchPage {
   }
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       this.header()
       Search({ value: $$this.keyword, placeholder: Translations.t('search_hint') })
         .layoutWeight(1).height(40).margin({ left: 16, right: 16, bottom: 8 })

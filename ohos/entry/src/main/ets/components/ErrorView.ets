@@ -5,7 +5,7 @@ export struct ErrorView {
   @Event onRetry: () => void = () => {}
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       Text('!').fontSize(48).fontColor('#FF3B30').fontWeight(FontWeight.Bold)
       Text(this.message).fontSize(14).fontColor(this.isDarkMode ? '#999999' : '#999999').margin({ top: 12 }).textAlign(TextAlign.Center)
       Button('重试').fontSize(14).fontColor('#FFFFFF').backgroundColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')

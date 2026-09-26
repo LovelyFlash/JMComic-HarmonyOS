@@ -10,7 +10,7 @@ struct AboutPage {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       Row() {
         Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF')
           .onClick(() => { router.back(); })
@@ -18,7 +18,7 @@ struct AboutPage {
           .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').margin({ left: 16 })
       }.width('100%').height(56).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
-      Column() {
+      Column({ space: 8 }) {
         Text('📚')
           .fontSize(64)
         Text(ApiConstants.APP_NAME)

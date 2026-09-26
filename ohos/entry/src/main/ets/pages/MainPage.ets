@@ -18,7 +18,7 @@ struct MainPage {
 
   @Builder
   tabBuilder(title: string, iconRes: string, iconSelectedRes: string, index: number) {
-    Column() {
+    Column({ space: 8 }) {
       Image(this.currentTab === index ? $rawfile(`icons/${iconSelectedRes}`) : $rawfile(`icons/${iconRes}`))
         .width(24)
         .height(24)
@@ -37,7 +37,7 @@ struct MainPage {
   }
 
   build() {
-    Column() {
+    Column({ space: 8 }) {
       Tabs({ barPosition: BarPosition.End, index: this.currentTab }) {
         TabContent() { this.buildExplorePage() }
           .tabBar(this.tabBuilder(Translations.t('tab_explore'), 'ic_explore.svg', 'ic_explore_selected.svg', 0))
@@ -63,7 +63,7 @@ struct MainPage {
 
   @Builder
   buildExplorePage() {
-    Column() {
+    Column({ space: 8 }) {
       Text(Translations.t('app_name'))
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
@@ -100,7 +100,7 @@ struct MainPage {
 
   @Builder
   sourceItem(label: string, source: string) {
-    Column() {
+    Column({ space: 8 }) {
       Text(label)
         .fontSize(15)
         .fontWeight(FontWeight.Medium)
@@ -118,14 +118,14 @@ struct MainPage {
 
   @Builder
   buildHistoryPage() {
-    Column() {
+    Column({ space: 8 }) {
       Text(Translations.t('tab_history'))
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
         .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
         .width('100%')
         .padding({ left: 24, top: 64, bottom: 8 })
-      Column() {
+      Column({ space: 8 }) {
         Text(Translations.t('no_data'))
           .fontSize(14)
           .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
@@ -141,14 +141,14 @@ struct MainPage {
 
   @Builder
   buildFavoritesPage() {
-    Column() {
+    Column({ space: 8 }) {
       Text(Translations.t('tab_favorites'))
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
         .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
         .width('100%')
         .padding({ left: 24, top: 64, bottom: 8 })
-      Column() {
+      Column({ space: 8 }) {
         Text(Translations.t('no_data'))
           .fontSize(14)
           .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
@@ -164,7 +164,7 @@ struct MainPage {
 
   @Builder
   buildSettingsPage() {
-    Column() {
+    Column({ space: 8 }) {
       Text(Translations.t('tab_settings'))
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
@@ -173,7 +173,7 @@ struct MainPage {
         .padding({ left: 24, top: 64, bottom: 16 })
 
       Scroll() {
-        Column() {
+        Column({ space: 8 }) {
           this.settingsSection(Translations.t('settings_appearance'))
           this.settingsItem(Translations.t('dark_mode'), () => { ThemeManager.setDarkMode(!ThemeManager.isDark); })
           this.settingsItem(Translations.t('theme_color'), () => {
