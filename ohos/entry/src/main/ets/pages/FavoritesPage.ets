@@ -1,5 +1,5 @@
 // pages/FavoritesPage.ets - 收藏夹（连接数据库）
-import { router } from '@kit.ArkUI';
+import { router, promptAction } from '@kit.ArkUI';
 import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { Database, FavoriteItem } from '../data/database/Database';
@@ -24,7 +24,7 @@ struct FavoritesPage {
       Row() {
         Image($rawfile('icons/ic_back.svg')).width(24).height(24).objectFit(ImageFit.Contain).onClick(() => { router.back(); })
         Text(Translations.t('tab_favorites')).fontSize(22).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').margin({ left: 12 })
+          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').margin({ left: 12 })
       }.width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       if (this.loading) { Column({ space: 8 }) { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center) }
@@ -36,11 +36,15 @@ struct FavoritesPage {
               Row() {
                 Image(item.coverUrl).width(70).height(100).objectFit(ImageFit.Cover).borderRadius(6).backgroundColor('#F0F0F0')
                 Column({ space: 8 }) {
-                  Text(item.title).fontSize(15).fontWeight(FontWeight.Medium).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%')
+                  Text(item.title).fontSize(15).fontWeight(FontWeight.Medium).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%')
                   Text(item.source).fontSize(11).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF').margin({ top: 4 })
                 }.layoutWeight(1).alignItems(HorizontalAlign.Start).margin({ left: 12 })
                 Image($rawfile('icons/ic_close.svg')).width(20).height(20).objectFit(ImageFit.Contain)
-                  .onClick(async () => { await Database.removeFavorite(item.id, item.source); this.loadData(); })
+                  .onClick(async () => {
+                    await Database.removeFavorite(item.id, item.source);
+                    promptAction.showToast({ message: '已取消收藏', duration: 2000 });
+                    this.loadData();
+                  })
               }.width('100%').padding(12)
             }
           })
