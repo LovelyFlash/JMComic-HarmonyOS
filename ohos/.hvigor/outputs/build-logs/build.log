@@ -20274,3 +20274,1539 @@ Require stack:
 [2026-09-27T00:11:20.604] [DEBUG] debug-file - Current idle worker size: 0.
 [2026-09-27T00:11:20.604] [DEBUG] debug-file - Current busy worker size: 0.
 [2026-09-27T00:11:20.604] [DEBUG] debug-file - Current worker pool is terminated.
+[2026-09-27T00:12:05.789] [DEBUG] debug-file - session manager: send message to worker process. WorkerThreadId: 3, data: {"type":"hvigor_failed","reason":"Server has disconnected."}
+[2026-09-27T00:12:05.789] [DEBUG] debug-file - session manager: send message to worker process. WorkerThreadId: 3, data: {"type":"CloseWatch","reason":"Server has disconnected."}
+[2026-09-27T00:12:05.789] [DEBUG] debug-file - ABORT_WORK sent to workers.
+[2026-09-27T00:12:05.796] [DEBUG] debug-file - bad codeSnippet [object Object]
+[2026-09-27T00:12:05.827] [DEBUG] debug-file - watch worker: worker is ready to be terminated.
+[2026-09-27T00:12:05.827] [DEBUG] debug-file - Server currently has 0 watch-worker
+[2026-09-27T00:12:07.867] [DEBUG] debug-file - session manager: set active socket. socketId=Izb8YY5KXgLRG3UQAAAJ
+[2026-09-27T00:12:07.870] [DEBUG] debug-file - watch worker: worker id should be larger than 0. Nothing will be sent to any worker thread.
+[2026-09-27T00:12:07.872] [DEBUG] debug-file - Workers' log level updated to INFO
+[2026-09-27T00:12:07.873] [DEBUG] debug-file - Hvigor init with startParameters:{
+  hvigorfileTypeCheck: false,
+  parallelExecution: true,
+  incrementalExecution: true,
+  printStackTrace: false,
+  daemon: true,
+  analyze: 0,
+  logLevel: Level { level: 20000, levelStr: 'INFO', colour: 'green' },
+  optimizationStrategy: 'memory',
+  hotCompile: undefined,
+  hotReloadBuild: undefined,
+  customizedParam: undefined
+}
+[2026-09-27T00:12:07.877] [DEBUG] debug-file - Cache service initialization finished in 4 ms 
+[2026-09-27T00:12:07.877] [DEBUG] debug-file - hvigorfile, resolving F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\hvigorfile.ts
+[2026-09-27T00:12:07.882] [DEBUG] debug-file - hvigorfile, require result:  { default: { plugins: [] } }
+[2026-09-27T00:12:07.882] [DEBUG] debug-file - hvigorfile, binding system plugins null
+[2026-09-27T00:12:07.882] [DEBUG] debug-file - Starting plugin build process
+[2026-09-27T00:12:07.882] [DEBUG] debug-file - App plugin prepare start...
+[2026-09-27T00:12:07.882] [DEBUG] debug-file - App plugin prepare end...
+[2026-09-27T00:12:07.882] [DEBUG] debug-file - App plugin creating...
+[2026-09-27T00:12:07.884] [DEBUG] debug-file - App plugin register hook start...
+[2026-09-27T00:12:07.884] [DEBUG] debug-file - App plugin register hook end...
+[2026-09-27T00:12:07.884] [DEBUG] debug-file - Plugin build process completed
+[2026-09-27T00:12:07.884] [DEBUG] debug-file - Start initialize project's product build option map with build mode debug.
+[2026-09-27T00:12:07.884] [DEBUG] debug-file - Picking option from product 'default' with build mode 'debug'.
+[2026-09-27T00:12:07.884] [DEBUG] debug-file - Product 'default' build option initialized
+[2026-09-27T00:12:07.885] [DEBUG] debug-file - End initialize project's product build option map with build mode 'debug'.
+[2026-09-27T00:12:07.885] [DEBUG] debug-file - Obtain build option for product 'default'in this build.
+[2026-09-27T00:12:07.885] [DEBUG] debug-file - F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\build\cache\default\remote_hsp\remoteHspCache.json not exists.
+[2026-09-27T00:12:07.886] [DEBUG] debug-file - Start recording SDK configuration permission data.
+[2026-09-27T00:12:07.899] [DEBUG] debug-file - Sdk init in 15 ms 
+[2026-09-27T00:12:07.901] [DEBUG] debug-file - Project task initialization takes 2 ms 
+[2026-09-27T00:12:07.901] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-09-27T00:12:07.901] [DEBUG] debug-file - hvigorfile, no custom plugins were found in F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\hvigorfile.ts
+[2026-09-27T00:12:07.901] [DEBUG] debug-file - hvigorfile, resolve finished F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\hvigorfile.ts
+[2026-09-27T00:12:07.901] [DEBUG] debug-file - hvigorfile, resolving F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\hvigorfile.ts
+[2026-09-27T00:12:07.904] [DEBUG] debug-file - hvigorfile, require result:  { default: { plugins: [] } }
+[2026-09-27T00:12:07.904] [DEBUG] debug-file - hvigorfile, binding system plugins null
+[2026-09-27T00:12:07.904] [DEBUG] debug-file - Starting plugin build process
+[2026-09-27T00:12:07.904] [DEBUG] debug-file - Hap plugin creating...
+[2026-09-27T00:12:07.904] [DEBUG] debug-file - failed to load cangjie to dynamically generate schemas: Error: Cannot find module '@ohos/cangjie-build-support/index'
+Require stack:
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\src\plugin\hooks\cangjie-register.js
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\src\plugin\strategy\stage-init-strategy.js
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\src\plugin\builder\abstract-plugin-builder.js
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\src\plugin\builder\app-plugin-builder.js
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\src\plugin\factory\plugin-factory.js
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\index.js
+- F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\hvigorfile.ts
+- F:\DevEco Studio\tools\hvigor\hvigor\src\base\internal\lifecycle\configuration.js
+- F:\DevEco Studio\tools\hvigor\hvigor\src\base\boot\index.js
+- F:\DevEco Studio\tools\hvigor\hvigor\src\base\daemon\cluster\worker-process-lifecycle.js
+- F:\DevEco Studio\tools\hvigor\hvigor\src\base\daemon\process\daemon-process-boot-script.js
+[2026-09-27T00:12:07.905] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=release
+[2026-09-27T00:12:07.905] [DEBUG] debug-file - Target 'default' config initialized
+[2026-09-27T00:12:07.905] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-09-27T00:12:07.905] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-09-27T00:12:07.905] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=debug
+[2026-09-27T00:12:07.905] [DEBUG] debug-file - Target 'default' config initialized
+[2026-09-27T00:12:07.905] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-09-27T00:12:07.906] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-09-27T00:12:07.906] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=debug
+[2026-09-27T00:12:07.906] [DEBUG] debug-file - Target 'default' config initialized
+[2026-09-27T00:12:07.906] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-09-27T00:12:07.906] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-09-27T00:12:07.906] [DEBUG] debug-file - Obtain build option for module 'entry' target 'default'in this build.
+[2026-09-27T00:12:07.907] [DEBUG] debug-file - Module entry task initialization takes 1 ms 
+[2026-09-27T00:12:07.907] [DEBUG] debug-file - Hap plugin register hook start...
+[2026-09-27T00:12:07.907] [DEBUG] debug-file - Hap plugin register hook end...
+[2026-09-27T00:12:07.907] [DEBUG] debug-file - Plugin build process completed
+[2026-09-27T00:12:07.907] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-09-27T00:12:07.907] [DEBUG] debug-file - hvigorfile, no custom plugins were found in F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\hvigorfile.ts
+[2026-09-27T00:12:07.907] [DEBUG] debug-file - hvigorfile, resolve finished F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\hvigorfile.ts
+[2026-09-27T00:12:07.921] [DEBUG] debug-file - hvigorfile, resolve hvigorfile dependencies in 15 ms 
+[2026-09-27T00:12:07.921] [DEBUG] debug-file - project has submodules:entry
+[2026-09-27T00:12:07.922] [DEBUG] debug-file - start to load updatedOhPackageInfo to the disk
+[2026-09-27T00:12:07.923] [DEBUG] debug-file - load to the disk finished
+[2026-09-27T00:12:07.923] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-09-27T00:12:07.924] [DEBUG] debug-file - Module ohos Collected Dependency: 
+[2026-09-27T00:12:07.925] [DEBUG] debug-file - Module ohos's total dependency: 0
+[2026-09-27T00:12:07.925] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-09-27T00:12:07.925] [DEBUG] debug-file - Module entry Collected Dependency: 
+[2026-09-27T00:12:07.925] [DEBUG] debug-file - Module entry's total dependency: 0
+[2026-09-27T00:12:07.926] [DEBUG] debug-file - Configuration phase cost:50 ms 
+[2026-09-27T00:12:07.927] [DEBUG] debug-file - Configuration task cost before running: 55 ms 
+[2026-09-27T00:12:07.928] [DEBUG] debug-file - Executing task :entry:default@PreBuild
+[2026-09-27T00:12:07.929] [DEBUG] debug-file - Task 'entry:default@PreBuild' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:12:07.932] [DEBUG] debug-file - entry:default@PreBuild is not up-to-date, since the task snapshots are different.
+[2026-09-27T00:12:07.932] [DEBUG] debug-file - Incremental task entry:default@PreBuild pre-execution cost: 2 ms .
+[2026-09-27T00:12:07.934] [DEBUG] debug-file - current product is not Atomic service.
+[2026-09-27T00:12:07.935] [DEBUG] debug-file - Use tool [win32: JAVA_HOME, CLASSPATH]
+ [ { JAVA_HOME: 'F:\\DevEco Studio\\jbr' }, { CLASSPATH: undefined } ]
+[2026-09-27T00:12:07.935] [DEBUG] debug-file - Use tool [win32: NODE_HOME]
+ [ { NODE_HOME: 'F:\\DevEco Studio\\tools\\node' } ]
+[2026-09-27T00:12:07.935] [DEBUG] debug-file - entry : default@PreBuild cost memory 0.8783798217773438
+[2026-09-27T00:12:07.935] [DEBUG] debug-file - runTaskFromQueue task cost before running: 64 ms 
+[2026-09-27T00:12:07.936] [INFO] debug-file - Finished :entry:default@PreBuild... after 7 ms 
+[2026-09-27T00:12:07.937] [DEBUG] debug-file - Executing task :entry:default@CreateModuleInfo
+[2026-09-27T00:12:07.937] [DEBUG] debug-file - Task 'entry:default@CreateModuleInfo' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:12:07.937] [DEBUG] debug-file - entry : default@CreateModuleInfo cost memory 0.0404052734375
+[2026-09-27T00:12:07.937] [DEBUG] debug-file - runTaskFromQueue task cost before running: 66 ms 
+[2026-09-27T00:12:07.937] [INFO] debug-file - Finished :entry:default@CreateModuleInfo... after 1 ms 
+[2026-09-27T00:12:07.937] [DEBUG] debug-file - Executing task :entry:default@MergeProfile
+[2026-09-27T00:12:07.938] [DEBUG] debug-file - Task 'entry:default@MergeProfile' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:12:07.938] [DEBUG] debug-file - entry:default@MergeProfile is not up-to-date, since the task snapshots are different.
+[2026-09-27T00:12:07.938] [DEBUG] debug-file - Incremental task entry:default@MergeProfile pre-execution cost: 1 ms .
+[2026-09-27T00:12:07.938] [DEBUG] debug-file - Change app api release type with 'Release'
+[2026-09-27T00:12:07.938] [DEBUG] debug-file - Change app compile API version with '26.0.0.105'
+[2026-09-27T00:12:07.938] [DEBUG] debug-file - Change app target API version with '260000026'
+[2026-09-27T00:12:07.938] [DEBUG] debug-file - Change app minimum API version with '50000012'
+[2026-09-27T00:12:07.938] [DEBUG] debug-file - Use cli appEnvironment
+[2026-09-27T00:12:07.952] [DEBUG] debug-file - entry : default@MergeProfile cost memory 2.6203384399414062
+[2026-09-27T00:12:07.952] [DEBUG] debug-file - runTaskFromQueue task cost before running: 80 ms 
+[2026-09-27T00:12:07.952] [INFO] debug-file - Finished :entry:default@MergeProfile... after 15 ms 
+[2026-09-27T00:12:07.952] [DEBUG] debug-file - Executing task :entry:default@CreateBuildProfile
+[2026-09-27T00:12:07.953] [DEBUG] debug-file - Task 'entry:default@CreateBuildProfile' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:12:07.954] [DEBUG] debug-file - entry:default@CreateBuildProfile is not up-to-date, since the task snapshots are different.
+[2026-09-27T00:12:07.954] [DEBUG] debug-file - Incremental task entry:default@CreateBuildProfile pre-execution cost: 1 ms .
+[2026-09-27T00:12:07.954] [DEBUG] debug-file - entry : default@CreateBuildProfile cost memory 0.11161041259765625
+[2026-09-27T00:12:07.955] [DEBUG] debug-file - runTaskFromQueue task cost before running: 83 ms 
+[2026-09-27T00:12:07.955] [INFO] debug-file - Finished :entry:default@CreateBuildProfile... after 3 ms 
+[2026-09-27T00:12:07.955] [DEBUG] debug-file - Executing task :entry:default@PreCheckSyscap
+[2026-09-27T00:12:07.955] [DEBUG] debug-file - entry : default@PreCheckSyscap cost memory 0.01506805419921875
+[2026-09-27T00:12:07.955] [DEBUG] debug-file - runTaskFromQueue task cost before running: 84 ms 
+[2026-09-27T00:12:07.955] [INFO] debug-file - Finished :entry:default@PreCheckSyscap... after 1 ms 
+[2026-09-27T00:12:07.956] [DEBUG] debug-file - Executing task :entry:default@GeneratePkgContextInfo
+[2026-09-27T00:12:07.959] [DEBUG] debug-file - Task 'entry:default@GeneratePkgContextInfo' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:12:07.959] [DEBUG] debug-file - entry : default@GeneratePkgContextInfo cost memory 0.28609466552734375
+[2026-09-27T00:12:07.959] [DEBUG] debug-file - runTaskFromQueue task cost before running: 88 ms 
+[2026-09-27T00:12:07.960] [INFO] debug-file - Finished :entry:default@GeneratePkgContextInfo... after 4 ms 
+[2026-09-27T00:12:07.960] [DEBUG] debug-file - Executing task :entry:default@ProcessProfile
+[2026-09-27T00:12:07.961] [DEBUG] debug-file - Task 'entry:default@ProcessProfile' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:12:07.961] [DEBUG] debug-file - entry:default@ProcessProfile is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\merge_profile\default\module.json' has been changed.
+[2026-09-27T00:12:07.961] [DEBUG] debug-file - Incremental task entry:default@ProcessProfile pre-execution cost: 1 ms .
+[2026-09-27T00:12:07.962] [DEBUG] debug-file - [
+  'F:\\DevEco Studio\\tools\\node\\node.exe',
+  'F:\\DevEco Studio\\sdk\\default\\openharmony\\ets\\build-tools\\ets-loader\\bin\\ark\\ts2abc.js',
+  '--target-api-version',
+  '12',
+  '--target-api-sub-version',
+  'beta1'
+]
+[2026-09-27T00:12:08.036] [DEBUG] debug-file - 12.0.2.0
+[2026-09-27T00:12:08.037] [DEBUG] debug-file - No need to add fake ui ability because of abilityPath does not exist.
+[2026-09-27T00:12:08.038] [DEBUG] debug-file - entry : default@ProcessProfile cost memory 0.28670501708984375
+[2026-09-27T00:12:08.038] [DEBUG] debug-file - runTaskFromQueue task cost before running: 166 ms 
+[2026-09-27T00:12:08.038] [INFO] debug-file - Finished :entry:default@ProcessProfile... after 78 ms 
+[2026-09-27T00:12:08.038] [DEBUG] debug-file - Executing task :entry:default@ProcessRouterMap
+[2026-09-27T00:12:08.039] [DEBUG] debug-file - entry:default@ProcessRouterMap is not up-to-date, since the task snapshots are different.
+[2026-09-27T00:12:08.039] [DEBUG] debug-file - Incremental task entry:default@ProcessRouterMap pre-execution cost: 1 ms .
+[2026-09-27T00:12:08.040] [DEBUG] debug-file - entry : default@ProcessRouterMap cost memory 0.12183380126953125
+[2026-09-27T00:12:08.040] [DEBUG] debug-file - runTaskFromQueue task cost before running: 168 ms 
+[2026-09-27T00:12:08.040] [INFO] debug-file - Finished :entry:default@ProcessRouterMap... after 2 ms 
+[2026-09-27T00:12:08.040] [DEBUG] debug-file - Executing task :entry:default@ProcessShareConfig
+[2026-09-27T00:12:08.041] [DEBUG] debug-file - entry:default@ProcessShareConfig is not up-to-date, since the task snapshots are different.
+[2026-09-27T00:12:08.041] [DEBUG] debug-file - Incremental task entry:default@ProcessShareConfig pre-execution cost: 1 ms .
+[2026-09-27T00:12:08.041] [DEBUG] debug-file - entry : default@ProcessShareConfig cost memory 0.10268402099609375
+[2026-09-27T00:12:08.042] [DEBUG] debug-file - runTaskFromQueue task cost before running: 170 ms 
+[2026-09-27T00:12:08.042] [INFO] debug-file - Finished :entry:default@ProcessShareConfig... after 2 ms 
+[2026-09-27T00:12:08.042] [DEBUG] debug-file - Executing task :entry:default@ProcessStartupConfig
+[2026-09-27T00:12:08.043] [DEBUG] debug-file - Task 'entry:default@ProcessStartupConfig' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:12:08.043] [DEBUG] debug-file - entry:default@ProcessStartupConfig is not up-to-date, since the output file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\startup\default\startup_config.json' does not exist.
+[2026-09-27T00:12:08.043] [DEBUG] debug-file - Incremental task entry:default@ProcessStartupConfig pre-execution cost: 1 ms .
+[2026-09-27T00:12:08.044] [DEBUG] debug-file - entry : default@ProcessStartupConfig cost memory -2.7762527465820312
+[2026-09-27T00:12:08.044] [DEBUG] debug-file - runTaskFromQueue task cost before running: 172 ms 
+[2026-09-27T00:12:08.044] [INFO] debug-file - Finished :entry:default@ProcessStartupConfig... after 2 ms 
+[2026-09-27T00:12:08.044] [DEBUG] debug-file - restool module names: entry; moduleName=entry, taskName=default@PreviewProcessResource
+[2026-09-27T00:12:08.045] [DEBUG] debug-file - Executing task :entry:default@PreviewProcessResource
+[2026-09-27T00:12:08.045] [DEBUG] debug-file - Task 'entry:default@PreviewProcessResource' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:12:08.045] [DEBUG] debug-file - entry : default@PreviewProcessResource cost memory 0.04837799072265625
+[2026-09-27T00:12:08.045] [DEBUG] debug-file - runTaskFromQueue task cost before running: 174 ms 
+[2026-09-27T00:12:08.045] [INFO] debug-file - Finished :entry:default@PreviewProcessResource... after 1 ms 
+[2026-09-27T00:12:08.046] [DEBUG] debug-file - Executing task :entry:default@GenerateLoaderJson
+[2026-09-27T00:12:08.047] [DEBUG] debug-file - Task 'entry:default@GenerateLoaderJson' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:12:08.050] [DEBUG] debug-file - entry:default@GenerateLoaderJson is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\router_map\default\temp-router-map.json' has been changed.
+[2026-09-27T00:12:08.050] [DEBUG] debug-file - Incremental task entry:default@GenerateLoaderJson pre-execution cost: 2 ms .
+[2026-09-27T00:12:08.051] [DEBUG] debug-file - entry : default@GenerateLoaderJson cost memory 0.605438232421875
+[2026-09-27T00:12:08.051] [DEBUG] debug-file - runTaskFromQueue task cost before running: 180 ms 
+[2026-09-27T00:12:08.052] [INFO] debug-file - Finished :entry:default@GenerateLoaderJson... after 6 ms 
+[2026-09-27T00:12:08.053] [DEBUG] debug-file - restool module names: entry; moduleName=entry, taskName=default@PreviewCompileResource
+[2026-09-27T00:12:08.053] [DEBUG] debug-file - Executing task :entry:default@PreviewCompileResource
+[2026-09-27T00:12:08.056] [DEBUG] debug-file - entry:default@PreviewCompileResource is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\merge_profile\default\module.json' has been changed.
+[2026-09-27T00:12:08.056] [DEBUG] debug-file - Incremental task entry:default@PreviewCompileResource pre-execution cost: 3 ms .
+[2026-09-27T00:12:08.062] [DEBUG] debug-file - Use tool [F:\DevEco Studio\sdk\default\openharmony\toolchains\restool.exe]
+ [
+  'F:\\DevEco Studio\\sdk\\default\\openharmony\\toolchains\\restool.exe',
+  '-x',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\AppScope\\resources',
+  '-o',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\.preview\\default\\intermediates\\res\\default\\app_compiled'
+]
+[2026-09-27T00:12:08.063] [DEBUG] debug-file - current process  memoryUsage: {
+  rss: 514191360,
+  heapTotal: 127668224,
+  heapUsed: 119327688,
+  external: 3989802,
+  arrayBuffers: 58260
+} os memoryUsage :17.891307830810547
+[2026-09-27T00:12:08.091] [DEBUG] debug-file - Info: restool resources compile success.
+
+[2026-09-27T00:12:08.094] [DEBUG] debug-file - Use tool [F:\DevEco Studio\sdk\default\openharmony\toolchains\restool.exe]
+ [
+  'F:\\DevEco Studio\\sdk\\default\\openharmony\\toolchains\\restool.exe',
+  '-x',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\src\\main\\resources',
+  '-o',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\.preview\\default\\intermediates\\res\\default\\module_compiled'
+]
+[2026-09-27T00:12:08.095] [DEBUG] debug-file - current process  memoryUsage: {
+  rss: 514203648,
+  heapTotal: 127668224,
+  heapUsed: 119470472,
+  external: 3989928,
+  arrayBuffers: 58401
+} os memoryUsage :17.891338348388672
+[2026-09-27T00:12:08.135] [DEBUG] debug-file - Info: restool resources compile success.
+
+[2026-09-27T00:12:08.138] [DEBUG] debug-file - Use tool [F:\DevEco Studio\sdk\default\openharmony\toolchains\restool.exe]
+ [
+  'F:\\DevEco Studio\\sdk\\default\\openharmony\\toolchains\\restool.exe',
+  '-m',
+  'entry',
+  '-f',
+  '-j',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\.preview\\default\\intermediates\\process_profile\\default\\module.json',
+  '-p',
+  'c***y',
+  '-r',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\.preview\\default\\generated\\r\\default\\ResourceTable.h',
+  '-z',
+  '--ids',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\.preview\\default\\intermediates\\res\\default\\ids_map',
+  '--defined-ids',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\.preview\\default\\intermediates\\res\\default\\ids_map\\id_defined.json',
+  '-i',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\.preview\\default\\intermediates\\res\\default\\app_compiled',
+  '-i',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\.preview\\default\\intermediates\\res\\default\\module_compiled',
+  '-o',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\.preview\\default\\intermediates\\res\\default',
+  '--defined-sysids',
+  'F:\\DevEco Studio\\sdk\\default\\hms\\toolchains\\id_defined.json'
+]
+[2026-09-27T00:12:08.139] [DEBUG] debug-file - current process  memoryUsage: {
+  rss: 514203648,
+  heapTotal: 127668224,
+  heapUsed: 119622136,
+  external: 3990054,
+  arrayBuffers: 59713
+} os memoryUsage :17.932456970214844
+[2026-09-27T00:12:08.215] [DEBUG] debug-file - Info: hardware concurrency count is : 20
+Info: thread count is : 20
+
+[2026-09-27T00:12:08.216] [DEBUG] debug-file - Info: thread pool is started
+
+[2026-09-27T00:12:08.240] [DEBUG] debug-file - Info: restool resources compile success.
+
+[2026-09-27T00:12:08.240] [DEBUG] debug-file - Info: thread pool is stopped
+
+[2026-09-27T00:12:08.244] [DEBUG] debug-file - entry : default@PreviewCompileResource cost memory 0.8915328979492188
+[2026-09-27T00:12:08.245] [DEBUG] debug-file - runTaskFromQueue task cost before running: 373 ms 
+[2026-09-27T00:12:08.245] [INFO] debug-file - Finished :entry:default@PreviewCompileResource... after 192 ms 
+[2026-09-27T00:12:08.245] [DEBUG] debug-file - Executing task :entry:default@PreviewHookCompileResource
+[2026-09-27T00:12:08.246] [DEBUG] debug-file - entry : default@PreviewHookCompileResource cost memory 0.014862060546875
+[2026-09-27T00:12:08.246] [DEBUG] debug-file - runTaskFromQueue task cost before running: 374 ms 
+[2026-09-27T00:12:08.246] [INFO] debug-file - Finished :entry:default@PreviewHookCompileResource... after 1 ms 
+[2026-09-27T00:12:08.246] [DEBUG] debug-file - Executing task :entry:default@CopyPreviewProfile
+[2026-09-27T00:12:08.247] [DEBUG] debug-file - entry:default@CopyPreviewProfile is not up-to-date, since the output file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\res\default\resources\base\profile' does not exist.
+[2026-09-27T00:12:08.247] [DEBUG] debug-file - Incremental task entry:default@CopyPreviewProfile pre-execution cost: 1 ms .
+[2026-09-27T00:12:08.249] [DEBUG] debug-file - entry : default@CopyPreviewProfile cost memory 0.1334686279296875
+[2026-09-27T00:12:08.249] [DEBUG] debug-file - runTaskFromQueue task cost before running: 378 ms 
+[2026-09-27T00:12:08.249] [INFO] debug-file - Finished :entry:default@CopyPreviewProfile... after 3 ms 
+[2026-09-27T00:12:08.249] [DEBUG] debug-file - Executing task :entry:default@ReplacePreviewerPage
+[2026-09-27T00:12:08.250] [DEBUG] debug-file - entry : default@ReplacePreviewerPage cost memory 0.01482391357421875
+[2026-09-27T00:12:08.250] [DEBUG] debug-file - runTaskFromQueue task cost before running: 378 ms 
+[2026-09-27T00:12:08.250] [INFO] debug-file - Finished :entry:default@ReplacePreviewerPage... after 1 ms 
+[2026-09-27T00:12:08.250] [DEBUG] debug-file - Executing task :entry:buildPreviewerResource
+[2026-09-27T00:12:08.250] [DEBUG] debug-file - entry : buildPreviewerResource cost memory 0.013397216796875
+[2026-09-27T00:12:08.250] [DEBUG] debug-file - runTaskFromQueue task cost before running: 379 ms 
+[2026-09-27T00:12:08.250] [INFO] debug-file - Finished :entry:buildPreviewerResource... after 1 ms 
+[2026-09-27T00:12:08.251] [DEBUG] debug-file - Executing task :entry:default@PreviewUpdateAssets
+[2026-09-27T00:12:08.251] [DEBUG] debug-file - entry:default@PreviewUpdateAssets is not up-to-date, since the output file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\res\default\module.json' has been changed.
+[2026-09-27T00:12:08.251] [DEBUG] debug-file - Incremental task entry:default@PreviewUpdateAssets pre-execution cost: 1 ms .
+[2026-09-27T00:12:08.253] [DEBUG] debug-file - entry : default@PreviewUpdateAssets cost memory 0.090362548828125
+[2026-09-27T00:12:08.253] [DEBUG] debug-file - runTaskFromQueue task cost before running: 381 ms 
+[2026-09-27T00:12:08.253] [INFO] debug-file - Finished :entry:default@PreviewUpdateAssets... after 3 ms 
+[2026-09-27T00:12:08.254] [DEBUG] debug-file - Executing task :entry:default@PreviewArkTS
+[2026-09-27T00:12:08.254] [DEBUG] debug-file - obfuscationOptions: undefined
+[2026-09-27T00:12:08.254] [DEBUG] debug-file - Task 'entry:default@PreviewArkTS' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:12:08.256] [DEBUG] debug-file - entry:default@PreviewArkTS is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\loader\default' has been changed.
+[2026-09-27T00:12:08.256] [DEBUG] debug-file - Incremental task entry:default@PreviewArkTS pre-execution cost: 2 ms .
+[2026-09-27T00:12:08.261] [DEBUG] debug-file - No watchWorker available for preview
+[2026-09-27T00:12:08.261] [DEBUG] debug-file - Can not reuse worker, create new worker for preview
+[2026-09-27T00:12:08.262] [DEBUG] debug-file - session manager: binding session. socketId=Izb8YY5KXgLRG3UQAAAJ, threadId=1@4.
+[2026-09-27T00:12:08.263] [DEBUG] debug-file - entry : default@PreviewArkTS cost memory -2.063507080078125
+[2026-09-27T00:12:09.796] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchStart
+[2026-09-27T00:12:09.796] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchStart
+[2026-09-27T00:12:11.214] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.214] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.214] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.217] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.217] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.218] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.219] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.219] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.220] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.220] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.221] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.221] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.222] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.223] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.223] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.224] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.225] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.226] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.227] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.227] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.228] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.229] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.229] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.215] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.230] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.231] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.231] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.232] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.233] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.234] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.235] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.236] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.237] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.237] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.238] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.239] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:11.216] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:12:11.240] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:12:12.357] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchResult
+[2026-09-27T00:12:12.358] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchResult
+[2026-09-27T00:12:12.359] [INFO] debug-file - Finished :entry:default@PreviewArkTS... after 4 s 104 ms 
+[2026-09-27T00:12:12.359] [DEBUG] debug-file - Executing task :entry:PreviewBuild
+[2026-09-27T00:12:12.359] [DEBUG] debug-file - entry : PreviewBuild cost memory 0.01247406005859375
+[2026-09-27T00:12:12.359] [DEBUG] debug-file - runTaskFromQueue task cost before running: 4 s 488 ms 
+[2026-09-27T00:12:12.359] [INFO] debug-file - Finished :entry:PreviewBuild... after 1 ms 
+[2026-09-27T00:12:12.360] [INFO] debug-file - BUILD SUCCESSFUL in 4 s 489 ms 
+[2026-09-27T00:12:12.359] [DEBUG] debug-file - Ark compile finished.
+[2026-09-27T00:12:12.361] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\app.json5 cache by regenerate.
+[2026-09-27T00:12:12.361] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\module.json5 cache by regenerate.
+[2026-09-27T00:12:12.361] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\build-profile.json5 cache by regenerate.
+[2026-09-27T00:12:12.361] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build-profile.json5 cache by regenerate.
+[2026-09-27T00:12:12.361] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\resources\base\profile\main_pages.json cache by regenerate.
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\hvigor\hvigor-config.json5 cache by regenerate.
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\oh-package.json5 cache by regenerate.
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\oh-package.json5 cache by regenerate.
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Incremental task entry:default@PreBuild post-execution cost:2 ms .
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Update task entry:default@CreateModuleInfo output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\generated\profile\default\ModuleInfo.ts cache.
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Incremental task entry:default@CreateModuleInfo post-execution cost:1 ms .
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Update task entry:default@MergeProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\app.json5 cache by regenerate.
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Update task entry:default@MergeProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\build-profile.json5 cache by regenerate.
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Update task entry:default@MergeProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\module.json5 cache by regenerate.
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Update task entry:default@MergeProfile output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\merge_profile\default\module.json cache.
+[2026-09-27T00:12:12.362] [DEBUG] debug-file - Incremental task entry:default@MergeProfile post-execution cost:1 ms .
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@CreateBuildProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\app.json5 cache by regenerate.
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@CreateBuildProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\build-profile.json5 cache by regenerate.
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@CreateBuildProfile output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\generated\profile\default\BuildProfile.ets cache.
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Incremental task entry:default@CreateBuildProfile post-execution cost:1 ms .
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@GeneratePkgContextInfo output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\loader\default\pkgContextInfo.json cache.
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Incremental task entry:default@GeneratePkgContextInfo post-execution cost:1 ms .
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@ProcessProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\merge_profile\default\module.json cache from map.
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@ProcessProfile output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\process_profile\default\module.json cache.
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Incremental task entry:default@ProcessProfile post-execution cost:1 ms .
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@ProcessRouterMap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\oh-package.json5 cache by regenerate.
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@ProcessRouterMap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\oh-package.json5 cache by regenerate.
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@ProcessRouterMap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\module.json5 cache by regenerate.
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@ProcessRouterMap output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\router_map\default\temp-router-map.json cache.
+[2026-09-27T00:12:12.363] [DEBUG] debug-file - Update task entry:default@ProcessRouterMap output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\router_map\default\loader-router-map.json cache.
+[2026-09-27T00:12:12.364] [DEBUG] debug-file - Incremental task entry:default@ProcessRouterMap post-execution cost:1 ms .
+[2026-09-27T00:12:12.364] [DEBUG] debug-file - Update task entry:default@ProcessShareConfig input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\oh-package.json5 cache by regenerate.
+[2026-09-27T00:12:12.364] [DEBUG] debug-file - Update task entry:default@ProcessShareConfig input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\oh-package.json5 cache by regenerate.
+[2026-09-27T00:12:12.364] [DEBUG] debug-file - Update task entry:default@ProcessShareConfig input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\module.json5 cache by regenerate.
+[2026-09-27T00:12:12.364] [DEBUG] debug-file - Update task entry:default@ProcessShareConfig output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\share_config\default\temp-share-config.json cache.
+[2026-09-27T00:12:12.364] [DEBUG] debug-file - Incremental task entry:default@ProcessShareConfig post-execution cost:1 ms .
+[2026-09-27T00:12:12.364] [DEBUG] debug-file - Update task entry:default@ProcessStartupConfig output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\startup\default\startup_config.json cache.
+[2026-09-27T00:12:12.364] [DEBUG] debug-file - Incremental task entry:default@ProcessStartupConfig post-execution cost:1 ms .
+[2026-09-27T00:12:12.365] [DEBUG] debug-file - Update task entry:default@GenerateLoaderJson input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\router_map\default\temp-router-map.json cache from map.
+[2026-09-27T00:12:12.365] [DEBUG] debug-file - Update task entry:default@GenerateLoaderJson output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\loader\default\loader.json cache.
+[2026-09-27T00:12:12.365] [DEBUG] debug-file - Incremental task entry:default@GenerateLoaderJson post-execution cost:1 ms .
+[2026-09-27T00:12:12.365] [DEBUG] debug-file - Update task entry:default@PreviewCompileResource input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\resources cache by regenerate.
+[2026-09-27T00:12:12.367] [DEBUG] debug-file - Update task entry:default@PreviewCompileResource input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\merge_profile\default\module.json cache from map.
+[2026-09-27T00:12:12.367] [DEBUG] debug-file - Update task entry:default@PreviewCompileResource output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\res\default cache.
+[2026-09-27T00:12:12.370] [DEBUG] debug-file - Update task entry:default@PreviewCompileResource output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\generated\r\default cache.
+[2026-09-27T00:12:12.370] [DEBUG] debug-file - Incremental task entry:default@PreviewCompileResource post-execution cost:6 ms .
+[2026-09-27T00:12:12.370] [DEBUG] debug-file - Update task entry:default@CopyPreviewProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\resources\base\profile cache by regenerate.
+[2026-09-27T00:12:12.371] [DEBUG] debug-file - Update task entry:default@CopyPreviewProfile output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\res\default\resources\base\profile cache.
+[2026-09-27T00:12:12.371] [DEBUG] debug-file - Incremental task entry:default@CopyPreviewProfile post-execution cost:1 ms .
+[2026-09-27T00:12:12.371] [DEBUG] debug-file - Update task entry:default@PreviewUpdateAssets output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\res\default\module.json cache.
+[2026-09-27T00:12:12.371] [DEBUG] debug-file - Update task entry:default@PreviewUpdateAssets output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\res\default\resources\base\profile\main_pages.json cache.
+[2026-09-27T00:12:12.371] [DEBUG] debug-file - Incremental task entry:default@PreviewUpdateAssets post-execution cost:1 ms .
+[2026-09-27T00:12:12.372] [DEBUG] debug-file - Update task entry:default@PreviewArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\loader\default cache from map.
+[2026-09-27T00:12:12.372] [DEBUG] debug-file - Update task entry:default@PreviewArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\res\default\resources\rawfile cache by regenerate.
+[2026-09-27T00:12:12.373] [DEBUG] debug-file - Update task entry:default@PreviewArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\res\default\ResourceTable.txt cache by regenerate.
+[2026-09-27T00:12:12.373] [DEBUG] debug-file - Update task entry:default@PreviewArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\process_profile\default\module.json cache by regenerate.
+[2026-09-27T00:12:12.373] [DEBUG] debug-file - Update task entry:default@PreviewArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\res\default\resources\base\profile cache by regenerate.
+[2026-09-27T00:12:12.373] [DEBUG] debug-file - Update task entry:default@PreviewArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\ets cache by regenerate.
+[2026-09-27T00:12:12.376] [DEBUG] debug-file - Update task entry:default@PreviewArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\generated\profile\default\BuildProfile.ets cache by regenerate.
+[2026-09-27T00:12:12.376] [DEBUG] debug-file - Update task entry:default@PreviewArkTS output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\.preview\default\intermediates\loader_out\default\ets cache.
+[2026-09-27T00:12:12.376] [DEBUG] debug-file - Incremental task entry:default@PreviewArkTS post-execution cost:6 ms .
+[2026-09-27T00:12:12.398] [DEBUG] debug-file - There's no busy workers and idle workers need cleanup.
+[2026-09-27T00:12:12.398] [DEBUG] debug-file - hvigor build process will be closed.
+[2026-09-27T00:19:22.706] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchStart
+[2026-09-27T00:19:22.708] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchStart
+[2026-09-27T00:19:23.117] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.118] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.117] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.119] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.117] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.120] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.118] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.120] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.118] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.121] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.118] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.123] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.118] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.124] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.118] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.125] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.118] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.126] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.119] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.127] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.119] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.129] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.119] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.130] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.119] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.131] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.119] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.132] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.119] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.133] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.119] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.135] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.120] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.136] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.120] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.138] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.120] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.139] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.120] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.141] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.120] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.142] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.120] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.143] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.120] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.144] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.121] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.145] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.121] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.146] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.121] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.148] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.121] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.149] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.121] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.151] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.121] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.154] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.121] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.155] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.121] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.156] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.121] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.157] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.122] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.158] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.122] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.159] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.122] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:19:23.160] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:19:23.410] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchResult
+[2026-09-27T00:19:23.411] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchResult
+[2026-09-27T00:20:20.116] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchStart
+[2026-09-27T00:20:20.117] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchStart
+[2026-09-27T00:20:20.504] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.504] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.506] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.507] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.508] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.510] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.511] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.512] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.513] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.514] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.515] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.516] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.517] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.519] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.505] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.520] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.506] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.521] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.506] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.522] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.506] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.523] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.506] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.524] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.506] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.525] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.507] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.526] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.508] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.527] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.509] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.529] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.509] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.530] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.509] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.531] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.509] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.531] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.509] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.532] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.509] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.533] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.509] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.535] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.509] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.536] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.509] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.537] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.510] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.537] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.510] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.538] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.510] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.540] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.510] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.541] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.510] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchLog
+[2026-09-27T00:20:20.542] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchLog
+[2026-09-27T00:20:20.783] [DEBUG] debug-file - watch worker: send response to session manager. Response type: WatchResult
+[2026-09-27T00:20:20.784] [DEBUG] debug-file - session manager: watch message received from worker 1. Type: WatchResult
+[2026-09-27T00:21:43.242] [DEBUG] debug-file - env: nodejsVersion=v24.14.1
+[2026-09-27T00:21:43.462] [DEBUG] debug-file - Hvigor init with startParameters:{
+  hvigorfileTypeCheck: false,
+  parallelExecution: true,
+  incrementalExecution: true,
+  printStackTrace: false,
+  daemon: false,
+  analyze: 0,
+  logLevel: Level { level: 20000, levelStr: 'INFO', colour: 'green' },
+  optimizationStrategy: 'memory',
+  hotCompile: undefined,
+  hotReloadBuild: undefined,
+  customizedParam: undefined
+}
+[2026-09-27T00:21:44.678] [DEBUG] debug-file - hvigorfile, require result:  { default: { system: [Function: appTasks], plugins: [] } }
+[2026-09-27T00:21:44.680] [DEBUG] debug-file - Starting plugin build process
+[2026-09-27T00:21:44.804] [DEBUG] debug-file - App plugin register hook start...
+[2026-09-27T00:21:44.808] [DEBUG] debug-file - Obtain build option for product 'default'in this build.
+[2026-09-27T00:21:44.815] [DEBUG] debug-file - Start recording SDK configuration permission data.
+[2026-09-27T00:21:44.846] [DEBUG] debug-file - Project task initialization takes 5 ms 
+[2026-09-27T00:21:44.852] [DEBUG] debug-file - failed to load cangjie to dynamically generate schemas: Error: Cannot find module '@ohos/cangjie-build-support/index'
+Require stack:
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\src\plugin\hooks\cangjie-register.js
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\src\plugin\strategy\stage-init-strategy.js
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\src\plugin\builder\abstract-plugin-builder.js
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\src\plugin\builder\app-plugin-builder.js
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\src\plugin\factory\plugin-factory.js
+- F:\DevEco Studio\tools\hvigor\hvigor-ohos-plugin\index.js
+- F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\hvigorfile.ts
+- F:\DevEco Studio\tools\hvigor\hvigor\src\base\internal\lifecycle\configuration.js
+- F:\DevEco Studio\tools\hvigor\hvigor\src\base\boot\index.js
+- F:\DevEco Studio\tools\hvigor\hvigor\src\cli\main\cli.js
+- F:\DevEco Studio\tools\hvigor\hvigor\bin\hvigor.js
+[2026-09-27T00:21:44.857] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=release
+[2026-09-27T00:21:44.865] [DEBUG] debug-file - start to load updatedOhPackageInfo to the disk
+[2026-09-27T00:21:44.863] [DEBUG] debug-file - project has submodules:entry
+[2026-09-27T00:21:44.871] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-09-27T00:21:44.988] [DEBUG] debug-file - Executing task :entry:default@GenerateMetadata
+[2026-09-27T00:21:45.023] [DEBUG] debug-file - Executing task :entry:default@GeneratePkgContextInfo
+[2026-09-27T00:21:45.021] [DEBUG] debug-file - Executing task :entry:default@PreCheckSyscap
+[2026-09-27T00:21:45.035] [DEBUG] debug-file - Executing task :entry:default@ProcessIntegratedHsp
+[2026-09-27T00:21:45.018] [DEBUG] debug-file - Executing task :entry:default@CreateBuildProfile
+[2026-09-27T00:21:45.038] [DEBUG] debug-file - Executing task :entry:default@MakePackInfo
+[2026-09-27T00:21:45.036] [DEBUG] debug-file - Executing task :entry:default@BuildNativeWithCmake
+[2026-09-27T00:21:44.881] [DEBUG] debug-file - Executing task :entry:default@PreBuild
+[2026-09-27T00:21:45.040] [DEBUG] debug-file - Executing task :entry:default@SyscapTransform
+[2026-09-27T00:21:45.138] [DEBUG] debug-file - Executing task :entry:default@ProcessRouterMap
+[2026-09-27T00:21:45.143] [DEBUG] debug-file - Executing task :entry:default@ProcessShareConfig
+[2026-09-27T00:21:45.135] [DEBUG] debug-file - 12.0.2.0
+[2026-09-27T00:21:45.148] [DEBUG] debug-file - Executing task :entry:default@BuildNativeWithNinja
+[2026-09-27T00:21:45.050] [DEBUG] debug-file - Executing task :entry:default@ProcessProfile
+[2026-09-27T00:21:45.146] [DEBUG] debug-file - Executing task :entry:default@ProcessStartupConfig
+[2026-09-27T00:21:45.153] [DEBUG] debug-file - Executing task :entry:default@ProcessResource
+[2026-09-27T00:21:45.166] [DEBUG] debug-file - Executing task :entry:default@ProcessLibs
+[2026-09-27T00:21:45.169] [DEBUG] debug-file - Executing task :entry:default@CompileResource
+[2026-09-27T00:21:45.157] [DEBUG] debug-file - Executing task :entry:default@GenerateLoaderJson
+[2026-09-27T00:21:43.242] [DEBUG] debug-file - env: hvigor-config.json5 content = { modelVersion: '5.0.0', dependencies: {} }
+[2026-09-27T00:21:43.467] [DEBUG] debug-file - Cache service initialization finished in 4 ms 
+[2026-09-27T00:21:44.678] [DEBUG] debug-file - hvigorfile, binding system plugins [Function: appTasks]
+[2026-09-27T00:21:44.680] [DEBUG] debug-file - App plugin prepare start...
+[2026-09-27T00:21:44.804] [DEBUG] debug-file - App plugin register hook end...
+[2026-09-27T00:21:44.810] [DEBUG] debug-file - F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\build\cache\default\remote_hsp\remoteHspCache.json not exists.
+[2026-09-27T00:21:44.840] [DEBUG] debug-file - Sdk init in 30 ms 
+[2026-09-27T00:21:44.846] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-09-27T00:21:44.857] [DEBUG] debug-file - Target 'default' config initialized
+[2026-09-27T00:21:44.866] [DEBUG] debug-file - load to the disk finished
+[2026-09-27T00:21:44.873] [DEBUG] debug-file - Module entry Collected Dependency: 
+[2026-09-27T00:21:44.988] [DEBUG] debug-file - Task 'entry:default@GenerateMetadata' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.029] [DEBUG] debug-file - Task 'entry:default@GeneratePkgContextInfo' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.021] [DEBUG] debug-file - entry : default@PreCheckSyscap cost memory 0.02005767822265625
+[2026-09-27T00:21:45.035] [DEBUG] debug-file - entry:default@ProcessIntegratedHsp is not up-to-date, since the output file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\build\cache\default\integrated_hsp\integratedHspCache.json' does not exist.
+[2026-09-27T00:21:45.018] [DEBUG] debug-file - Task 'entry:default@CreateBuildProfile' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.039] [DEBUG] debug-file - Incremental task entry:default@MakePackInfo pre-execution cost: 1 ms .
+[2026-09-27T00:21:44.884] [DEBUG] debug-file - Task 'entry:default@PreBuild' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.040] [DEBUG] debug-file - File: 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\syscap.json' from 'sysCapJsonPath' is not exists, just ignore.
+[2026-09-27T00:21:45.037] [DEBUG] debug-file - entry : default@BuildNativeWithCmake cost memory 0.0186767578125
+[2026-09-27T00:21:45.140] [DEBUG] debug-file - entry:default@ProcessRouterMap is not up-to-date, since the task snapshots are different.
+[2026-09-27T00:21:45.144] [DEBUG] debug-file - entry:default@ProcessShareConfig is not up-to-date, since the task snapshots are different.
+[2026-09-27T00:21:45.135] [DEBUG] debug-file - No need to add fake ui ability because of not in preview process.
+[2026-09-27T00:21:45.148] [DEBUG] debug-file - entry : default@BuildNativeWithNinja cost memory 0.02538299560546875
+[2026-09-27T00:21:45.051] [DEBUG] debug-file - Task 'entry:default@ProcessProfile' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.146] [DEBUG] debug-file - Task 'entry:default@ProcessStartupConfig' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.153] [DEBUG] debug-file - Task 'entry:default@ProcessResource' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.166] [DEBUG] debug-file - Task 'entry:default@ProcessLibs' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.173] [DEBUG] debug-file - entry:default@CompileResource is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\resources' has been changed.
+[2026-09-27T00:21:45.157] [DEBUG] debug-file - Task 'entry:default@GenerateLoaderJson' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:43.243] [DEBUG] debug-file - env: daemon=false
+[2026-09-27T00:21:45.179] [DEBUG] debug-file - current process  memoryUsage: {
+  rss: 238583808,
+  heapTotal: 177217536,
+  heapUsed: 148353608,
+  external: 4000145,
+  arrayBuffers: 55973
+} os memoryUsage :18.80950927734375
+[2026-09-27T00:21:43.468] [DEBUG] debug-file - hvigorfile, resolving F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\hvigorfile.ts
+[2026-09-27T00:21:44.680] [DEBUG] debug-file - App plugin prepare end...
+[2026-09-27T00:21:44.804] [DEBUG] debug-file - Plugin build process completed
+[2026-09-27T00:21:44.811] [DEBUG] debug-file - Local scan or download HarmonyOS sdk components toolchains,ets,js,native,previewer
+[2026-09-27T00:21:44.846] [DEBUG] debug-file - hvigorfile, no custom plugins were found in F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\hvigorfile.ts
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-09-27T00:21:44.866] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-09-27T00:21:44.873] [DEBUG] debug-file - Module entry's total dependency: 0
+[2026-09-27T00:21:44.990] [DEBUG] debug-file - Incremental task entry:default@GenerateMetadata pre-execution cost: 1 ms .
+[2026-09-27T00:21:45.035] [DEBUG] debug-file - Incremental task entry:default@ProcessIntegratedHsp pre-execution cost: 1 ms .
+[2026-09-27T00:21:45.021] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 565 ms 
+[2026-09-27T00:21:45.019] [DEBUG] debug-file - entry:default@CreateBuildProfile is not up-to-date, since the task snapshots are different.
+[2026-09-27T00:21:44.888] [DEBUG] debug-file - entry:default@PreBuild is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\resources\base\profile\main_pages.json' has been changed.
+[2026-09-27T00:21:45.040] [DEBUG] debug-file - Task 'entry:default@SyscapTransform' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.037] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 581 ms 
+[2026-09-27T00:21:45.029] [DEBUG] debug-file - entry : default@GeneratePkgContextInfo cost memory 0.4208526611328125
+[2026-09-27T00:21:45.140] [DEBUG] debug-file - Incremental task entry:default@ProcessRouterMap pre-execution cost: 2 ms .
+[2026-09-27T00:21:45.039] [DEBUG] debug-file - entry : default@MakePackInfo cost memory 0.14536285400390625
+[2026-09-27T00:21:45.136] [DEBUG] debug-file - entry : default@ProcessProfile cost memory 1.7509307861328125
+[2026-09-27T00:21:45.148] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 692 ms 
+[2026-09-27T00:21:45.144] [DEBUG] debug-file - Incremental task entry:default@ProcessShareConfig pre-execution cost: 1 ms .
+[2026-09-27T00:21:45.146] [DEBUG] debug-file - entry:default@ProcessStartupConfig is not up-to-date, since the output file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\startup\default\startup_config.json' does not exist.
+[2026-09-27T00:21:45.051] [DEBUG] debug-file - entry:default@ProcessProfile is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\merge_profile\default\module.json' has been changed.
+[2026-09-27T00:21:45.154] [DEBUG] debug-file - Incremental task entry:default@ProcessResource pre-execution cost: 1 ms .
+[2026-09-27T00:21:45.167] [DEBUG] debug-file - Incremental task entry:default@ProcessLibs pre-execution cost: 1 ms .
+[2026-09-27T00:21:45.173] [DEBUG] debug-file - Incremental task entry:default@CompileResource pre-execution cost: 3 ms .
+[2026-09-27T00:21:45.161] [DEBUG] debug-file - entry:default@GenerateLoaderJson is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\router_map\default\temp-router-map.json' has been changed.
+[2026-09-27T00:21:43.243] [DEBUG] debug-file - no-daemon, use the parent process.execArgv --max-old-space-size=8192,--max-semi-space-size=16,--expose-gc
+[2026-09-27T00:21:44.680] [DEBUG] debug-file - App plugin creating...
+[2026-09-27T00:21:44.805] [DEBUG] debug-file - Start initialize project's product build option map with build mode debug.
+[2026-09-27T00:21:44.813] [DEBUG] debug-file - Local scan or download hmscore sdk components toolchains,ets,native
+[2026-09-27T00:21:44.846] [DEBUG] debug-file - hvigorfile, resolve finished F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\hvigorfile.ts
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-09-27T00:21:44.870] [DEBUG] debug-file - Module ohos Collected Dependency: 
+[2026-09-27T00:21:44.875] [DEBUG] debug-file - Configuration phase cost:1 s 408 ms 
+[2026-09-27T00:21:44.990] [DEBUG] debug-file - entry : default@GenerateMetadata cost memory 0.1254730224609375
+[2026-09-27T00:21:45.035] [DEBUG] debug-file - entry : default@ProcessIntegratedHsp cost memory 0.06908416748046875
+[2026-09-27T00:21:45.021] [INFO] debug-file - Finished :entry:default@PreCheckSyscap... after 1 ms 
+[2026-09-27T00:21:44.888] [DEBUG] debug-file - Incremental task entry:default@PreBuild pre-execution cost: 3 ms .
+[2026-09-27T00:21:45.019] [DEBUG] debug-file - Incremental task entry:default@CreateBuildProfile pre-execution cost: 1 ms .
+[2026-09-27T00:21:45.037] [INFO] debug-file - Finished :entry:default@BuildNativeWithCmake... after 1 ms 
+[2026-09-27T00:21:45.039] [INFO] debug-file - UP-TO-DATE :entry:default@MakePackInfo...  
+[2026-09-27T00:21:45.048] [DEBUG] debug-file - entry:default@SyscapTransform is not up-to-date, since the output file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\syscap\default\rpcid.sc' does not exist.
+[2026-09-27T00:21:45.136] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 680 ms 
+[2026-09-27T00:21:45.141] [DEBUG] debug-file - entry : default@ProcessRouterMap cost memory 0.15132904052734375
+[2026-09-27T00:21:45.148] [INFO] debug-file - Finished :entry:default@BuildNativeWithNinja... after 1 ms 
+[2026-09-27T00:21:45.144] [DEBUG] debug-file - entry : default@ProcessShareConfig cost memory 0.1187591552734375
+[2026-09-27T00:21:45.146] [DEBUG] debug-file - Incremental task entry:default@ProcessStartupConfig pre-execution cost: 1 ms .
+[2026-09-27T00:21:45.051] [DEBUG] debug-file - Incremental task entry:default@ProcessProfile pre-execution cost: 1 ms .
+[2026-09-27T00:21:45.154] [DEBUG] debug-file - entry : default@ProcessResource cost memory 0.1423797607421875
+[2026-09-27T00:21:45.167] [DEBUG] debug-file - entry : default@ProcessLibs cost memory 0.6716537475585938
+[2026-09-27T00:21:45.178] [DEBUG] debug-file - Use tool [F:\DevEco Studio\sdk\default\openharmony\toolchains\restool.exe]
+ [
+  'F:\\DevEco Studio\\sdk\\default\\openharmony\\toolchains\\restool.exe',
+  '-l',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\res\\default\\resConfig.json'
+]
+[2026-09-27T00:21:45.030] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 574 ms 
+[2026-09-27T00:21:45.161] [DEBUG] debug-file - Incremental task entry:default@GenerateLoaderJson pre-execution cost: 2 ms .
+[2026-09-27T00:21:44.805] [DEBUG] debug-file - Picking option from product 'default' with build mode 'debug'.
+[2026-09-27T00:21:44.846] [DEBUG] debug-file - hvigorfile, resolving F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\hvigorfile.ts
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=debug
+[2026-09-27T00:21:44.876] [DEBUG] debug-file - Configuration task cost before running: 1 s 420 ms 
+[2026-09-27T00:21:44.870] [DEBUG] debug-file - Module ohos's total dependency: 0
+[2026-09-27T00:21:44.990] [INFO] debug-file - UP-TO-DATE :entry:default@GenerateMetadata...  
+[2026-09-27T00:21:45.035] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 579 ms 
+[2026-09-27T00:21:44.981] [DEBUG] debug-file - current product is not Atomic service.
+[2026-09-27T00:21:45.020] [DEBUG] debug-file - entry : default@CreateBuildProfile cost memory 0.16411590576171875
+[2026-09-27T00:21:45.048] [DEBUG] debug-file - Incremental task entry:default@SyscapTransform pre-execution cost: 8 ms .
+[2026-09-27T00:21:45.136] [INFO] debug-file - Finished :entry:default@ProcessProfile... after 86 ms 
+[2026-09-27T00:21:45.141] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 685 ms 
+[2026-09-27T00:21:45.151] [DEBUG] debug-file - restool module names: entry; moduleName=entry, taskName=default@ProcessResource
+[2026-09-27T00:21:45.144] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 688 ms 
+[2026-09-27T00:21:45.147] [DEBUG] debug-file - entry : default@ProcessStartupConfig cost memory 0.099822998046875
+[2026-09-27T00:21:45.052] [DEBUG] debug-file - [
+  'F:\\DevEco Studio\\tools\\node\\node.exe',
+  'F:\\DevEco Studio\\sdk\\default\\openharmony\\ets\\build-tools\\ets-loader\\bin\\ark\\ts2abc.js',
+  '--target-api-version',
+  '12',
+  '--target-api-sub-version',
+  'beta1'
+]
+[2026-09-27T00:21:45.155] [INFO] debug-file - UP-TO-DATE :entry:default@ProcessResource...  
+[2026-09-27T00:21:45.167] [INFO] debug-file - UP-TO-DATE :entry:default@ProcessLibs...  
+[2026-09-27T00:21:45.030] [INFO] debug-file - Finished :entry:default@GeneratePkgContextInfo... after 7 ms 
+[2026-09-27T00:21:45.163] [DEBUG] debug-file - entry : default@GenerateLoaderJson cost memory 0.5937957763671875
+[2026-09-27T00:21:44.806] [DEBUG] debug-file - Product 'default' build option initialized
+[2026-09-27T00:21:44.850] [DEBUG] debug-file - hvigorfile, require result:  { default: { system: [Function: hapTasks], plugins: [] } }
+[2026-09-27T00:21:45.035] [INFO] debug-file - Finished :entry:default@ProcessIntegratedHsp... after 1 ms 
+[2026-09-27T00:21:44.990] [DEBUG] debug-file - Executing task :entry:default@ConfigureCmake
+[2026-09-27T00:21:44.981] [DEBUG] debug-file - Use tool [win32: JAVA_HOME, CLASSPATH]
+ [ { JAVA_HOME: undefined }, { CLASSPATH: undefined } ]
+[2026-09-27T00:21:45.020] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 564 ms 
+[2026-09-27T00:21:45.048] [DEBUG] debug-file - entry : default@SyscapTransform cost memory 0.13005828857421875
+[2026-09-27T00:21:45.142] [INFO] debug-file - Finished :entry:default@ProcessRouterMap... after 4 ms 
+[2026-09-27T00:21:45.145] [INFO] debug-file - Finished :entry:default@ProcessShareConfig... after 2 ms 
+[2026-09-27T00:21:45.147] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 691 ms 
+[2026-09-27T00:21:45.168] [DEBUG] debug-file - restool module names: entry; moduleName=entry, taskName=default@CompileResource
+[2026-09-27T00:21:45.030] [DEBUG] debug-file - Executing task :entry:default@GeneratePkgSdkInfo
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - Target 'default' config initialized
+[2026-09-27T00:21:45.163] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 707 ms 
+[2026-09-27T00:21:44.806] [DEBUG] debug-file - End initialize project's product build option map with build mode 'debug'.
+[2026-09-27T00:21:44.850] [DEBUG] debug-file - hvigorfile, binding system plugins [Function: hapTasks]
+[2026-09-27T00:21:44.991] [DEBUG] debug-file - entry : default@ConfigureCmake cost memory 0.01638031005859375
+[2026-09-27T00:21:44.981] [DEBUG] debug-file - Use tool [win32: NODE_HOME]
+ [ { NODE_HOME: undefined } ]
+[2026-09-27T00:21:45.020] [INFO] debug-file - Finished :entry:default@CreateBuildProfile... after 2 ms 
+[2026-09-27T00:21:45.048] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 593 ms 
+[2026-09-27T00:21:45.147] [INFO] debug-file - Finished :entry:default@ProcessStartupConfig... after 1 ms 
+[2026-09-27T00:21:45.032] [DEBUG] debug-file - Task 'entry:default@GeneratePkgSdkInfo' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-09-27T00:21:44.851] [DEBUG] debug-file - Starting plugin build process
+[2026-09-27T00:21:44.991] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 535 ms 
+[2026-09-27T00:21:45.165] [INFO] debug-file - Finished :entry:default@GenerateLoaderJson... after 7 ms 
+[2026-09-27T00:21:44.982] [DEBUG] debug-file - entry : default@PreBuild cost memory 4.090911865234375
+[2026-09-27T00:21:45.049] [INFO] debug-file - Finished :entry:default@SyscapTransform... after 9 ms 
+[2026-09-27T00:21:45.032] [DEBUG] debug-file - Incremental task entry:default@GeneratePkgSdkInfo pre-execution cost: 1 ms .
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-09-27T00:21:44.991] [INFO] debug-file - Finished :entry:default@ConfigureCmake... after 1 ms 
+[2026-09-27T00:21:44.851] [DEBUG] debug-file - Hap plugin creating...
+[2026-09-27T00:21:44.982] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 526 ms 
+[2026-09-27T00:21:45.032] [DEBUG] debug-file - entry : default@GeneratePkgSdkInfo cost memory 0.09375
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=debug
+[2026-09-27T00:21:44.991] [DEBUG] debug-file - Executing task :entry:default@MergeProfile
+[2026-09-27T00:21:44.984] [INFO] debug-file - Finished :entry:default@PreBuild... after 101 ms 
+[2026-09-27T00:21:45.032] [INFO] debug-file - UP-TO-DATE :entry:default@GeneratePkgSdkInfo...  
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - Target 'default' config initialized
+[2026-09-27T00:21:44.992] [DEBUG] debug-file - Task 'entry:default@MergeProfile' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-09-27T00:21:44.985] [DEBUG] debug-file - Executing task :entry:default@CreateModuleInfo
+[2026-09-27T00:21:44.993] [DEBUG] debug-file - entry:default@MergeProfile is not up-to-date, since the task snapshots are different.
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-09-27T00:21:44.985] [DEBUG] debug-file - Task 'entry:default@CreateModuleInfo' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:44.993] [DEBUG] debug-file - Incremental task entry:default@MergeProfile pre-execution cost: 2 ms .
+[2026-09-27T00:21:44.993] [DEBUG] debug-file - Change app api release type with 'Release'
+[2026-09-27T00:21:44.985] [DEBUG] debug-file - entry : default@CreateModuleInfo cost memory 0.05692291259765625
+[2026-09-27T00:21:44.858] [DEBUG] debug-file - Obtain build option for module 'entry' target 'default'in this build.
+[2026-09-27T00:21:44.993] [DEBUG] debug-file - Change app compile API version with '26.0.0.105'
+[2026-09-27T00:21:44.985] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 529 ms 
+[2026-09-27T00:21:44.862] [DEBUG] debug-file - Module entry task initialization takes 3 ms 
+[2026-09-27T00:21:44.993] [DEBUG] debug-file - Change app target API version with '260000026'
+[2026-09-27T00:21:44.985] [INFO] debug-file - Finished :entry:default@CreateModuleInfo... after 1 ms 
+[2026-09-27T00:21:44.862] [DEBUG] debug-file - Hap plugin register hook start...
+[2026-09-27T00:21:44.994] [DEBUG] debug-file - Change app minimum API version with '50000012'
+[2026-09-27T00:21:44.862] [DEBUG] debug-file - Hap plugin register hook end...
+[2026-09-27T00:21:44.994] [DEBUG] debug-file - Use cli appEnvironment
+[2026-09-27T00:21:44.862] [DEBUG] debug-file - Plugin build process completed
+[2026-09-27T00:21:45.015] [DEBUG] debug-file - entry : default@MergeProfile cost memory 7.450828552246094
+[2026-09-27T00:21:44.862] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-09-27T00:21:45.016] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 560 ms 
+[2026-09-27T00:21:44.862] [DEBUG] debug-file - hvigorfile, no custom plugins were found in F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\hvigorfile.ts
+[2026-09-27T00:21:45.016] [INFO] debug-file - Finished :entry:default@MergeProfile... after 25 ms 
+[2026-09-27T00:21:44.862] [DEBUG] debug-file - hvigorfile, resolve finished F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\hvigorfile.ts
+[2026-09-27T00:21:45.243] [DEBUG] debug-file - Info: Pack: normal pack mode
+
+[2026-09-27T00:21:45.291] [DEBUG] debug-file - Info: hardware concurrency count is : 20
+Info: thread count is : 20
+
+[2026-09-27T00:21:45.291] [DEBUG] debug-file - Info: thread pool is started
+
+[2026-09-27T00:21:45.292] [DEBUG] debug-file - Info: GenericCompiler::CompileFiles
+
+[2026-09-27T00:21:45.295] [DEBUG] debug-file - Info: GenericCompiler::CompileFiles
+
+[2026-09-27T00:21:45.295] [DEBUG] debug-file - Warning: 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\resources\base\media\app_icon.png' is defined repeatedly.
+
+[2026-09-27T00:21:45.298] [DEBUG] debug-file - Info: GenericCompiler::CompileFiles
+
+[2026-09-27T00:21:45.301] [DEBUG] debug-file - 09-27 00:21:45.301 47572 37196 I C01400/SvgDecodeUtils: SvgDecodeUtils::IsSvgFormat probe svg format, path:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\resources\base\media\app_icon.png.
+09-27 00:21:45.301 47572 37196 E C01400/ImageTranscoderUtils: DecodeToRGBA IN
+
+[2026-09-27T00:21:45.302] [DEBUG] debug-file - 09-27 00:21:45.301 47572 37196 I C01400/SvgDecodeUtils: SvgDecodeUtils::IsSvgFormat probe svg format, path:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\resources\base\media\app_icon.png.
+09-27 00:21:45.301 47572 37196 E C01400/ImageTranscoderUtils: ImageFilter IN F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\resources\base\media\app_icon.png
+
+[2026-09-27T00:21:45.302] [DEBUG] debug-file - 09-27 00:21:45.302 47572 37196 E C01400/ImageTranscoder: TranscodeSLR Only zoom-out is supported.
+Warning: ScaleImage failed, error message: INVALID_PARAMETERS, file path = F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\resources\base\media\app_icon.png
+
+[2026-09-27T00:21:45.303] [DEBUG] debug-file - Warning: The width or height of the png file referenced by the icon exceeds the limit (41 pixels)
+at F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\resources\base\media\app_icon.png
+
+[2026-09-27T00:21:45.304] [DEBUG] debug-file - Info: restool resources compile success.
+
+[2026-09-27T00:21:45.304] [DEBUG] debug-file - Info: thread pool is stopped
+
+[2026-09-27T00:21:45.372] [WARN] debug-file - Warning: 'start_window_background' conflict, first declared.
+at F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\resources\base\element\color.json
+but declared again.
+at F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\resources\base\element\color.json
+
+[2026-09-27T00:21:45.374] [DEBUG] debug-file - entry : default@CompileResource cost memory 3.2010116577148438
+[2026-09-27T00:21:45.376] [DEBUG] debug-file - Executing task :entry:default@DoNativeStrip
+[2026-09-27T00:21:45.378] [DEBUG] debug-file - Executing task :entry:default@CompileArkTS
+[2026-09-27T00:21:45.395] [DEBUG] debug-file - Create  resident worker with id: 0.
+[2026-09-27T00:21:45.402] [DEBUG] debug-file - Executing task :entry:default@BuildJS
+[2026-09-27T00:21:45.405] [DEBUG] debug-file - Executing task :entry:default@CacheNativeLibs
+[2026-09-27T00:21:45.374] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 918 ms 
+[2026-09-27T00:21:45.376] [DEBUG] debug-file - File: 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\binxo\default' from 'doBinxoNativeLibs' is not exists, just ignore.
+[2026-09-27T00:21:45.396] [DEBUG] debug-file - Create  resident worker with id: 1.
+[2026-09-27T00:21:45.379] [DEBUG] debug-file - obfuscationOptions: undefined
+[2026-09-27T00:21:45.406] [DEBUG] debug-file - File: 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\binxo\default' from 'cacheBinxoNativeLibs' is not exists, just ignore.
+[2026-09-27T00:21:45.402] [DEBUG] debug-file - Task 'entry:default@BuildJS' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.374] [INFO] debug-file - Finished :entry:default@CompileResource... after 205 ms 
+[2026-09-27T00:21:45.376] [DEBUG] debug-file - Task 'entry:default@DoNativeStrip' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - before submitting ArkTS compile task to worker pool, config.buildDir: F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build
+[2026-09-27T00:21:45.380] [DEBUG] debug-file - Task 'entry:default@CompileArkTS' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.406] [DEBUG] debug-file - Task 'entry:default@CacheNativeLibs' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:45.404] [DEBUG] debug-file - entry : default@BuildJS cost memory 0.1566162109375
+[2026-09-27T00:21:45.376] [DEBUG] debug-file - Incremental task entry:default@DoNativeStrip pre-execution cost: 1 ms .
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - default@CompileArkTS work[0] is submitted.
+[2026-09-27T00:21:45.384] [DEBUG] debug-file - entry:default@CompileArkTS is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader\default' has been changed.
+[2026-09-27T00:21:45.407] [DEBUG] debug-file - Incremental task entry:default@CacheNativeLibs pre-execution cost: 1 ms .
+[2026-09-27T00:21:45.404] [DEBUG] debug-file - runTaskFromQueue task cost before running: 1 s 948 ms 
+[2026-09-27T00:21:45.377] [DEBUG] debug-file - entry : default@DoNativeStrip cost memory 0.08152008056640625
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - default@CompileArkTS work[0] is pushed to ready queue.
+[2026-09-27T00:21:45.384] [DEBUG] debug-file - Incremental task entry:default@CompileArkTS pre-execution cost: 2 ms .
+[2026-09-27T00:21:45.407] [DEBUG] debug-file - entry : default@CacheNativeLibs cost memory 0.104827880859375
+[2026-09-27T00:21:45.404] [INFO] debug-file - Finished :entry:default@BuildJS... after 2 ms 
+[2026-09-27T00:21:45.377] [INFO] debug-file - UP-TO-DATE :entry:default@DoNativeStrip...  
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[19] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.393] [DEBUG] debug-file - build config:
+[2026-09-27T00:21:45.407] [INFO] debug-file - UP-TO-DATE :entry:default@CacheNativeLibs...  
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[18] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.393] [DEBUG] debug-file - {
+  moduleType: 'entry',
+  perf: 0,
+  targetName: '.default',
+  packageManagerType: 'ohpm',
+  localPropertiesPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\local.properties',
+  isPreview: false,
+  isOhosTest: false,
+  isLocalTest: false,
+  buildMode: 'Debug',
+  hotReloadBuild: undefined,
+  watchMode: 'false',
+  aceProfilePath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\res\\default\\resources\\base\\profile',
+  etsLoaderPath: 'F:\\DevEco Studio\\sdk\\default\\openharmony\\ets\\build-tools\\ets-loader',
+  modulePath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry',
+  testFrameworkPar: {
+    testMode: undefined,
+    coveragePathFilter: undefined,
+    coverageMode: undefined
+  },
+  needCoverageInsert: false,
+  debugLine: false,
+  projectTopDir: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos',
+  compileSdkVersion: 26,
+  compatibleSdkVersion: 12,
+  originCompatibleSdkVersion: '5.0.0(12)',
+  compatibleSdkVersionStage: 'beta1',
+  bundleName: 'c***y',
+  etsLoaderVersion: '26.0.0.105',
+  etsLoaderReleaseType: 'Release',
+  aotCompileMode: 'type',
+  apPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\modules.ap',
+  entryModuleName: 'entry',
+  entryModuleVersion: '1.0.0',
+  entryPackageName: 'entry',
+  allModuleNameHash: 'c7c75bee3dedd9a83725cc5bf1ce7a588416c95f027b81b9cd778eed34de8ccc',
+  externalApiPaths: [ 'F:\\DevEco Studio\\sdk\\default\\hms\\ets' ],
+  compilerTypes: [],
+  isCrossplatform: false,
+  hvigorPluginFile: undefined,
+  compilePluginPath: undefined,
+  buildGeneratedProfilePath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\generated\\profile\\default',
+  bundleType: 'app',
+  arkTSVersion: undefined,
+  apiVersion: 26,
+  needCompleteSourcesMap: false,
+  isFaMode: false,
+  buildDir: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build',
+  buildCacheProjectDir: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos',
+  deviceTypes: [ 'phone', 'tablet', '2in1' ],
+  pkgContextInfo: undefined,
+  ohPackagePathMap: {},
+  dependencyAliasMap: {},
+  permission: {
+    requestPermissions: [ [Object], [Object], [Object], [Object], [Object] ],
+    definePermissions: undefined
+  },
+  useGetCurrentBundleName: false,
+  projectArkOption: undefined,
+  sourceMapDir: undefined,
+  branchElimination: false,
+  transformLib: undefined,
+  tsImportSendable: false,
+  resolveConflictMode: true,
+  depName2RootPath: {},
+  depName2DepInfo: {},
+  depName2OhExports: {},
+  rootPathSet: [
+    'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos'
+  ],
+  useNativeResolver: true,
+  shouldEmitJs: true,
+  useUnifiedAst: false,
+  useTscResolve: false,
+  singleFileEmit: false,
+  userProjectConfig: {
+    autoLazyImport: false,
+    allowEmptyBundleName: false,
+    reExportCheckMode: 'noCheck',
+    executionMode: 'memory',
+    usePathPlaceholder: false,
+    writeRollupCache: true,
+    isExpandImportEnabled: false,
+    expandImportExclude: '',
+    lazyImportExclude: '',
+    lazyImportInclude: '',
+    ignoreCrossplatformCheck: false,
+    isHarDeduplicateEnabled: false,
+    skipOhModulesLint: false,
+    enableStrictCheckOHModule: false,
+    disableSendableCheckRules: [],
+    useDeclarationFileSignature: false,
+    customizedOptions: undefined,
+    integratedHsp: false,
+    tsImportSoCheck: false,
+    isPreloadSoEnabled: false
+  },
+  executionMode: 'memory',
+  arkCompileCachePath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\cache\\default\\default@CompileArkTS\\esmodule',
+  autoLazyFilter: undefined,
+  isHarDeduplicateEnabled: false,
+  intermediateHarDuplicateDirPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\har_duplicate\\default',
+  autoLazyImport: false,
+  allowEmptyBundleName: false,
+  reExportCheckMode: 'noCheck',
+  usePathPlaceholder: false,
+  writeRollupCache: true,
+  isExpandImportEnabled: false,
+  expandImportExclude: '',
+  lazyImportExclude: '',
+  lazyImportInclude: '',
+  ignoreCrossplatformCheck: false,
+  skipOhModulesLint: false,
+  enableStrictCheckOHModule: false,
+  disableSendableCheckRules: [],
+  useDeclarationFileSignature: false,
+  customizedOptions: undefined,
+  integratedHsp: false,
+  tsImportSoCheck: false,
+  isPreloadSoEnabled: false,
+  strictMode: { caseSensitiveCheck: true },
+  useNormalizedOHMUrl: false,
+  caseSensitiveCheck: true,
+  strictCheckerOnly: false,
+  aceModuleJsonPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\res\\default\\ark_module.json',
+  appResource: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\res\\default\\ResourceTable.txt',
+  rawFileResource: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\res\\default\\resources\\rawfile',
+  resourceTableHash: 'aa052d2ef3cfe5791bcc0daeecae47111825f8849102b4966d84d69d73bf6c1e',
+  runtimeOS: 'HarmonyOS',
+  sdkInfo: 'false:26:26.0.0.105:Release',
+  aceModuleRoot: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\src\\main\\ets',
+  compileMode: 'esmodule',
+  aceSuperVisualPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\src\\main\\supervisual',
+  aceBuildJson: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\loader\\default\\loader.json',
+  cachePath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\cache\\default\\default@CompileArkTS\\esmodule\\debug',
+  aceModuleBuild: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\loader_out\\default\\ets',
+  supportChunks: true,
+  declaredFilesPath: undefined,
+  shouldCollectDirectImportees: false,
+  isByteCodeHarOptimize: false,
+  expandImportPath: undefined,
+  resourceTableTs: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\generated\\r\\default\\ResourceTable.ts',
+  moduleMetaInfoFiles: [
+    {
+      filePath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\generated\\r\\default\\ResourceTable.ts',
+      ohmurl: 'com.picacomic.harmony/entry/build/generated/r/ResourceTable'
+    }
+  ],
+  pkgNameToPkgBriefInfo: {
+    entry: {
+      pkgRoot: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry',
+      originalSourceRoots: undefined,
+      sourceRoots: [Array],
+      pkgName: 'entry'
+    }
+  },
+  projectModel: {
+    'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\src\\main': {
+      moduleName: 'entry',
+      modulePkgPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry',
+      belongProjectPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos'
+    },
+    'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry': {
+      moduleName: 'entry',
+      modulePkgPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry',
+      belongProjectPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos'
+    },
+    'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos': {
+      moduleName: 'ohos',
+      modulePkgPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos',
+      belongProjectPath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos'
+    }
+  },
+  pkgJsonFileHash: '0371deda54d2eb1af4fd159364bcb6513ba15d14ee908ed2d815ab694b5db363',
+  allModulePaths: [
+    'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry'
+  ],
+  routerMap: {},
+  obfuscationOptions: undefined,
+  byteCodeHarToDependencyKeys: undefined,
+  compileBlockPkg: [],
+  mockParams: {
+    decorator: '@MockSetup',
+    packageName: '@ohos/hamock',
+    etsSourceRootPath: 'src/main/ets',
+    mockConfigPath: undefined,
+    mockConfigKey2ModuleInfo: {},
+    source2ModuleIdMap: {}
+  },
+  copyCodeResourceEnable: true,
+  copyCodeResourceExcludes: [],
+  copyCodeResourceIncludes: undefined,
+  uiTransformOptimization: false,
+  sdkPath: 'F:/DevEco Studio/sdk',
+  needPreloadSoFileSet: {},
+  preloadSoFilePath: 'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\preload\\default\\preload.json',
+  useSourceHash: false,
+  localModuleParamMap: {},
+  otherPaths: {
+    'entry/*': [
+      '..\\*',
+      '..\\..\\..\\build\\default\\generated\\profile\\default\\*'
+    ]
+  },
+  collectImportersConfig: undefined
+}
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[17] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[16] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.394] [DEBUG] debug-file - Compile arkts with external api path: F:\DevEco Studio\sdk\default\hms\ets
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[15] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.394] [DEBUG] debug-file - Since there is no instance or instance is terminated, create a new worker pool.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[14] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.394] [DEBUG] debug-file - Worker pool is initialized with config:  {
+  minPoolNum: 2,
+  maxPoolNum: undefined,
+  maxCoreSize: undefined,
+  cacheCapacity: undefined,
+  cacheTtl: undefined
+}
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[13] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[12] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[11] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[10] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[9] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[8] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[7] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[6] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - A work dispatched to worker[5] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.398] [DEBUG] debug-file - Create  resident worker with id: 4.
+[2026-09-27T00:21:45.399] [DEBUG] debug-file - default@CompileArkTS work[0] has been dispatched to worker[4].
+[2026-09-27T00:21:45.399] [DEBUG] debug-file - default@CompileArkTS work[0] is dispatched.
+[2026-09-27T00:21:45.400] [DEBUG] debug-file - CopyResources startTime: 197910806435700
+[2026-09-27T00:21:45.400] [DEBUG] debug-file - default@CompileArkTS work[1] is submitted.
+[2026-09-27T00:21:45.400] [DEBUG] debug-file - default@CompileArkTS work[1] is pushed to ready queue.
+[2026-09-27T00:21:45.400] [DEBUG] debug-file - A work dispatched to worker[19] failed because unable to get work from ready queue.
+[2026-09-27T00:21:45.400] [DEBUG] debug-file - Create  resident worker with id: 18.
+[2026-09-27T00:21:45.400] [DEBUG] debug-file - default@CompileArkTS work[1] has been dispatched to worker[18].
+[2026-09-27T00:21:45.400] [DEBUG] debug-file - default@CompileArkTS work[1] is dispatched.
+[2026-09-27T00:21:45.401] [DEBUG] debug-file - entry : default@CompileArkTS cost memory 2.1323318481445312
+[2026-09-27T00:21:45.949] [DEBUG] debug-file - worker[18] has one work done.
+[2026-09-27T00:21:45.949] [DEBUG] debug-file - CopyResources is end, endTime: 197911356357700
+[2026-09-27T00:21:45.950] [DEBUG] debug-file - default@CompileArkTS work[1] done.
+[2026-09-27T00:21:45.950] [DEBUG] debug-file - A work dispatched to worker[18] failed because unable to get work from ready queue.
+[2026-09-27T00:21:49.820] [WARN] debug-file - [33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/MainPage.ets:188:88
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/MainPage.ets:189:88
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/MainPage.ets:192:69
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/MainPage.ets:237:38
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/MainPage.ets:237:38
+ Function may throw exceptions. Special handling is required.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/components/SearchBar.ets:9:54
+ The system capacity of this api 'TextInputController' is not supported on all devices
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/SearchPage.ets:22:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/HistoryPage.ets:17:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/FavoritesPage.ets:15:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/DownloadPage.ets:15:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/ComicDetailPage.ets:15:27
+ 'getParams' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/ComicDetailPage.ets:31:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/reader/ReaderPage.ets:15:27
+ 'getParams' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/reader/ReaderPage.ets:61:39
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/SettingsPage.ets:19:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/SettingsPage.ets:43:20
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/SettingsPage.ets:74:20
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/SettingsPage.ets:77:20
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/SettingsPage.ets:92:20
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/AboutPage.ets:16:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/JmSettings.ets:33:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/HtSettings.ets:28:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/ReadingSettings.ets:40:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/ExploreSettings.ets:29:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/AppSettings.ets:18:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/settings/NetworkSettings.ets:20:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/nhentai/NhHome.ets:25:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/nhentai/NhHome.ets:69:22
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/hitomi/HitomiHome.ets:25:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/hitomi/HitomiHome.ets:69:22
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/picacg/PicacgHome.ets:25:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/picacg/PicacgHome.ets:69:22
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/ehentai/EhHome.ets:25:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/ehentai/EhHome.ets:69:22
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/jm/JmHome.ets:25:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/jm/JmHome.ets:69:22
+ 'pushUrl' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/htcomic/HtHome.ets:25:35
+ 'back' has been deprecated.
+[39m[39m
+[33mWARN: [33m[33mArkTS:WARN File: F:/Programming/Code/VS_Code/ArkTS/PicaComic-HarmonyOS/ohos/entry/src/main/ets/pages/htcomic/HtHome.ets:69:22
+ 'pushUrl' has been deprecated.
+[39m[39m
+
+[2026-09-27T00:21:49.821] [DEBUG] debug-file - Ark compile task finished.finished time is 197915227500400
+[2026-09-27T00:21:49.821] [DEBUG] debug-file - worker[4] has one work done.
+[2026-09-27T00:21:49.822] [DEBUG] debug-file - default@CompileArkTS work[0] done.
+[2026-09-27T00:21:49.833] [DEBUG] debug-file - default@PackageHap work[2] is submitted.
+[2026-09-27T00:21:49.822] [DEBUG] debug-file - A work dispatched to worker[4] failed because unable to get work from ready queue.
+[2026-09-27T00:21:49.829] [DEBUG] debug-file - Executing task :entry:default@PackageHap
+[2026-09-27T00:21:49.833] [DEBUG] debug-file - default@PackageHap work[2] is pushed to ready queue.
+[2026-09-27T00:21:49.823] [INFO] debug-file - Finished :entry:default@CompileArkTS... after 3 s 18 ms 
+[2026-09-27T00:21:49.831] [DEBUG] debug-file - entry:default@PackageHap is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\module.json' has been changed.
+[2026-09-27T00:21:49.833] [DEBUG] debug-file - A work dispatched to worker[19] failed because unable to get work from ready queue.
+[2026-09-27T00:21:49.824] [DEBUG] debug-file - Executing task :entry:default@GeneratePkgModuleJson
+[2026-09-27T00:21:49.831] [DEBUG] debug-file - Incremental task entry:default@PackageHap pre-execution cost: 2 ms .
+[2026-09-27T00:21:49.833] [DEBUG] debug-file - default@PackageHap work[2] has been dispatched to worker[18].
+[2026-09-27T00:21:49.833] [DEBUG] debug-file - default@PackageHap work[2] is dispatched.
+[2026-09-27T00:21:49.832] [DEBUG] debug-file - Use tool [F:\DevEco Studio\sdk\default\openharmony\toolchains\lib\app_packing_tool.jar]
+ [
+  'java',
+  '-Dfile.encoding=GBK',
+  '-jar',
+  'F:\\DevEco Studio\\sdk\\default\\openharmony\\toolchains\\lib\\app_packing_tool.jar',
+  '--mode',
+  'hap',
+  '--force',
+  'true',
+  '--lib-path',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\stripped_native_libs\\default',
+  '--json-path',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\package\\default\\module.json',
+  '--resources-path',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\res\\default\\resources',
+  '--index-path',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\res\\default\\resources.index',
+  '--pack-info-path',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\outputs\\default\\pack.info',
+  '--out-path',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\outputs\\default\\entry-default-unsigned.hap',
+  '--ets-path',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\loader_out\\default\\ets',
+  '--pkg-sdk-info-path',
+  'F:\\Programming\\Code\\VS_Code\\ArkTS\\PicaComic-HarmonyOS\\ohos\\entry\\build\\default\\intermediates\\loader\\default\\pkgSdkInfo.json'
+]
+[2026-09-27T00:21:49.824] [DEBUG] debug-file - File: 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\preload\default\preload.json' from 'preloadSoJsonPath' is not exists, just ignore.
+[2026-09-27T00:21:49.834] [DEBUG] debug-file - entry : default@PackageHap cost memory 0.42771148681640625
+[2026-09-27T00:21:49.824] [DEBUG] debug-file - Error occurs while handling @Input 'shouldDeduplicateHar': The "data" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received undefined
+[2026-09-27T00:21:49.824] [DEBUG] debug-file - Task 'entry:default@GeneratePkgModuleJson' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:49.825] [DEBUG] debug-file - entry:default@GeneratePkgModuleJson is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\module.json' has been changed.
+[2026-09-27T00:21:49.825] [DEBUG] debug-file - Incremental task entry:default@GeneratePkgModuleJson pre-execution cost: 1 ms .
+[2026-09-27T00:21:49.826] [DEBUG] debug-file - entry : default@GeneratePkgModuleJson cost memory 0.17132568359375
+[2026-09-27T00:21:49.826] [DEBUG] debug-file - runTaskFromQueue task cost before running: 6 s 370 ms 
+[2026-09-27T00:21:49.826] [INFO] debug-file - Finished :entry:default@GeneratePkgModuleJson... after 2 ms 
+[2026-09-27T00:21:49.826] [DEBUG] debug-file - Executing task :entry:default@ProcessCompiledResources
+[2026-09-27T00:21:49.826] [DEBUG] debug-file - File: 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\preload\default\preload.json' from 'preloadSoJsonPath' is not exists, just ignore.
+[2026-09-27T00:21:49.826] [DEBUG] debug-file - Task 'entry:default@ProcessCompiledResources' cost while wrapping incremental declarations: 1 ms 
+[2026-09-27T00:21:49.827] [DEBUG] debug-file - entry : default@ProcessCompiledResources cost memory 0.05487060546875
+[2026-09-27T00:21:49.827] [DEBUG] debug-file - runTaskFromQueue task cost before running: 6 s 371 ms 
+[2026-09-27T00:21:49.827] [INFO] debug-file - Finished :entry:default@ProcessCompiledResources... after 1 ms 
+[2026-09-27T00:21:49.959] [DEBUG] debug-file - current process  memoryUsage: {
+  rss: 777265152,
+  heapTotal: 80166912,
+  heapUsed: 54017592,
+  external: 3960113,
+  arrayBuffers: 18671
+} os memoryUsage :19.237903594970703
+[2026-09-27T00:21:50.448] [DEBUG] debug-file - worker[18] has one work done.
+[2026-09-27T00:21:50.448] [DEBUG] debug-file - default@PackageHap work[2] done.
+[2026-09-27T00:21:50.450] [DEBUG] debug-file - Executing task :entry:default@PackingCheck
+[2026-09-27T00:21:50.456] [DEBUG] debug-file - Executing task :entry:default@SignHap
+[2026-09-27T00:21:50.465] [DEBUG] debug-file - current process  memoryUsage: {
+  rss: 777920512,
+  heapTotal: 178003968,
+  heapUsed: 157292224,
+  external: 4059139,
+  arrayBuffers: 114935
+} os memoryUsage :19.262134552001953
+[2026-09-27T00:21:50.448] [DEBUG] debug-file - A work dispatched to worker[18] failed because unable to get work from ready queue.
+[2026-09-27T00:21:50.454] [DEBUG] debug-file - entry : default@PackingCheck cost memory 0.5464401245117188
+[2026-09-27T00:21:50.457] [DEBUG] debug-file - entry:default@SignHap is not up-to-date, since the input file 'F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\outputs\default\entry-default-unsigned.hap' has been changed.
+[2026-09-27T00:21:50.449] [INFO] debug-file - Finished :entry:default@PackageHap... after 498 ms 
+[2026-09-27T00:21:50.454] [DEBUG] debug-file - runTaskFromQueue task cost before running: 6 s 998 ms 
+[2026-09-27T00:21:50.457] [DEBUG] debug-file - Incremental task entry:default@SignHap pre-execution cost: 1 ms .
+[2026-09-27T00:21:50.455] [INFO] debug-file - Finished :entry:default@PackingCheck... after 5 ms 
+[2026-09-27T00:21:50.926] [DEBUG] debug-file - 09-27 00:21:50.925  INFO - Start verify-profile
+
+[2026-09-27T00:21:51.104] [DEBUG] debug-file - 09-27 00:21:51.104  INFO - verify-profile success
+
+[2026-09-27T00:21:51.124] [DEBUG] debug-file - current process  memoryUsage: {
+  rss: 776699904,
+  heapTotal: 177295360,
+  heapUsed: 119732416,
+  external: 3984061,
+  arrayBuffers: 39889
+} os memoryUsage :19.21175765991211
+[2026-09-27T00:21:51.576] [DEBUG] debug-file - 09-27 00:21:51.576  INFO - Start sign-app
+
+[2026-09-27T00:21:51.723] [DEBUG] debug-file - 09-27 00:21:51.723  INFO - certificate in profile: 王李超(1728971825909633025)\,Development
+
+[2026-09-27T00:21:51.801] [DEBUG] debug-file - 09-27 00:21:51.800  INFO - Start to sign code.
+
+[2026-09-27T00:21:51.805] [DEBUG] debug-file - 09-27 00:21:51.805  INFO - profile type is: debug
+
+[2026-09-27T00:21:51.816] [DEBUG] debug-file - 09-27 00:21:51.815  INFO - C:\Users\29582\.ohos\config\default_ohos_gXiST2b6dB_bPpWjMZnmvA_rV7uldDvpJHara92vx6k=.p12 is exist. Try to load it with given passwd
+
+[2026-09-27T00:21:52.790] [DEBUG] debug-file - 09-27 00:21:52.790  INFO - Create a sign info successfully.
+
+[2026-09-27T00:21:52.800] [DEBUG] debug-file - 09-27 00:21:52.799  INFO - Create a sign info successfully.
+
+[2026-09-27T00:21:52.803] [DEBUG] debug-file - 09-27 00:21:52.803  INFO - No native libs.
+
+[2026-09-27T00:21:52.804] [DEBUG] debug-file - 09-27 00:21:52.804  INFO - Sign successfully.
+
+[2026-09-27T00:21:52.804] [DEBUG] debug-file - 09-27 00:21:52.804  INFO - Start permission signing.
+
+[2026-09-27T00:21:52.817] [DEBUG] debug-file - 09-27 00:21:52.816  INFO - Add sign data in sign info list success.
+
+[2026-09-27T00:21:52.820] [DEBUG] debug-file - 09-27 00:21:52.819  INFO - Generate signing block success, begin write it to output file
+
+[2026-09-27T00:21:52.821] [DEBUG] debug-file - 09-27 00:21:52.820  INFO - Sign Hap success!
+
+[2026-09-27T00:21:52.821] [DEBUG] debug-file - 09-27 00:21:52.820  INFO - sign-app success
+
+[2026-09-27T00:21:52.850] [DEBUG] debug-file - entry : default@SignHap cost memory -35.161094665527344
+[2026-09-27T00:21:52.850] [DEBUG] debug-file - runTaskFromQueue task cost before running: 9 s 394 ms 
+[2026-09-27T00:21:52.852] [DEBUG] debug-file - Executing task :entry:default@CollectDebugSymbol
+[2026-09-27T00:21:52.851] [INFO] debug-file - Finished :entry:default@SignHap... after 2 s 395 ms 
+[2026-09-27T00:21:52.853] [DEBUG] debug-file - entry : default@CollectDebugSymbol cost memory 0.09349822998046875
+[2026-09-27T00:21:52.853] [DEBUG] debug-file - runTaskFromQueue task cost before running: 9 s 397 ms 
+[2026-09-27T00:21:52.853] [INFO] debug-file - Finished :entry:default@CollectDebugSymbol... after 2 ms 
+[2026-09-27T00:21:52.854] [DEBUG] debug-file - Executing task :entry:assembleHap
+[2026-09-27T00:21:52.854] [DEBUG] debug-file - entry : assembleHap cost memory 0.01318359375
+[2026-09-27T00:21:52.854] [DEBUG] debug-file - runTaskFromQueue task cost before running: 9 s 398 ms 
+[2026-09-27T00:21:52.854] [INFO] debug-file - Finished :entry:assembleHap... after 1 ms 
+[2026-09-27T00:21:52.855] [INFO] debug-file - BUILD SUCCESSFUL in 9 s 399 ms 
+[2026-09-27T00:21:52.856] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\app.json5 cache by regenerate.
+[2026-09-27T00:21:52.856] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\module.json5 cache by regenerate.
+[2026-09-27T00:21:52.856] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\build-profile.json5 cache by regenerate.
+[2026-09-27T00:21:52.856] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build-profile.json5 cache by regenerate.
+[2026-09-27T00:21:52.856] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\resources\base\profile\main_pages.json cache from map.
+[2026-09-27T00:21:52.856] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\hvigor\hvigor-config.json5 cache by regenerate.
+[2026-09-27T00:21:52.856] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\oh-package.json5 cache by regenerate.
+[2026-09-27T00:21:52.856] [DEBUG] debug-file - Update task entry:default@PreBuild input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\oh-package.json5 cache by regenerate.
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - Incremental task entry:default@PreBuild post-execution cost:2 ms .
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - Update task entry:default@CreateModuleInfo output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\generated\profile\default\ModuleInfo.ts cache.
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - Incremental task entry:default@CreateModuleInfo post-execution cost:1 ms .
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - There is no need to refresh cache, since the incremental task entry:default@GenerateMetadata is up-to-date.
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - Update task entry:default@MergeProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\app.json5 cache by regenerate.
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - Update task entry:default@MergeProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\build-profile.json5 cache by regenerate.
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - Update task entry:default@MergeProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\module.json5 cache by regenerate.
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - Update task entry:default@MergeProfile output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\merge_profile\default\module.json cache.
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - Incremental task entry:default@MergeProfile post-execution cost:1 ms .
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - Update task entry:default@CreateBuildProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\app.json5 cache by regenerate.
+[2026-09-27T00:21:52.857] [DEBUG] debug-file - Update task entry:default@CreateBuildProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\build-profile.json5 cache by regenerate.
+[2026-09-27T00:21:52.858] [DEBUG] debug-file - Update task entry:default@CreateBuildProfile output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\generated\profile\default\BuildProfile.ets cache.
+[2026-09-27T00:21:52.858] [DEBUG] debug-file - Incremental task entry:default@CreateBuildProfile post-execution cost:1 ms .
+[2026-09-27T00:21:52.858] [DEBUG] debug-file - Update task entry:default@GeneratePkgContextInfo output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader\default\pkgContextInfo.json cache.
+[2026-09-27T00:21:52.858] [DEBUG] debug-file - Incremental task entry:default@GeneratePkgContextInfo post-execution cost:1 ms .
+[2026-09-27T00:21:52.858] [DEBUG] debug-file - There is no need to refresh cache, since the incremental task entry:default@GeneratePkgSdkInfo is up-to-date.
+[2026-09-27T00:21:52.858] [DEBUG] debug-file - Update task entry:default@ProcessIntegratedHsp output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\build\cache\default\integrated_hsp\integratedHspCache.json cache.
+[2026-09-27T00:21:52.858] [DEBUG] debug-file - Incremental task entry:default@ProcessIntegratedHsp post-execution cost:1 ms .
+[2026-09-27T00:21:52.858] [DEBUG] debug-file - There is no need to refresh cache, since the incremental task entry:default@MakePackInfo is up-to-date.
+[2026-09-27T00:21:52.858] [DEBUG] debug-file - Update task entry:default@SyscapTransform input file:F:\DevEco Studio\sdk\default\openharmony\toolchains\syscap_tool.exe cache by regenerate.
+[2026-09-27T00:21:52.858] [DEBUG] debug-file - Update task entry:default@SyscapTransform input file:F:\DevEco Studio\sdk\default\openharmony\ets\api\device-define cache by regenerate.
+[2026-09-27T00:21:52.859] [DEBUG] debug-file - Update task entry:default@SyscapTransform output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\syscap\default\rpcid.sc cache.
+[2026-09-27T00:21:52.859] [DEBUG] debug-file - Incremental task entry:default@SyscapTransform post-execution cost:2 ms .
+[2026-09-27T00:21:52.859] [DEBUG] debug-file - Update task entry:default@ProcessProfile input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\merge_profile\default\module.json cache from map.
+[2026-09-27T00:21:52.859] [DEBUG] debug-file - Update task entry:default@ProcessProfile output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\process_profile\default\module.json cache.
+[2026-09-27T00:21:52.859] [DEBUG] debug-file - Incremental task entry:default@ProcessProfile post-execution cost:1 ms .
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Update task entry:default@ProcessRouterMap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\oh-package.json5 cache by regenerate.
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Update task entry:default@ProcessRouterMap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\oh-package.json5 cache by regenerate.
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Update task entry:default@ProcessRouterMap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\module.json5 cache by regenerate.
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Update task entry:default@ProcessRouterMap output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\router_map\default\temp-router-map.json cache.
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Update task entry:default@ProcessRouterMap output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\router_map\default\loader-router-map.json cache.
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Incremental task entry:default@ProcessRouterMap post-execution cost:1 ms .
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Update task entry:default@ProcessShareConfig input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\oh-package.json5 cache by regenerate.
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Update task entry:default@ProcessShareConfig input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\oh-package.json5 cache by regenerate.
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Update task entry:default@ProcessShareConfig input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\module.json5 cache by regenerate.
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Update task entry:default@ProcessShareConfig output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\share_config\default\temp-share-config.json cache.
+[2026-09-27T00:21:52.860] [DEBUG] debug-file - Incremental task entry:default@ProcessShareConfig post-execution cost:1 ms .
+[2026-09-27T00:21:52.861] [DEBUG] debug-file - Update task entry:default@ProcessStartupConfig output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\startup\default\startup_config.json cache.
+[2026-09-27T00:21:52.861] [DEBUG] debug-file - Incremental task entry:default@ProcessStartupConfig post-execution cost:1 ms .
+[2026-09-27T00:21:52.861] [DEBUG] debug-file - There is no need to refresh cache, since the incremental task entry:default@ProcessResource is up-to-date.
+[2026-09-27T00:21:52.861] [DEBUG] debug-file - Update task entry:default@GenerateLoaderJson input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\router_map\default\temp-router-map.json cache from map.
+[2026-09-27T00:21:52.861] [DEBUG] debug-file - Update task entry:default@GenerateLoaderJson output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader\default\loader.json cache.
+[2026-09-27T00:21:52.861] [DEBUG] debug-file - Incremental task entry:default@GenerateLoaderJson post-execution cost:1 ms .
+[2026-09-27T00:21:52.861] [DEBUG] debug-file - There is no need to refresh cache, since the incremental task entry:default@ProcessLibs is up-to-date.
+[2026-09-27T00:21:52.862] [DEBUG] debug-file - Update task entry:default@CompileResource input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\resources cache from map.
+[2026-09-27T00:21:52.862] [DEBUG] debug-file - Update task entry:default@CompileResource input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\AppScope\resources cache by regenerate.
+[2026-09-27T00:21:52.862] [DEBUG] debug-file - Update task entry:default@CompileResource input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\process_profile\default\module.json cache by regenerate.
+[2026-09-27T00:21:52.862] [DEBUG] debug-file - Update task entry:default@CompileResource input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\resConfig.json cache by regenerate.
+[2026-09-27T00:21:52.862] [DEBUG] debug-file - Update task entry:default@CompileResource output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default cache.
+[2026-09-27T00:21:52.865] [DEBUG] debug-file - Update task entry:default@CompileResource output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\generated\r\default\ResourceTable.h cache.
+[2026-09-27T00:21:52.865] [DEBUG] debug-file - Update task entry:default@CompileResource output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\generated\r\default\ResourceTable.ts cache.
+[2026-09-27T00:21:52.865] [DEBUG] debug-file - Update task entry:default@CompileResource output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\generated\r\default cache.
+[2026-09-27T00:21:52.865] [DEBUG] debug-file - Incremental task entry:default@CompileResource post-execution cost:5 ms .
+[2026-09-27T00:21:52.865] [DEBUG] debug-file - There is no need to refresh cache, since the incremental task entry:default@DoNativeStrip is up-to-date.
+[2026-09-27T00:21:52.866] [DEBUG] debug-file - Update task entry:default@CompileArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader\default cache from map.
+[2026-09-27T00:21:52.866] [DEBUG] debug-file - Update task entry:default@CompileArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\resources\rawfile cache by regenerate.
+[2026-09-27T00:21:52.867] [DEBUG] debug-file - Update task entry:default@CompileArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\ResourceTable.txt cache by regenerate.
+[2026-09-27T00:21:52.867] [DEBUG] debug-file - Update task entry:default@CompileArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\ark_module.json cache by regenerate.
+[2026-09-27T00:21:52.867] [DEBUG] debug-file - Update task entry:default@CompileArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\resources\base\profile cache by regenerate.
+[2026-09-27T00:21:52.867] [DEBUG] debug-file - Update task entry:default@CompileArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\ets cache by regenerate.
+[2026-09-27T00:21:52.871] [DEBUG] debug-file - Update task entry:default@CompileArkTS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\generated\profile\default\BuildProfile.ets cache by regenerate.
+[2026-09-27T00:21:52.872] [DEBUG] debug-file - Update task entry:default@CompileArkTS output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader_out\default\ets cache.
+[2026-09-27T00:21:52.872] [DEBUG] debug-file - Incremental task entry:default@CompileArkTS post-execution cost:7 ms .
+[2026-09-27T00:21:52.872] [DEBUG] debug-file - Update task entry:default@BuildJS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader\default cache by regenerate.
+[2026-09-27T00:21:52.872] [DEBUG] debug-file - Update task entry:default@BuildJS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\resources\rawfile cache by regenerate.
+[2026-09-27T00:21:52.873] [DEBUG] debug-file - Update task entry:default@BuildJS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\ResourceTable.txt cache by regenerate.
+[2026-09-27T00:21:52.873] [DEBUG] debug-file - Update task entry:default@BuildJS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\ark_module.json cache by regenerate.
+[2026-09-27T00:21:52.873] [DEBUG] debug-file - Update task entry:default@BuildJS input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\resources\base\profile cache by regenerate.
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - Update task entry:default@BuildJS output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader_out\default\js cache.
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - Incremental task entry:default@BuildJS post-execution cost:2 ms .
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - There is no need to refresh cache, since the incremental task entry:default@CacheNativeLibs is up-to-date.
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - Update task entry:default@GeneratePkgModuleJson input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\module.json cache from map.
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - Update task entry:default@GeneratePkgModuleJson output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\package\default\module.json cache.
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - Incremental task entry:default@GeneratePkgModuleJson post-execution cost:1 ms .
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - Incremental task entry:default@ProcessCompiledResources post-execution cost:1 ms .
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - Update task entry:default@PackageHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\outputs\default\pack.info cache by regenerate.
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - Update task entry:default@PackageHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\stripped_native_libs\default cache by regenerate.
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - Update task entry:default@PackageHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\module.json cache from map.
+[2026-09-27T00:21:52.874] [DEBUG] debug-file - Update task entry:default@PackageHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\resources cache by regenerate.
+[2026-09-27T00:21:52.876] [DEBUG] debug-file - Update task entry:default@PackageHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\res\default\resources.index cache by regenerate.
+[2026-09-27T00:21:52.876] [DEBUG] debug-file - Update task entry:default@PackageHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader_out\default\ets cache by regenerate.
+[2026-09-27T00:21:52.876] [DEBUG] debug-file - Update task entry:default@PackageHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader\default\pkgSdkInfo.json cache by regenerate.
+[2026-09-27T00:21:52.876] [DEBUG] debug-file - Update task entry:default@PackageHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\package\default\module.json cache by regenerate.
+[2026-09-27T00:21:52.876] [DEBUG] debug-file - Update task entry:default@PackageHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader_out\default\ets\sourceMaps.map cache by regenerate.
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Update task entry:default@PackageHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\generated\profile\default\BuildProfile.ets cache by regenerate.
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Update task entry:default@PackageHap output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\outputs\default\entry-default-unsigned.hap cache.
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Update task entry:default@PackageHap output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\source_map\default\sourceMaps.map cache.
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Update task entry:default@PackageHap output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\outputs\default\mapping\sourceMaps.map cache.
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Incremental task entry:default@PackageHap post-execution cost:4 ms .
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Update task entry:default@SignHap input file:C:\Users\29582\.ohos\config\default_ohos_gXiST2b6dB_bPpWjMZnmvA_rV7uldDvpJHara92vx6k=.cer cache by regenerate.
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Update task entry:default@SignHap input file:C:\Users\29582\.ohos\config\default_ohos_gXiST2b6dB_bPpWjMZnmvA_rV7uldDvpJHara92vx6k=.p7b cache by regenerate.
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Update task entry:default@SignHap input file:C:\Users\29582\.ohos\config\default_ohos_gXiST2b6dB_bPpWjMZnmvA_rV7uldDvpJHara92vx6k=.p12 cache by regenerate.
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Update task entry:default@SignHap input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\outputs\default\entry-default-unsigned.hap cache from map.
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Update task entry:default@SignHap output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\outputs\default\entry-default-signed.hap cache.
+[2026-09-27T00:21:52.877] [DEBUG] debug-file - Incremental task entry:default@SignHap post-execution cost:1 ms .
+[2026-09-27T00:21:52.878] [DEBUG] debug-file - Update task entry:default@CollectDebugSymbol input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\loader_out\default\ets\sourceMaps.map cache by regenerate.
+[2026-09-27T00:21:52.878] [DEBUG] debug-file - Update task entry:default@CollectDebugSymbol input file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\intermediates\libs\default cache by regenerate.
+[2026-09-27T00:21:52.878] [DEBUG] debug-file - Update task entry:default@CollectDebugSymbol output file:F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\build\default\outputs\default\symbol cache.
+[2026-09-27T00:21:52.878] [DEBUG] debug-file - Incremental task entry:default@CollectDebugSymbol post-execution cost:1 ms .
+[2026-09-27T00:21:52.887] [DEBUG] debug-file - Current worker pool is stopped or closed.
+[2026-09-27T00:21:52.887] [DEBUG] debug-file - Clear worker 0.
+[2026-09-27T00:21:52.887] [DEBUG] debug-file - Clear worker 1.
+[2026-09-27T00:21:52.887] [DEBUG] debug-file - Clear worker 4.
+[2026-09-27T00:21:52.887] [DEBUG] debug-file - Clear worker 18.
+[2026-09-27T00:21:52.888] [DEBUG] debug-file - hvigor build process will be closed.
+[2026-09-27T00:21:52.890] [DEBUG] debug-file - worker[0] exits with exit code 1.
+[2026-09-27T00:21:52.890] [DEBUG] debug-file - Worker 0 has been cleared.
+[2026-09-27T00:21:52.890] [DEBUG] debug-file - Current idle worker size: 0.
+[2026-09-27T00:21:52.890] [DEBUG] debug-file - Current busy worker size: 0.
+[2026-09-27T00:21:52.890] [DEBUG] debug-file - worker[1] exits with exit code 1.
+[2026-09-27T00:21:52.890] [DEBUG] debug-file - Worker 1 has been cleared.
+[2026-09-27T00:21:52.890] [DEBUG] debug-file - Current idle worker size: 0.
+[2026-09-27T00:21:52.890] [DEBUG] debug-file - Current busy worker size: 0.
+[2026-09-27T00:21:52.892] [DEBUG] debug-file - Current worker pool is terminated.
+[2026-09-27T00:21:52.892] [DEBUG] debug-file - Current worker pool is terminated.
+[2026-09-27T00:21:52.892] [DEBUG] debug-file - worker[18] exits with exit code 1.
+[2026-09-27T00:21:52.892] [DEBUG] debug-file - Worker 18 has been cleared.
+[2026-09-27T00:21:52.892] [DEBUG] debug-file - Current idle worker size: 0.
+[2026-09-27T00:21:52.892] [DEBUG] debug-file - Current busy worker size: 0.
+[2026-09-27T00:21:52.892] [DEBUG] debug-file - Current worker pool is terminated.
+[2026-09-27T00:21:52.901] [DEBUG] debug-file - worker[4] exits with exit code 1.
+[2026-09-27T00:21:52.901] [DEBUG] debug-file - Worker 4 has been cleared.
+[2026-09-27T00:21:52.901] [DEBUG] debug-file - Current idle worker size: 0.
+[2026-09-27T00:21:52.901] [DEBUG] debug-file - Current busy worker size: 0.
+[2026-09-27T00:21:52.901] [DEBUG] debug-file - Current worker pool is terminated.

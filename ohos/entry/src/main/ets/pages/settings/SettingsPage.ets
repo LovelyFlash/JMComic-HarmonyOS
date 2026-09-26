@@ -1,105 +1,112 @@
-// pages/settings/SettingsPage.ets - 设置主页
+// pages/settings/SettingsPage.ets - 设置主页（完整版）
 import { router } from '@kit.ArkUI';
 import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
-import { AppData } from '../../viewmodel/AppData';
+import { SettingItem } from '../../components/SettingItem';
+import { SettingSection } from '../../components/SettingSection';
 
 @Entry
 @Component
 struct SettingsPage {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @State darkModeOption: number = 0
 
   build() {
     Column() {
+      // Header
       Row() {
-        Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
+        Image($rawfile('icons/ic_back.svg'))
+          .width(24).height(24).objectFit(ImageFit.Contain)
           .onClick(() => { router.back(); })
-        Text(Translations.t('tab_settings')).fontSize(18).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').margin({ left: 16 })
-      }.width('100%').height(56).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
+        Text(Translations.t('tab_settings'))
+          .fontSize(22).fontWeight(FontWeight.Bold)
+          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+          .margin({ left: 12 })
+      }
+      .width('100%')
+      .height(64)
+      .padding({ left: 16, right: 16 })
+      .alignItems(VerticalAlign.Center)
 
       Scroll() {
         Column() {
-          // Appearance section
-          Text(Translations.t('settings_appearance')).fontSize(13)
-            .fontColor(this.isDarkMode ? '#999999' : '#666666').width('100%')
-            .padding({ left: 16, top: 56, bottom: 8 })
+          // === 浏览 ===
+          SettingSection({ title: '浏览' })
+          SettingItem({ icon: '🔍', title: '初始页面', value: '主页', onTap: () => {} })
+          SettingItem({ icon: '📋', title: '探索页面配置', onTap: () => {} })
+          SettingItem({ icon: '🚫', title: '关键词屏蔽', onTap: () => {} })
+          SettingItem({ icon: '🔎', title: '默认搜索源', value: 'NHentai', onTap: () => {} })
+          SettingItem({ icon: '📱', title: '漫画列表显示', value: '连续模式', onTap: () => {} })
 
-          this.settingItem(Translations.t('dark_mode'), this.getDarkModeLabel(), () => {
+          // === 阅读 ===
+          SettingSection({ title: '阅读' })
+          SettingItem({ icon: '📖', title: '阅读模式', value: '从上至下', onTap: () => {
+            router.pushUrl({ url: 'pages/settings/ReadingSettings' });
+          }})
+          SettingItem({ icon: '👆', title: '点按翻页', value: 'ON', onTap: () => {} })
+          SettingItem({ icon: '🔊', title: '音量键翻页', value: 'ON', onTap: () => {} })
+          SettingItem({ icon: '🔆', title: '屏幕常亮', value: 'ON', onTap: () => {} })
+          SettingItem({ icon: '📝', title: '显示章节评论', value: 'ON', onTap: () => {} })
+          SettingItem({ icon: '💾', title: '图片质量', value: 'Original', onTap: () => {} })
+          SettingItem({ icon: '🔤', title: '字体大小', value: '16', onTap: () => {} })
+
+          // === 外观 ===
+          SettingSection({ title: '外观' })
+          SettingItem({ icon: '🌙', title: Translations.t('dark_mode'), value: this.getDarkModeLabel(), onTap: () => {
             this.cycleDarkMode();
-          })
-
-          this.settingItem(Translations.t('theme_color'), ThemeManager.themeColor, () => {
+          }})
+          SettingItem({ icon: '🎨', title: Translations.t('theme_color'), value: '', onTap: () => {
             this.cycleThemeColor();
-          })
+          }})
 
-          // Reading section
-          Text(Translations.t('settings_reading')).fontSize(13)
-            .fontColor(this.isDarkMode ? '#999999' : '#666666').width('100%')
-            .padding({ left: 16, top: 24, bottom: 8 })
+          // === 本地收藏 ===
+          SettingSection({ title: '本地收藏' })
+          SettingItem({ icon: '⭐', title: '收藏夹设置', onTap: () => {} })
 
-          this.settingItem(Translations.t('volume_key'), 'ON', () => {})
+          // === APP ===
+          SettingSection({ title: 'APP' })
+          SettingItem({ icon: '📂', title: '下载路径', value: '默认', onTap: () => {} })
+          SettingItem({ icon: '🗑️', title: '清除缓存', value: '', onTap: () => {} })
+          SettingItem({ icon: '🔄', title: '检查更新', onTap: () => {} })
 
-          this.settingItem(Translations.t('keep_screen_on'), 'ON', () => {})
-
-          // Comic source section
-          Text(Translations.t('settings_comic_source')).fontSize(13)
-            .fontColor(this.isDarkMode ? '#999999' : '#666666').width('100%')
-            .padding({ left: 16, top: 24, bottom: 8 })
-
-          this.settingItem('JM ' + Translations.t('jm_domain_update'), '→', () => {
+          // === 漫画源 ===
+          SettingSection({ title: '漫画源' })
+          SettingItem({ icon: '📕', title: 'JM 禁漫', value: '→', onTap: () => {
             router.pushUrl({ url: 'pages/settings/JmSettings' });
-          })
-
-          this.settingItem('HT ' + Translations.t('ht_domain_update'), '→', () => {
+          }})
+          SettingItem({ icon: '📚', title: 'HT 绅士漫画', value: '→', onTap: () => {
             router.pushUrl({ url: 'pages/settings/HtSettings' });
-          })
+          }})
+          SettingItem({ icon: '📘', title: 'NHentai 设置', value: '→', onTap: () => {} })
+          SettingItem({ icon: '📖', title: 'EHentai 设置', value: '→', onTap: () => {} })
+          SettingItem({ icon: '🐱', title: 'Picacg 设置', value: '→', onTap: () => {} })
+          SettingItem({ icon: '🎨', title: 'Hitomi 设置', value: '→', onTap: () => {} })
 
-          // System section
-          Text(Translations.t('settings_system')).fontSize(13)
-            .fontColor(this.isDarkMode ? '#999999' : '#666666').width('100%')
-            .padding({ left: 16, top: 24, bottom: 8 })
+          // === 网络 ===
+          SettingSection({ title: '网络' })
+          SettingItem({ icon: '🌐', title: '代理设置', value: '系统代理', onTap: () => {} })
+          SettingItem({ icon: '☁️', title: 'WebDAV 同步', value: '未配置', onTap: () => {} })
 
-          this.settingItem(Translations.t('download'), '→', () => {
-            router.pushUrl({ url: 'pages/DownloadPage' });
-          })
-
-          this.settingItem(Translations.t('about'), '→', () => {
+          // === 关于 ===
+          SettingSection({ title: '关于' })
+          SettingItem({ icon: 'ℹ️', title: Translations.t('about'), value: 'v' + '1.0.0', onTap: () => {
             router.pushUrl({ url: 'pages/settings/AboutPage' });
-          })
+          }})
         }
+        .width('100%')
       }
       .layoutWeight(1)
     }
-    .width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
-  }
-
-  @Builder
-  settingItem(label: string, value: string, action: () => void) {
-    Row() {
-      Text(label).fontSize(15).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').layoutWeight(1)
-      Text(value).fontSize(14).fontColor(this.isDarkMode ? '#999999' : '#666666')
-    }
-    .width('100%').height(52).padding({ left: 16, right: 16 })
-    .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' })
-    .onClick(action)
+    .width('100%')
+    .height('100%')
+    .backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
   }
 
   private getDarkModeLabel(): string {
-    if (this.darkModeOption === 0) return '跟随系统';
-    if (this.darkModeOption === 1) return '关闭';
-    return '开启';
+    return ThemeManager.isDark ? '开启' : '关闭';
   }
 
   private cycleDarkMode(): void {
-    this.darkModeOption = (this.darkModeOption + 1) % 3;
-    if (this.darkModeOption === 2) {
-      AppStorage.setOrCreate('isDarkMode', true);
-    } else if (this.darkModeOption === 1) {
-      AppStorage.setOrCreate('isDarkMode', false);
-    }
+    ThemeManager.setDarkMode(!ThemeManager.isDark);
   }
 
   private cycleThemeColor(): void {
@@ -109,7 +116,6 @@ struct SettingsPage {
     for (let i = 0; i < colors.length; i++) {
       if (colors[i] === current) { idx = i; break; }
     }
-    const next = (idx + 1) % colors.length;
-    ThemeManager.setThemeColor(colors[next]);
+    ThemeManager.setThemeColor(colors[(idx + 1) % colors.length]);
   }
 }

@@ -67,5 +67,13 @@
 			"type":	"media",
 			"name":	"ic_settings_selected",
 			"id":	"0x01000010"
+		}, {
+			"type":	"media",
+			"name":	"_icons",
+			"id":	"0x01000011"
+		}, {
+			"type":	"media",
+			"name":	"_convert_icons",
+			"id":	"0x01000012"
 		}]
 }

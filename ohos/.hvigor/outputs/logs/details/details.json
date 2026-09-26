@@ -52,23 +52,32 @@
     "OPTIMIZATION_STRATEGY": "memory",
     "TASK_TIME": {
       "923fe53966c6cd9343e11af776cd4b05be315ea4b200b02e4d5dfb0f929b73bf": {
-        "CreateModuleInfo": 727700,
-        "ConfigureCmake": 204200,
-        "PreCheckSyscap": 433400,
-        "GeneratePkgContextInfo": 7223000,
-        "ProcessIntegratedHsp": 573700,
-        "BuildNativeWithCmake": 356000,
-        "SyscapTransform": 9182000,
-        "ProcessStartupConfig": 1209300,
-        "BuildNativeWithNinja": 444500,
-        "BuildJS": 1900700,
-        "CompileArkTS": 6140234600,
-        "ProcessCompiledResources": 537900,
-        "PackageHap": 558586900,
-        "PackingCheck": 3804100,
-        "SignHap": 2471880000,
-        "CollectDebugSymbol": 737000,
-        "assembleHap": 195800
+        "PreBuild": 101819400,
+        "CreateModuleInfo": 703400,
+        "ConfigureCmake": 159400,
+        "MergeProfile": 24355400,
+        "CreateBuildProfile": 1874000,
+        "PreCheckSyscap": 246600,
+        "GeneratePkgContextInfo": 6969200,
+        "ProcessIntegratedHsp": 622400,
+        "BuildNativeWithCmake": 225100,
+        "SyscapTransform": 8569600,
+        "ProcessProfile": 85751000,
+        "ProcessRouterMap": 3450800,
+        "ProcessShareConfig": 1916500,
+        "ProcessStartupConfig": 941300,
+        "BuildNativeWithNinja": 383200,
+        "GenerateLoaderJson": 7995200,
+        "CompileResource": 204926300,
+        "BuildJS": 1651700,
+        "CompileArkTS": 4445021800,
+        "GeneratePkgModuleJson": 1570100,
+        "ProcessCompiledResources": 347700,
+        "PackageHap": 620112500,
+        "PackingCheck": 4194400,
+        "SignHap": 2394840100,
+        "CollectDebugSymbol": 1189800,
+        "assembleHap": 107700
       }
     },
     "CUSTOM_TASK_TIME": {},
@@ -81,8 +90,8 @@
       "ENABLE_CPP_FUNCTION_LEVEL_INCREMENTAL": false
     },
     "CONFIG_PROPERTIES": {},
-    "BUILD_ID": "202609270011097480",
-    "PID": 47464,
-    "TOTAL_TIME": 10807770700
+    "BUILD_ID": "202609270021434560",
+    "PID": 39956,
+    "TOTAL_TIME": 9398197500
   }
 }
