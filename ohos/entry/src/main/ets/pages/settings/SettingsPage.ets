@@ -1,5 +1,5 @@
 // pages/settings/SettingsPage.ets - 设置主页
-import { router } from '@kit.ArkUI';
+import { router, promptAction } from '@kit.ArkUI';
 import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
 
@@ -23,7 +23,10 @@ struct SettingsPage {
       Scroll() {
         Column({ space: 8 }) {
           this.section('外观')
-          this.item(Translations.t('dark_mode'), ThemeManager.isDark ? '开启' : '关闭', () => { ThemeManager.setDarkMode(!ThemeManager.isDark); })
+          this.item(Translations.t('dark_mode'), ThemeManager.isDark ? '开启' : '关闭', () => {
+            ThemeManager.setDarkMode(!ThemeManager.isDark);
+            promptAction.showToast({ message: this.isDarkMode ? '已切换深色模式' : '已切换浅色模式', duration: 2000 });
+          })
           this.item(Translations.t('theme_color'), '', () => {
             const colors = ThemeManager.themePresets;
             const cur = ThemeManager.themeColor;
@@ -49,7 +52,7 @@ struct SettingsPage {
 
   @Builder item(label: string, value: string, action: () => void) {
     Row() {
-      Text(label).fontSize(16).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').layoutWeight(1)
+      Text(label).fontSize(16).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').layoutWeight(1)
       if (value.length > 0) { Text(value).fontSize(14).fontColor(this.isDarkMode ? '#8E8E93' : '#666666').margin({ right: 4 }) }
       Image($rawfile('icons/ic_arrow_right.svg')).width(16).height(16).objectFit(ImageFit.Contain)
     }.width('100%').height(56).padding({ left: 16, right: 16 })
