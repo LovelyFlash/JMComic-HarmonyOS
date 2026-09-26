@@ -1,7 +1,6 @@
-// pages/MainPage.ets - 主页面（含底部导航 + 初始化）
+// pages/MainPage.ets - 主页面（Tabs + PNG 图标 + 系统颜色）
 import { router } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { FloatingTabBar } from '../components/FloatingTabBar';
 import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 
@@ -11,61 +10,83 @@ const TAG = 'MainPage';
 @Component
 struct MainPage {
   @State currentTab: number = 0
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
 
   aboutToAppear(): void {
     hilog.info(0x0000, TAG, 'MainPage aboutToAppear');
   }
 
-  build() {
+  @Builder
+  tabBuilder(title: string, iconRes: Resource, iconSelectedRes: Resource, index: number) {
     Column() {
-      // Content area — layoutWeight(1) 让它填充剩余空间
-      if (this.currentTab === 0) {
-        this.buildExplorePage()
-      } else if (this.currentTab === 1) {
-        this.buildHistoryPage()
-      } else if (this.currentTab === 2) {
-        this.buildFavoritesPage()
-      } else {
-        this.buildSettingsPage()
-      }
-
-      // Bottom Tab Bar
-      Column() {
-        FloatingTabBar({
-          selectedIndex: this.currentTab,
-          onTap: (index: number) => {
-            this.currentTab = index;
-          }
-        })
-      }
-      .width('100%')
-      .padding({ bottom: 12 })
-      .backgroundColor(ThemeManager.colors.background)
+      Image(this.currentTab === index ? iconSelectedRes : iconRes)
+        .width(24)
+        .height(24)
+        .objectFit(ImageFit.Contain)
+      Text(title)
+        .fontSize(10)
+        .fontColor(this.currentTab === index ?
+          $r('sys.color.ohos_id_color_text_primary_activated') :
+          $r('sys.color.ohos_id_color_text_secondary'))
+        .margin({ top: 2 })
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(ThemeManager.colors.background)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(HorizontalAlign.Center)
+  }
+
+  build() {
+    Column() {
+      Tabs({ barPosition: BarPosition.End, index: this.currentTab }) {
+        TabContent() {
+          this.buildExplorePage()
+        }.tabBar(this.tabBuilder(Translations.t('tab_explore'),
+          $r('app.media.ic_explore'), $r('app.media.ic_explore_selected'), 0))
+
+        TabContent() {
+          this.buildHistoryPage()
+        }.tabBar(this.tabBuilder(Translations.t('tab_history'),
+          $r('app.media.ic_history'), $r('app.media.ic_history_selected'), 1))
+
+        TabContent() {
+          this.buildFavoritesPage()
+        }.tabBar(this.tabBuilder(Translations.t('tab_favorites'),
+          $r('app.media.ic_favorites'), $r('app.media.ic_favorites_selected'), 2))
+
+        TabContent() {
+          this.buildSettingsPage()
+        }.tabBar(this.tabBuilder(Translations.t('tab_settings'),
+          $r('app.media.ic_settings'), $r('app.media.ic_settings_selected'), 3))
+      }
+      .vertical(false)
+      .barHeight(56)
+      .barMode(BarMode.Fixed)
+      .onChange((index: number) => {
+        this.currentTab = index;
+      })
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor($r('sys.color.ohos_id_color_background'))
   }
 
   @Builder
   buildExplorePage() {
     Column() {
       Text(Translations.t('app_name'))
-        .fontSize(22)
+        .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor(ThemeManager.colors.textPrimary)
+        .fontColor($r('sys.color.ohos_id_color_text_primary'))
         .width('100%')
         .textAlign(TextAlign.Start)
-        .padding({ left: 16, top: 56, bottom: 4 })
+        .padding({ left: 24, top: 64, bottom: 4 })
 
       Text(Translations.t('tab_explore'))
         .fontSize(14)
-        .fontColor(ThemeManager.colors.textSecondary)
+        .fontColor($r('sys.color.ohos_id_color_text_secondary'))
         .width('100%')
-        .padding({ left: 16, bottom: 16 })
+        .padding({ left: 24, bottom: 20 })
 
-      // Source grid
       Grid() {
         this.sourceItem('Picacg', 'picacg')
         this.sourceItem('EHentai', 'ehentai')
@@ -82,23 +103,25 @@ struct MainPage {
       .layoutWeight(1)
     }
     .width('100%')
-    .layoutWeight(1)
-    .backgroundColor(ThemeManager.colors.background)
+    .height('100%')
+    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
   }
 
   @Builder
   sourceItem(label: string, source: string) {
     Column() {
       Text(label)
-        .fontSize(16)
+        .fontSize(15)
         .fontWeight(FontWeight.Medium)
+        .fontColor($r('sys.color.ohos_id_color_text_primary'))
     }
     .width('100%')
     .height(80)
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
-    .backgroundColor(ThemeManager.colors.surface)
-    .borderRadius(12)
+    .backgroundColor($r('sys.color.ohos_id_color_background'))
+    .borderRadius(16)
+    .shadow({ radius: 4, color: 'rgba(0,0,0,0.08)', offsetY: 2 })
     .onClick(() => {
       this.navigateToSource(source);
     })
@@ -108,94 +131,120 @@ struct MainPage {
   buildHistoryPage() {
     Column() {
       Text(Translations.t('tab_history'))
-        .fontSize(22)
+        .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor(ThemeManager.colors.textPrimary)
+        .fontColor($r('sys.color.ohos_id_color_text_primary'))
         .width('100%')
-        .padding({ left: 16, top: 56, bottom: 8 })
-      Text(Translations.t('no_data'))
-        .fontSize(14)
-        .fontColor(ThemeManager.colors.textSecondary)
-        .layoutWeight(1)
-        .textAlign(TextAlign.Center)
-        .width('100%')
+        .padding({ left: 24, top: 64, bottom: 8 })
+      Column() {
+        Text(Translations.t('no_data'))
+          .fontSize(14)
+          .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+      }
+      .layoutWeight(1)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
     }
     .width('100%')
-    .layoutWeight(1)
-    .backgroundColor(ThemeManager.colors.background)
+    .height('100%')
+    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
   }
 
   @Builder
   buildFavoritesPage() {
     Column() {
       Text(Translations.t('tab_favorites'))
-        .fontSize(22)
+        .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor(ThemeManager.colors.textPrimary)
+        .fontColor($r('sys.color.ohos_id_color_text_primary'))
         .width('100%')
-        .padding({ left: 16, top: 56, bottom: 8 })
-      Text(Translations.t('no_data'))
-        .fontSize(14)
-        .fontColor(ThemeManager.colors.textSecondary)
-        .layoutWeight(1)
-        .textAlign(TextAlign.Center)
-        .width('100%')
+        .padding({ left: 24, top: 64, bottom: 8 })
+      Column() {
+        Text(Translations.t('no_data'))
+          .fontSize(14)
+          .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+      }
+      .layoutWeight(1)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
     }
     .width('100%')
-    .layoutWeight(1)
-    .backgroundColor(ThemeManager.colors.background)
+    .height('100%')
+    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
   }
 
   @Builder
   buildSettingsPage() {
     Column() {
       Text(Translations.t('tab_settings'))
-        .fontSize(22)
+        .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor(ThemeManager.colors.textPrimary)
+        .fontColor($r('sys.color.ohos_id_color_text_primary'))
         .width('100%')
-        .padding({ left: 16, top: 56, bottom: 8 })
+        .padding({ left: 24, top: 64, bottom: 16 })
 
-      // Settings items
-      Column() {
-        this.settingsItem(Translations.t('dark_mode'), () => {
-          ThemeManager.setDarkMode(!ThemeManager.isDark);
-        })
-        this.settingsItem(Translations.t('theme_color'), () => {})
-        this.settingsItem('JM ' + Translations.t('jm_domain_update'), () => {
-          router.pushUrl({ url: 'pages/settings/JmSettings' });
-        })
-        this.settingsItem('HT ' + Translations.t('ht_domain_update'), () => {
-          router.pushUrl({ url: 'pages/settings/HtSettings' });
-        })
-        this.settingsItem(Translations.t('about'), () => {
-          router.pushUrl({ url: 'pages/settings/AboutPage' });
-        })
+      Scroll() {
+        Column() {
+          this.settingsSection(Translations.t('settings_appearance'))
+          this.settingsItem(Translations.t('dark_mode'), () => {
+            ThemeManager.setDarkMode(!ThemeManager.isDark);
+          })
+          this.settingsItem(Translations.t('theme_color'), () => {
+            const colors = ThemeManager.themePresets;
+            const current = ThemeManager.themeColor;
+            let idx = 0;
+            for (let i = 0; i < colors.length; i++) {
+              if (colors[i] === current) { idx = i; break; }
+            }
+            ThemeManager.setThemeColor(colors[(idx + 1) % colors.length]);
+          })
+
+          this.settingsSection(Translations.t('settings_comic_source'))
+          this.settingsItem('JM ' + Translations.t('jm_domain_update'), () => {
+            router.pushUrl({ url: 'pages/settings/JmSettings' });
+          })
+          this.settingsItem('HT ' + Translations.t('ht_domain_update'), () => {
+            router.pushUrl({ url: 'pages/settings/HtSettings' });
+          })
+
+          this.settingsSection(Translations.t('settings_system'))
+          this.settingsItem(Translations.t('about'), () => {
+            router.pushUrl({ url: 'pages/settings/AboutPage' });
+          })
+        }
+        .width('100%')
       }
-      .width('100%')
       .layoutWeight(1)
     }
     .width('100%')
-    .layoutWeight(1)
-    .backgroundColor(ThemeManager.colors.background)
+    .height('100%')
+    .backgroundColor($r('sys.color.ohos_id_color_sub_background'))
+  }
+
+  @Builder
+  settingsSection(title: string) {
+    Text(title)
+      .fontSize(13)
+      .fontColor($r('sys.color.ohos_id_color_text_secondary'))
+      .width('100%')
+      .padding({ left: 16, top: 24, bottom: 8 })
   }
 
   @Builder
   settingsItem(label: string, action: () => void) {
     Row() {
       Text(label)
-        .fontSize(15)
-        .fontColor(ThemeManager.colors.textPrimary)
+        .fontSize(16)
+        .fontColor($r('sys.color.ohos_id_color_text_primary'))
         .layoutWeight(1)
       Text('>')
-        .fontSize(14)
-        .fontColor(ThemeManager.colors.textSecondary)
+        .fontSize(16)
+        .fontColor($r('sys.color.ohos_id_color_text_secondary'))
     }
     .width('100%')
-    .height(52)
+    .height(56)
     .padding({ left: 16, right: 16 })
-    .backgroundColor(ThemeManager.colors.surface)
-    .border({ width: { bottom: 0.5 }, color: ThemeManager.colors.divider })
+    .backgroundColor($r('sys.color.ohos_id_color_background'))
     .onClick(action)
   }
 
