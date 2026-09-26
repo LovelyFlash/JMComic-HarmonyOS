@@ -1,0 +1,36 @@
+﻿> hvigor [32mUP-TO-DATE :entry:default@PreBuild...  [39m
+> hvigor [32mFinished :entry:default@CreateModuleInfo... after 1 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@GenerateMetadata...  [39m
+> hvigor [32mFinished :entry:default@ConfigureCmake... after 1 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@MergeProfile...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@CreateBuildProfile...  [39m
+> hvigor [32mFinished :entry:default@PreCheckSyscap... after 1 ms [39m
+> hvigor [32mFinished :entry:default@GeneratePkgContextInfo... after 7 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@GeneratePkgSdkInfo...  [39m
+> hvigor [32mFinished :entry:default@ProcessIntegratedHsp... after 1 ms [39m
+> hvigor [32mFinished :entry:default@BuildNativeWithCmake... after 1 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@MakePackInfo...  [39m
+> hvigor [32mFinished :entry:default@SyscapTransform... after 9 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@ProcessProfile...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@ProcessRouterMap...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@ProcessShareConfig...  [39m
+> hvigor [32mFinished :entry:default@ProcessStartupConfig... after 1 ms [39m
+> hvigor [32mFinished :entry:default@BuildNativeWithNinja... after 1 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@ProcessResource...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@GenerateLoaderJson...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@ProcessLibs...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@CompileResource...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@DoNativeStrip...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@CompileArkTS...  [39m
+> hvigor [32mFinished :entry:default@BuildJS... after 2 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@CacheNativeLibs...  [39m
+> hvigor [32mUP-TO-DATE :entry:default@GeneratePkgModuleJson...  [39m
+> hvigor [32mFinished :entry:default@ProcessCompiledResources... after 1 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@PackageHap...  [39m
+> hvigor [32mFinished :entry:default@PackingCheck... after 4 ms [39m
+> hvigor [32mUP-TO-DATE :entry:default@SignHap...  [39m
+> hvigor [32mFinished :entry:default@CollectDebugSymbol... after 1 ms [39m
+> hvigor [32mFinished :entry:assembleHap... after 1 ms [39m
+> hvigor [32mBUILD SUCCESSFUL in 1 s 622 ms [39m
+
+33 tasks in total: 14 executed, 19 up-to-date

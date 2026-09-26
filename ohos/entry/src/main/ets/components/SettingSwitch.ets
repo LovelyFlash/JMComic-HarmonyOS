@@ -10,9 +10,7 @@ export struct SettingSwitch {
   build() {
     Row() {
       if (this.icon.length > 0) {
-        Text(this.icon)
-          .fontSize(20)
-          .margin({ right: 12 })
+        Text(this.icon).fontSize(20).margin({ right: 12 })
       }
       Text(this.title)
         .fontSize(16)
