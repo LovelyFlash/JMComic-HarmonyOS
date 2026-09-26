@@ -66,7 +66,7 @@ struct HtHome {
             .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
             .borderRadius(8)
             .onClick(() => {
-              router.pushUrl({ url: 'pages/htcomic/HtDetail' });
+              router.pushUrl({ url: 'pages/ComicDetailPage' });
             })
           }
         })

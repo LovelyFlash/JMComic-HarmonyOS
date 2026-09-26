@@ -66,7 +66,7 @@ struct JmHome {
             .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
             .borderRadius(8)
             .onClick(() => {
-              router.pushUrl({ url: 'pages/jm/JmDetail' });
+              router.pushUrl({ url: 'pages/ComicDetailPage' });
             })
           }
         })

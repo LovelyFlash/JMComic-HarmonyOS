@@ -66,7 +66,7 @@ struct NhHome {
             .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
             .borderRadius(8)
             .onClick(() => {
-              router.pushUrl({ url: 'pages/nhentai/NhDetail' });
+              router.pushUrl({ url: 'pages/ComicDetailPage' });
             })
           }
         })

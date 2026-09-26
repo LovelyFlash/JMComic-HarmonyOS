@@ -66,7 +66,7 @@ struct EhHome {
             .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
             .borderRadius(8)
             .onClick(() => {
-              router.pushUrl({ url: 'pages/ehentai/EhDetail' });
+              router.pushUrl({ url: 'pages/ComicDetailPage' });
             })
           }
         })

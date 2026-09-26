@@ -66,7 +66,7 @@ struct PicacgHome {
             .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
             .borderRadius(8)
             .onClick(() => {
-              router.pushUrl({ url: 'pages/picacg/PicacgDetail' });
+              router.pushUrl({ url: 'pages/ComicDetailPage' });
             })
           }
         })
