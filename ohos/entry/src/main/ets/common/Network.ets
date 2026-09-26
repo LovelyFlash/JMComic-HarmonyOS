@@ -118,16 +118,23 @@ export class Network {
     const httpRequest = http.createHttp();
     try {
       const requestHeaders: Record<string, string> = headers ?? {};
-      const options: http.HttpRequestOptions = {
-        method: method,
-        header: requestHeaders,
-        connectTimeout: 15000,
-        readTimeout: 30000
-      };
+      let response: http.HttpResponse;
       if (body !== undefined) {
-        options.extraData = body;
+        response = await httpRequest.request(url, {
+          method: method,
+          header: requestHeaders,
+          extraData: body,
+          connectTimeout: 15000,
+          readTimeout: 30000
+        });
+      } else {
+        response = await httpRequest.request(url, {
+          method: method,
+          header: requestHeaders,
+          connectTimeout: 15000,
+          readTimeout: 30000
+        });
       }
-      const response = await httpRequest.request(url, options);
       return response.responseCode;
     } catch (e) {
       return -1;
@@ -142,8 +149,22 @@ export class Network {
 
   private static extractHost(url: string): string {
     try {
-      const urlObj = new URL(url);
-      return urlObj.hostname;
+      let host = url;
+      // Remove protocol
+      if (host.indexOf('://') !== -1) {
+        host = host.substring(host.indexOf('://') + 3);
+      }
+      // Remove path
+      const slashIdx = host.indexOf('/');
+      if (slashIdx !== -1) {
+        host = host.substring(0, slashIdx);
+      }
+      // Remove port
+      const colonIdx = host.indexOf(':');
+      if (colonIdx !== -1) {
+        host = host.substring(0, colonIdx);
+      }
+      return host;
     } catch (e) {
       return '';
     }

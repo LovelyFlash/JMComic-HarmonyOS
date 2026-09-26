@@ -44,7 +44,7 @@ export class Database {
         'readTime': Date.now(), 'lastChapter': lastChapter,
         'lastPage': lastPage, 'source': source
       };
-      await Database.store.insert('history', bucket, relationalStore.ConflictType.REPLACE);
+      await Database.store.insert('history', bucket);
     } catch (e) {
       Logger.error(TAG, `insertHistory failed: ${String(e)}`);
     }
@@ -137,7 +137,7 @@ export class Database {
         'id': id, 'title': title, 'coverUrl': coverUrl,
         'source': source, 'addTime': Date.now()
       };
-      await Database.store.insert('favorites', bucket, relationalStore.ConflictType.REPLACE);
+      await Database.store.insert('favorites', bucket);
     } catch (e) {
       Logger.error(TAG, `insertFavorite failed: ${String(e)}`);
     }
@@ -202,7 +202,7 @@ export class Database {
         'source': source, 'downloadPath': downloadPath,
         'downloadTime': Date.now()
       };
-      await Database.store.insert('downloads', bucket, relationalStore.ConflictType.REPLACE);
+      await Database.store.insert('downloads', bucket);
     } catch (e) {
       Logger.error(TAG, `insertDownload failed: ${String(e)}`);
     }
