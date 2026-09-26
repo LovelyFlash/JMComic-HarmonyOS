@@ -15,23 +15,22 @@ export struct FloatingTabBar {
       this.tabItem(2, Translations.t('tab_favorites'))
       this.tabItem(3, Translations.t('tab_settings'))
     }
-    .width('92%')
-    .height(56)
-    .borderRadius(28)
+    .width('100%')
+    .height(52)
     .backgroundColor(ThemeManager.colors.surface)
-    .shadow({ radius: 12, color: 'rgba(0,0,0,0.15)', offsetX: 0, offsetY: 4 })
-    .padding({ left: 8, right: 8 })
+    .border({ width: { top: 0.5 }, color: ThemeManager.colors.divider })
   }
 
   @Builder
   tabItem(index: number, label: string) {
     Column() {
       Text(label)
-        .fontSize(10)
+        .fontSize(11)
         .fontColor(this.selectedIndex === index ? ThemeManager.colors.primary : ThemeManager.colors.textSecondary)
+        .fontWeight(this.selectedIndex === index ? FontWeight.Medium : FontWeight.Normal)
     }
     .layoutWeight(1)
-    .height(52)
+    .height('100%')
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
     .onClick(() => {

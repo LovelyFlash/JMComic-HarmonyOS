@@ -19,7 +19,7 @@ struct MainPage {
 
   build() {
     Column() {
-      // Content area
+      // Content area — layoutWeight(1) 让它填充剩余空间
       if (this.currentTab === 0) {
         this.buildExplorePage()
       } else if (this.currentTab === 1) {
@@ -30,13 +30,18 @@ struct MainPage {
         this.buildSettingsPage()
       }
 
-      // Floating Tab Bar
-      FloatingTabBar({
-        selectedIndex: this.currentTab,
-        onTap: (index: number) => {
-          this.currentTab = index;
-        }
-      })
+      // Bottom Tab Bar
+      Column() {
+        FloatingTabBar({
+          selectedIndex: this.currentTab,
+          onTap: (index: number) => {
+            this.currentTab = index;
+          }
+        })
+      }
+      .width('100%')
+      .padding({ bottom: 12 })
+      .backgroundColor(ThemeManager.colors.background)
     }
     .width('100%')
     .height('100%')
@@ -52,16 +57,22 @@ struct MainPage {
         .fontColor(ThemeManager.colors.textPrimary)
         .width('100%')
         .textAlign(TextAlign.Start)
-        .padding({ left: 16, top: 16, bottom: 4 })
+        .padding({ left: 16, top: 56, bottom: 4 })
+
+      Text(Translations.t('tab_explore'))
+        .fontSize(14)
+        .fontColor(ThemeManager.colors.textSecondary)
+        .width('100%')
+        .padding({ left: 16, bottom: 16 })
 
       // Source grid
       Grid() {
-        this.sourceItem('🐱', 'Picacg', 'picacg')
-        this.sourceItem('📖', 'EHentai', 'ehentai')
-        this.sourceItem('📕', '禁漫', 'jm')
-        this.sourceItem('🎨', 'Hitomi', 'hitomi')
-        this.sourceItem('📚', '绅士漫画', 'htmanga')
-        this.sourceItem('📘', 'NHentai', 'nhentai')
+        this.sourceItem('Picacg', 'picacg')
+        this.sourceItem('EHentai', 'ehentai')
+        this.sourceItem('JinMan', 'jm')
+        this.sourceItem('Hitomi', 'hitomi')
+        this.sourceItem('HT', 'htmanga')
+        this.sourceItem('NHentai', 'nhentai')
       }
       .columnsTemplate('1fr 1fr 1fr')
       .columnsGap(12)
@@ -71,22 +82,19 @@ struct MainPage {
       .layoutWeight(1)
     }
     .width('100%')
-    .height('100%')
+    .layoutWeight(1)
     .backgroundColor(ThemeManager.colors.background)
   }
 
   @Builder
-  sourceItem(icon: string, label: string, source: string) {
+  sourceItem(label: string, source: string) {
     Column() {
-      Text(icon)
-        .fontSize(32)
       Text(label)
-        .fontSize(12)
-        .fontColor(ThemeManager.colors.textPrimary)
-        .margin({ top: 6 })
+        .fontSize(16)
+        .fontWeight(FontWeight.Medium)
     }
     .width('100%')
-    .height(90)
+    .height(80)
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
     .backgroundColor(ThemeManager.colors.surface)
@@ -104,7 +112,7 @@ struct MainPage {
         .fontWeight(FontWeight.Bold)
         .fontColor(ThemeManager.colors.textPrimary)
         .width('100%')
-        .padding({ left: 16, top: 16, bottom: 8 })
+        .padding({ left: 16, top: 56, bottom: 8 })
       Text(Translations.t('no_data'))
         .fontSize(14)
         .fontColor(ThemeManager.colors.textSecondary)
@@ -113,7 +121,7 @@ struct MainPage {
         .width('100%')
     }
     .width('100%')
-    .height('100%')
+    .layoutWeight(1)
     .backgroundColor(ThemeManager.colors.background)
   }
 
@@ -125,7 +133,7 @@ struct MainPage {
         .fontWeight(FontWeight.Bold)
         .fontColor(ThemeManager.colors.textPrimary)
         .width('100%')
-        .padding({ left: 16, top: 16, bottom: 8 })
+        .padding({ left: 16, top: 56, bottom: 8 })
       Text(Translations.t('no_data'))
         .fontSize(14)
         .fontColor(ThemeManager.colors.textSecondary)
@@ -134,7 +142,7 @@ struct MainPage {
         .width('100%')
     }
     .width('100%')
-    .height('100%')
+    .layoutWeight(1)
     .backgroundColor(ThemeManager.colors.background)
   }
 
@@ -146,17 +154,49 @@ struct MainPage {
         .fontWeight(FontWeight.Bold)
         .fontColor(ThemeManager.colors.textPrimary)
         .width('100%')
-        .padding({ left: 16, top: 16, bottom: 8 })
-      Text('Settings coming soon')
-        .fontSize(14)
-        .fontColor(ThemeManager.colors.textSecondary)
-        .layoutWeight(1)
-        .textAlign(TextAlign.Center)
-        .width('100%')
+        .padding({ left: 16, top: 56, bottom: 8 })
+
+      // Settings items
+      Column() {
+        this.settingsItem(Translations.t('dark_mode'), () => {
+          ThemeManager.setDarkMode(!ThemeManager.isDark);
+        })
+        this.settingsItem(Translations.t('theme_color'), () => {})
+        this.settingsItem('JM ' + Translations.t('jm_domain_update'), () => {
+          router.pushUrl({ url: 'pages/settings/JmSettings' });
+        })
+        this.settingsItem('HT ' + Translations.t('ht_domain_update'), () => {
+          router.pushUrl({ url: 'pages/settings/HtSettings' });
+        })
+        this.settingsItem(Translations.t('about'), () => {
+          router.pushUrl({ url: 'pages/settings/AboutPage' });
+        })
+      }
+      .width('100%')
+      .layoutWeight(1)
     }
     .width('100%')
-    .height('100%')
+    .layoutWeight(1)
     .backgroundColor(ThemeManager.colors.background)
+  }
+
+  @Builder
+  settingsItem(label: string, action: () => void) {
+    Row() {
+      Text(label)
+        .fontSize(15)
+        .fontColor(ThemeManager.colors.textPrimary)
+        .layoutWeight(1)
+      Text('>')
+        .fontSize(14)
+        .fontColor(ThemeManager.colors.textSecondary)
+    }
+    .width('100%')
+    .height(52)
+    .padding({ left: 16, right: 16 })
+    .backgroundColor(ThemeManager.colors.surface)
+    .border({ width: { bottom: 0.5 }, color: ThemeManager.colors.divider })
+    .onClick(action)
   }
 
   private navigateToSource(source: string): void {

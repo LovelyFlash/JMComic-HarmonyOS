@@ -1,5 +1,6 @@
 string ability_desc 0x01000001
 string app_name 0x01000002
+string entry_desc 0x01000008
 string form_history_desc 0x01000003
 string module_desc 0x01000004
 string reason_media 0x01000005

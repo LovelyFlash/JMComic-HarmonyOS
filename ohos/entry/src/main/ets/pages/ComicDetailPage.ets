@@ -90,7 +90,7 @@ struct ComicDetailPage {
             .fontWeight(FontWeight.Medium)
             .fontColor(ThemeManager.colors.textPrimary)
             .width('100%')
-            .padding({ left: 16, top: 16, bottom: 8 })
+            .padding({ left: 16, top: 56, bottom: 8 })
 
           Text('暂无章节数据')
             .fontSize(14)

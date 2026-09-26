@@ -30,7 +30,7 @@ struct HitomiHome {
         Blank()
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: 16, bottom: 12 })
+      .padding({ left: 16, right: 16, top: 56, bottom: 12 })
 
       Divider()
         .color(ThemeManager.colors.border)

@@ -34,7 +34,7 @@ struct HtSettings {
       Scroll() {
         Column() {
           Text('当前域名').fontSize(13).fontColor(ThemeManager.colors.textSecondary)
-            .width('100%').padding({ left: 16, top: 16, bottom: 8 })
+            .width('100%').padding({ left: 16, top: 56, bottom: 8 })
           Text(this.currentDomain).fontSize(15).fontColor(ThemeManager.colors.textPrimary)
             .width('100%').padding({ left: 16, bottom: 16 })
 

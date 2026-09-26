@@ -23,7 +23,7 @@ struct ReadingSettings {
       Column() {
         Text(Translations.t('font_size')).fontSize(13)
           .fontColor(ThemeManager.colors.textSecondary).width('100%')
-          .padding({ left: 16, top: 16, bottom: 8 })
+          .padding({ left: 16, top: 56, bottom: 8 })
         Row() {
           ForEach([12, 14, 16, 18, 20, 22], (size: number) => {
             Text(size.toString())

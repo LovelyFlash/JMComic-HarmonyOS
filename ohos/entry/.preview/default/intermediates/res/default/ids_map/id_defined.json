@@ -31,5 +31,9 @@
 			"type":	"profile",
 			"name":	"main_pages",
 			"id":	"0x01000007"
+		}, {
+			"type":	"string",
+			"name":	"entry_desc",
+			"id":	"0x01000008"
 		}]
 }
