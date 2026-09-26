@@ -38,7 +38,7 @@ struct PicacgHome {
               Column({ space: 8 }) {
                 Image(comic.coverUrl).width('100%').height(180).objectFit(ImageFit.Cover).borderRadius(6).backgroundColor('#F0F0F0')
                 Text(comic.title).fontSize(12).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%').margin({ top: 6 })
-              }.width('100%').padding(6).backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF').borderRadius(8)
+              }.width('100%').padding(6).backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF').borderRadius(8).shadow({ radius: 8, color: this.isDarkMode ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)', offsetX: 0, offsetY: 2 })
               .onClick(() => { router.pushUrl({ url: 'pages/ComicDetailPage', params: { comicId: comic.id, title: comic.title, source: 'picacg' } }); })
             }
           })
