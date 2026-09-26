@@ -15,7 +15,7 @@ export struct ComicTile {
           .fontSize(15).fontWeight(FontWeight.Medium).maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%')
         if (this.comic.author.length > 0) {
-          Text(this.comic.author).fontSize(12).fontColor('#999999')
+          Text(this.comic.author).fontSize(12).fontColor(this.isDarkMode ? '#999999' : '#999999')
             .margin({ top: 4 }).maxLines(1)
         }
       }

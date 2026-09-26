@@ -67,14 +67,14 @@ struct MainPage {
       Text(Translations.t('app_name'))
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
         .width('100%')
         .textAlign(TextAlign.Start)
         .padding({ left: 24, top: 64, bottom: 4 })
 
       Text(Translations.t('tab_explore'))
         .fontSize(14)
-        .fontColor(this.isDarkMode ? '#999999' : '#666666')
+        .fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
         .width('100%')
         .padding({ left: 24, bottom: 20 })
 
@@ -95,7 +95,7 @@ struct MainPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
+    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 
   @Builder
@@ -104,7 +104,7 @@ struct MainPage {
       Text(label)
         .fontSize(15)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
     }
     .width('100%')
     .height(80)
@@ -122,13 +122,13 @@ struct MainPage {
       Text(Translations.t('tab_history'))
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
         .width('100%')
         .padding({ left: 24, top: 64, bottom: 8 })
       Column() {
         Text(Translations.t('no_data'))
           .fontSize(14)
-          .fontColor(this.isDarkMode ? '#999999' : '#666666')
+          .fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
       }
       .layoutWeight(1)
       .justifyContent(FlexAlign.Center)
@@ -136,7 +136,7 @@ struct MainPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
+    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 
   @Builder
@@ -145,13 +145,13 @@ struct MainPage {
       Text(Translations.t('tab_favorites'))
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
         .width('100%')
         .padding({ left: 24, top: 64, bottom: 8 })
       Column() {
         Text(Translations.t('no_data'))
           .fontSize(14)
-          .fontColor(this.isDarkMode ? '#999999' : '#666666')
+          .fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
       }
       .layoutWeight(1)
       .justifyContent(FlexAlign.Center)
@@ -159,7 +159,7 @@ struct MainPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
+    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 
   @Builder
@@ -168,7 +168,7 @@ struct MainPage {
       Text(Translations.t('tab_settings'))
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
         .width('100%')
         .padding({ left: 24, top: 64, bottom: 16 })
 
@@ -196,14 +196,14 @@ struct MainPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
+    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 
   @Builder
   settingsSection(title: string) {
     Text(title)
       .fontSize(13)
-      .fontColor(this.isDarkMode ? '#999999' : '#666666')
+      .fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
       .width('100%')
       .padding({ left: 16, top: 24, bottom: 8 })
   }
@@ -213,7 +213,7 @@ struct MainPage {
     Row() {
       Text(label)
         .fontSize(16)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
         .layoutWeight(1)
       Image($rawfile('icons/ic_arrow_right.svg'))
         .width(16).height(16)
@@ -223,7 +223,7 @@ struct MainPage {
     .height(56)
     .padding({ left: 16, right: 16 })
     .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' })
+    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? this.isDarkMode ? '#333333' : '#E5E5EA' : this.isDarkMode ? '#333333' : '#E5E5EA' })
     .onClick(action)
   }
 

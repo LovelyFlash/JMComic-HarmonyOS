@@ -40,7 +40,7 @@ struct ReadingSettings {
           .onClick(() => { router.back(); })
         Text('阅读设置')
           .fontSize(22).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
           .margin({ left: 12 })
       }
       .width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
@@ -81,7 +81,7 @@ struct ReadingSettings {
 
           SettingSection({ title: '字体' })
           Row() {
-            Text('A').fontSize(12).fontColor(this.isDarkMode ? '#999999' : '#666666')
+            Text('A').fontSize(12).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
             Slider({
               value: this.fontSize,
               min: 12,
@@ -91,7 +91,7 @@ struct ReadingSettings {
             })
             .layoutWeight(1)
             .onChange((value: number) => { this.fontSize = value })
-            Text('A').fontSize(24).fontColor(this.isDarkMode ? '#999999' : '#666666')
+            Text('A').fontSize(24).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
           }
           .width('100%').height(56).padding({ left: 16, right: 16 })
           .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
@@ -105,6 +105,6 @@ struct ReadingSettings {
         }.width('100%')
       }.layoutWeight(1)
     }
-    .width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
+    .width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 }

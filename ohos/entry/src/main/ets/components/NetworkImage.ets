@@ -27,7 +27,7 @@ export struct NetworkImage {
       Column() {
         Text('No Image')
           .fontSize(12)
-          .fontColor(this.isDarkMode ? '#666666' : '#CCCCCC')
+          .fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : '#CCCCCC')
       }
       .width(this.imgWidth)
       .height(this.imgHeight)

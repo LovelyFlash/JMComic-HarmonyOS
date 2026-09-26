@@ -16,7 +16,7 @@ struct SettingsPage {
           .onClick(() => { router.back(); })
         Text(Translations.t('tab_settings'))
           .fontSize(22).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
           .margin({ left: 12 })
       }.width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
@@ -40,21 +40,21 @@ struct SettingsPage {
           this.item(Translations.t('about'), 'v' + '1.0.0', () => { router.pushUrl({ url: 'pages/settings/AboutPage' }); })
         }.width('100%')
       }.layoutWeight(1)
-    }.width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
+    }.width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 
   @Builder section(title: string) {
-    Text(title).fontSize(13).fontColor(this.isDarkMode ? '#999999' : '#666666').width('100%').padding({ left: 16, top: 24, bottom: 8 })
+    Text(title).fontSize(13).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999').width('100%').padding({ left: 16, top: 24, bottom: 8 })
   }
 
   @Builder item(label: string, value: string, action: () => void) {
     Row() {
-      Text(label).fontSize(16).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').layoutWeight(1)
-      if (value.length > 0) { Text(value).fontSize(14).fontColor(this.isDarkMode ? '#999999' : '#666666').margin({ right: 4 }) }
+      Text(label).fontSize(16).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').layoutWeight(1)
+      if (value.length > 0) { Text(value).fontSize(14).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999').margin({ right: 4 }) }
       Image($rawfile('icons/ic_arrow_right.svg')).width(16).height(16).objectFit(ImageFit.Contain)
     }.width('100%').height(56).padding({ left: 16, right: 16 })
     .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' })
+    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? this.isDarkMode ? '#333333' : '#E5E5EA' : this.isDarkMode ? '#333333' : '#E5E5EA' })
     .onClick(action)
   }
 }

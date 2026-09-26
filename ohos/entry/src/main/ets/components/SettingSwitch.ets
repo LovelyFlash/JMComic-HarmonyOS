@@ -14,10 +14,10 @@ export struct SettingSwitch {
       }
       Text(this.title)
         .fontSize(16)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
         .layoutWeight(1)
       Toggle({ type: ToggleType.Switch, isOn: this.isOn })
-        .selectedColor('#007AFF')
+        .selectedColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
         .switchPointColor('#FFFFFF')
         .onChange((isOn: boolean) => {
           this.onToggle(isOn);
@@ -27,6 +27,6 @@ export struct SettingSwitch {
     .height(56)
     .padding({ left: 16, right: 16 })
     .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' })
+    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? this.isDarkMode ? '#333333' : '#E5E5EA' : this.isDarkMode ? '#333333' : '#E5E5EA' })
   }
 }

@@ -32,11 +32,11 @@ struct ReaderPage {
             Image(url)
               .width('100%').height('100%')
               .objectFit(ImageFit.Contain)
-              .backgroundColor('#000000')
+              .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
               .onError(() => { Logger.debug('ReaderPage', `Image load failed: ${url}`); })
           } else {
             Column() { Text('...').fontSize(16).fontColor('#FFFFFF') }
-              .width('100%').height('100%').justifyContent(FlexAlign.Center).backgroundColor('#000000')
+              .width('100%').height('100%').justifyContent(FlexAlign.Center).backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
           }
         })
       }
@@ -60,7 +60,7 @@ struct ReaderPage {
         }.width('100%').height('100%')
       }
     }
-    .width('100%').height('100%').backgroundColor('#000000')
+    .width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
     .onClick(() => { this.showToolbar = !this.showToolbar; })
   }
 }

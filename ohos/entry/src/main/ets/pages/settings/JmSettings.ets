@@ -29,30 +29,30 @@ struct JmSettings {
   build() {
     Column() {
       Row() {
-        Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
+        Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF')
           .onClick(() => { router.back(); })
         Text('JM ' + Translations.t('jm_domain_update'))
           .fontSize(18).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').margin({ left: 16 })
+          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').margin({ left: 16 })
       }.width('100%').height(56).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       Scroll() {
         Column() {
           // Current domain
-          Text('当前域名').fontSize(13).fontColor(this.isDarkMode ? '#999999' : '#666666')
+          Text('当前域名').fontSize(13).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
             .width('100%').padding({ left: 16, top: 56, bottom: 8 })
-          Text(this.currentDomain).fontSize(15).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+          Text(this.currentDomain).fontSize(15).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
             .width('100%').padding({ left: 16, bottom: 16 })
 
           // Domain list
-          Text('可用域名').fontSize(13).fontColor(this.isDarkMode ? '#999999' : '#666666')
+          Text('可用域名').fontSize(13).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
             .width('100%').padding({ left: 16, top: 8, bottom: 8 })
 
           ForEach(this.domains, (domain: string, index: number) => {
             Row() {
               Column() {
                 Text(domain).fontSize(14).fontColor(
-                  domain === this.currentDomain ? this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : '#000000')
+                  domain === this.currentDomain ? this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
                 if (index < this.healthStatus.length && this.healthStatus[index]) {
                   Text('✓ 可用').fontSize(11).fontColor(this.isDarkMode ? '#30D158' : '#34C759')
                 } else if (index < this.healthStatus.length && !this.healthStatus[index]) {
@@ -61,12 +61,12 @@ struct JmSettings {
               }.alignItems(HorizontalAlign.Start).layoutWeight(1)
 
               if (domain === this.currentDomain) {
-                Text('●').fontSize(16).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
+                Text('●').fontSize(16).fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF')
               }
             }
             .width('100%').height(56).padding({ left: 16, right: 16 })
             .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-            .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' })
+            .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? this.isDarkMode ? '#333333' : '#E5E5EA' : this.isDarkMode ? '#333333' : '#E5E5EA' })
             .onClick(() => {
               AppData.jmDomainIndex = index;
               this.currentDomain = domain;
@@ -77,7 +77,7 @@ struct JmSettings {
           Button(this.isChecking ? '检查中...' : '检查域名健康状态')
             .width('90%').height(44).margin({ top: 24 })
             .fontSize(14).fontColor('#FFFFFF')
-            .backgroundColor(this.isChecking ? '#999999' : this.isDarkMode ? '#4DA6FF' : '#007AFF')
+            .backgroundColor(this.isChecking ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF')
             .onClick(() => { this.checkHealth(); })
 
           // Refresh from remote

@@ -27,14 +27,14 @@ export struct SearchBar {
       if (this.keyword.length > 0) {
         Text('×')
           .fontSize(18)
-          .fontColor(this.isDarkMode ? '#999999' : this.isDarkMode ? '#999999' : '#666666')
+          .fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
           .margin({ left: 8 })
       }
     }
     .width('100%')
     .height(44)
     .padding({ left: 12, right: 12 })
-    .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#F5F5F5')
+    .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
     .borderRadius(22)
   }
 }

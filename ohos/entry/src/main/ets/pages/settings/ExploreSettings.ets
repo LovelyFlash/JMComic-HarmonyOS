@@ -29,7 +29,7 @@ struct ExploreSettings {
           .onClick(() => { router.back(); })
         Text('浏览设置')
           .fontSize(22).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
           .margin({ left: 12 })
       }
       .width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
@@ -63,6 +63,6 @@ struct ExploreSettings {
         }.width('100%')
       }.layoutWeight(1)
     }
-    .width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
+    .width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 }

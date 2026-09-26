@@ -24,44 +24,44 @@ struct HtSettings {
   build() {
     Column() {
       Row() {
-        Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
+        Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF')
           .onClick(() => { router.back(); })
         Text('HT ' + Translations.t('ht_domain_update'))
           .fontSize(18).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').margin({ left: 16 })
+          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').margin({ left: 16 })
       }.width('100%').height(56).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       Scroll() {
         Column() {
-          Text('当前域名').fontSize(13).fontColor(this.isDarkMode ? '#999999' : '#666666')
+          Text('当前域名').fontSize(13).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
             .width('100%').padding({ left: 16, top: 56, bottom: 8 })
-          Text(this.currentDomain).fontSize(15).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+          Text(this.currentDomain).fontSize(15).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
             .width('100%').padding({ left: 16, bottom: 16 })
 
           // Fetch remote domains
           Button(this.isLoading ? '加载中...' : '获取远程域名列表')
             .width('90%').height(44).margin({ top: 12 })
             .fontSize(14).fontColor('#FFFFFF')
-            .backgroundColor(this.isLoading ? '#999999' : this.isDarkMode ? '#FFB340' : '#FF9500')
+            .backgroundColor(this.isLoading ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#FFB340' : '#FF9500')
             .onClick(() => { this.fetchDomains(); })
 
           // Available domains
           if (this.availableDomains.length > 0) {
-            Text('可用域名').fontSize(13).fontColor(this.isDarkMode ? '#999999' : '#666666')
+            Text('可用域名').fontSize(13).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
               .width('100%').padding({ left: 16, top: 24, bottom: 8 })
 
             ForEach(this.availableDomains, (domain: string) => {
               Row() {
                 Text(domain).fontSize(14).fontColor(
-                  domain === this.currentDomain ? this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : '#000000')
+                  domain === this.currentDomain ? this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF' : this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
                   .layoutWeight(1)
                 if (domain === this.currentDomain) {
-                  Text('●').fontSize(16).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
+                  Text('●').fontSize(16).fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF')
                 }
               }
               .width('100%').height(52).padding({ left: 16, right: 16 })
               .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-              .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#333333' : '#E5E5EA' })
+              .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? this.isDarkMode ? '#333333' : '#E5E5EA' : this.isDarkMode ? '#333333' : '#E5E5EA' })
               .onClick(() => {
                 AppData.htBaseUrl = domain;
                 this.currentDomain = domain;

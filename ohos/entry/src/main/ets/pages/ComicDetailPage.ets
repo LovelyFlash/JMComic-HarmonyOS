@@ -80,7 +80,7 @@ struct ComicDetailPage {
     Column() {
       Row() {
         Image($rawfile('icons/ic_back.svg')).width(24).height(24).objectFit(ImageFit.Contain).onClick(() => { router.back(); })
-        Text(this.title).fontSize(18).fontWeight(FontWeight.Bold).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
+        Text(this.title).fontSize(18).fontWeight(FontWeight.Bold).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
           .layoutWeight(1).margin({ left: 12 }).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
         Image($rawfile('icons/ic_favorites.svg')).width(24).height(24).objectFit(ImageFit.Contain)
           .onClick(() => { this.toggleFavorite(); })
@@ -95,23 +95,23 @@ struct ComicDetailPage {
             Row() {
               Image(this.comic.coverUrl).width(130).height(180).objectFit(ImageFit.Cover).borderRadius(8).backgroundColor('#F0F0F0')
               Column() {
-                Text(this.comic.title).fontSize(18).fontWeight(FontWeight.Bold).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').maxLines(3).textOverflow({ overflow: TextOverflow.Ellipsis })
-                if (this.comic.author.length > 0) { Text('作者: ' + this.comic.author).fontSize(13).fontColor(this.isDarkMode ? '#999999' : '#666666').margin({ top: 8 }) }
+                Text(this.comic.title).fontSize(18).fontWeight(FontWeight.Bold).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').maxLines(3).textOverflow({ overflow: TextOverflow.Ellipsis })
+                if (this.comic.author.length > 0) { Text('作者: ' + this.comic.author).fontSize(13).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999').margin({ top: 8 }) }
                 if (this.comic.likes > 0) { Text('❤ ' + this.comic.likes.toString()).fontSize(13).fontColor('#FF3B30').margin({ top: 4 }) }
-                Text(this.comic.source).fontSize(12).fontColor(this.isDarkMode ? '#999999' : '#666666').margin({ top: 4 })
+                Text(this.comic.source).fontSize(12).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999').margin({ top: 4 })
               }.layoutWeight(1).alignItems(HorizontalAlign.Start).margin({ left: 16 })
             }.width('100%').padding(16)
 
             // Description
             if (this.comic.description.length > 0) {
-              Text(this.comic.description).fontSize(14).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').width('100%').padding({ left: 16, right: 16, bottom: 16 })
+              Text(this.comic.description).fontSize(14).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').width('100%').padding({ left: 16, right: 16, bottom: 16 })
             }
 
             // Tags
             if (this.comic.tags.length > 0) {
               Flex({ wrap: FlexWrap.Wrap }) {
                 ForEach(this.comic.tags, (tag: string) => {
-                  Text(tag).fontSize(12).fontColor('#007AFF').backgroundColor('#F0F8FF').borderRadius(4)
+                  Text(tag).fontSize(12).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF').backgroundColor('#F0F8FF').borderRadius(4)
                     .padding({ left: 8, right: 8, top: 4, bottom: 4 }).margin({ right: 6, bottom: 6 })
                 })
               }.width('100%').padding({ left: 16, right: 16, bottom: 16 })
@@ -120,12 +120,12 @@ struct ComicDetailPage {
             // Read button
             Button('开始阅读')
               .width('90%').height(48).fontSize(16).fontColor('#FFFFFF')
-              .backgroundColor('#007AFF').borderRadius(12)
+              .backgroundColor(this.isDarkMode ? '#4DA6FF' : '#007AFF').borderRadius(12)
               .margin({ top: 8, bottom: 24 })
               .onClick(() => { this.loadImages(); })
           }
         }.layoutWeight(1)
       }
-    }.width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
+    }.width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 }
