@@ -1,0 +1,9 @@
+{
+  "string": [
+    { "name": "app_name", "value": "PicaComic" },
+    { "name": "module_desc", "value": "PicaComic - A comic app" },
+    { "name": "ability_desc", "value": "PicaComic Main Entry" },
+    { "name": "form_history_desc", "value": "Reading History Widget" },
+    { "name": "reason_media", "value": "用于保存和读取漫画图片到媒体库" }
+  ]
+}
