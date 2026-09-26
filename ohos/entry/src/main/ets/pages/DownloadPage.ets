@@ -28,7 +28,7 @@ struct DownloadPage {
       }.width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       if (this.loading) { Column() { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center) }
-      else if (this.items.length === 0) { Column() { Text(Translations.t('no_data')).fontSize(14).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999') }.layoutWeight(1).justifyContent(FlexAlign.Center) }
+      else if (this.items.length === 0) { Column() { Text(Translations.t('no_data')).fontSize(14).fontColor(this.isDarkMode ? '#8E8E93' : '#666666') }.layoutWeight(1).justifyContent(FlexAlign.Center) }
       else {
         List({ space: 1 }) {
           ForEach(this.items, (item: DownloadItem) => {
@@ -38,7 +38,7 @@ struct DownloadPage {
                 Column() {
                   Text(item.title).fontSize(15).fontWeight(FontWeight.Medium).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%')
                   Text(item.source).fontSize(11).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF').margin({ top: 4 })
-                  if (item.downloadPath.length > 0) { Text(item.downloadPath).fontSize(11).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999').margin({ top: 2 }).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis }) }
+                  if (item.downloadPath.length > 0) { Text(item.downloadPath).fontSize(11).fontColor(this.isDarkMode ? '#8E8E93' : '#666666').margin({ top: 2 }).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis }) }
                 }.layoutWeight(1).alignItems(HorizontalAlign.Start).margin({ left: 12 })
               }.width('100%').padding(12)
             }

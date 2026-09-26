@@ -7,7 +7,7 @@ export struct SettingSection {
   build() {
     Text(this.title)
       .fontSize(13)
-      .fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
+      .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
       .width('100%')
       .padding({ left: 16, top: 24, bottom: 8 })
   }

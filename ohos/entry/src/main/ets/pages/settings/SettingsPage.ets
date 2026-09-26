@@ -44,17 +44,17 @@ struct SettingsPage {
   }
 
   @Builder section(title: string) {
-    Text(title).fontSize(13).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999').width('100%').padding({ left: 16, top: 24, bottom: 8 })
+    Text(title).fontSize(13).fontColor(this.isDarkMode ? '#8E8E93' : '#666666').width('100%').padding({ left: 16, top: 24, bottom: 8 })
   }
 
   @Builder item(label: string, value: string, action: () => void) {
     Row() {
       Text(label).fontSize(16).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').layoutWeight(1)
-      if (value.length > 0) { Text(value).fontSize(14).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999').margin({ right: 4 }) }
+      if (value.length > 0) { Text(value).fontSize(14).fontColor(this.isDarkMode ? '#8E8E93' : '#666666').margin({ right: 4 }) }
       Image($rawfile('icons/ic_arrow_right.svg')).width(16).height(16).objectFit(ImageFit.Contain)
     }.width('100%').height(56).padding({ left: 16, right: 16 })
     .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? this.isDarkMode ? '#333333' : '#E5E5EA' : this.isDarkMode ? '#333333' : '#E5E5EA' })
+    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' })
     .onClick(action)
   }
 }

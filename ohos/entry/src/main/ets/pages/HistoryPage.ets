@@ -28,7 +28,7 @@ struct HistoryPage {
       }.width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       if (this.loading) { Column() { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center) }
-      else if (this.items.length === 0) { Column() { Text(Translations.t('no_data')).fontSize(14).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999') }.layoutWeight(1).justifyContent(FlexAlign.Center) }
+      else if (this.items.length === 0) { Column() { Text(Translations.t('no_data')).fontSize(14).fontColor(this.isDarkMode ? '#8E8E93' : '#666666') }.layoutWeight(1).justifyContent(FlexAlign.Center) }
       else {
         List({ space: 1 }) {
           ForEach(this.items, (item: HistoryItem) => {
@@ -37,7 +37,7 @@ struct HistoryPage {
                 Image(item.coverUrl).width(70).height(100).objectFit(ImageFit.Cover).borderRadius(6).backgroundColor('#F0F0F0')
                 Column() {
                   Text(item.title).fontSize(15).fontWeight(FontWeight.Medium).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%')
-                  if (item.lastChapter.length > 0) { Text(item.lastChapter).fontSize(12).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999').margin({ top: 4 }) }
+                  if (item.lastChapter.length > 0) { Text(item.lastChapter).fontSize(12).fontColor(this.isDarkMode ? '#8E8E93' : '#666666').margin({ top: 4 }) }
                   Text(item.source).fontSize(11).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF').margin({ top: 2 })
                 }.layoutWeight(1).alignItems(HorizontalAlign.Start).margin({ left: 12 })
               }.width('100%').padding(12)

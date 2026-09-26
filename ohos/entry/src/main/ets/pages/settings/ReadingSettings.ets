@@ -81,7 +81,7 @@ struct ReadingSettings {
 
           SettingSection({ title: '字体' })
           Row() {
-            Text('A').fontSize(12).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
+            Text('A').fontSize(12).fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
             Slider({
               value: this.fontSize,
               min: 12,
@@ -91,7 +91,7 @@ struct ReadingSettings {
             })
             .layoutWeight(1)
             .onChange((value: number) => { this.fontSize = value })
-            Text('A').fontSize(24).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
+            Text('A').fontSize(24).fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
           }
           .width('100%').height(56).padding({ left: 16, right: 16 })
           .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')

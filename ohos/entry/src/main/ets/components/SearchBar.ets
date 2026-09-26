@@ -27,7 +27,7 @@ export struct SearchBar {
       if (this.keyword.length > 0) {
         Text('×')
           .fontSize(18)
-          .fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999')
+          .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
           .margin({ left: 8 })
       }
     }

@@ -28,7 +28,7 @@ struct FavoritesPage {
       }.width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
 
       if (this.loading) { Column() { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center) }
-      else if (this.items.length === 0) { Column() { Text(Translations.t('no_data')).fontSize(14).fontColor(this.isDarkMode ? this.isDarkMode ? '#999999' : '#999999' : this.isDarkMode ? '#999999' : '#999999') }.layoutWeight(1).justifyContent(FlexAlign.Center) }
+      else if (this.items.length === 0) { Column() { Text(Translations.t('no_data')).fontSize(14).fontColor(this.isDarkMode ? '#8E8E93' : '#666666') }.layoutWeight(1).justifyContent(FlexAlign.Center) }
       else {
         List({ space: 1 }) {
           ForEach(this.items, (item: FavoriteItem) => {

@@ -52,31 +52,23 @@
     "OPTIMIZATION_STRATEGY": "memory",
     "TASK_TIME": {
       "923fe53966c6cd9343e11af776cd4b05be315ea4b200b02e4d5dfb0f929b73bf": {
-        "CreateModuleInfo": 697200,
-        "ConfigureCmake": 186000,
-        "MergeProfile": 24058000,
-        "CreateBuildProfile": 2484100,
-        "PreCheckSyscap": 277300,
-        "GeneratePkgContextInfo": 6261200,
-        "ProcessIntegratedHsp": 520800,
-        "BuildNativeWithCmake": 204600,
-        "SyscapTransform": 9535900,
-        "ProcessProfile": 79608900,
-        "ProcessRouterMap": 2011000,
-        "ProcessShareConfig": 1622400,
-        "ProcessStartupConfig": 1011700,
-        "BuildNativeWithNinja": 485100,
-        "GenerateLoaderJson": 8348200,
-        "CompileResource": 170820900,
-        "BuildJS": 1976400,
-        "CompileArkTS": 6983631100,
-        "GeneratePkgModuleJson": 1890800,
-        "ProcessCompiledResources": 593800,
-        "PackageHap": 599926800,
-        "PackingCheck": 7156100,
-        "SignHap": 2410894300,
-        "CollectDebugSymbol": 818600,
-        "assembleHap": 119100
+        "CreateModuleInfo": 727500,
+        "ConfigureCmake": 213600,
+        "PreCheckSyscap": 264400,
+        "GeneratePkgContextInfo": 6708100,
+        "ProcessIntegratedHsp": 763400,
+        "BuildNativeWithCmake": 314300,
+        "SyscapTransform": 8927200,
+        "ProcessStartupConfig": 1213100,
+        "BuildNativeWithNinja": 447300,
+        "BuildJS": 3545400,
+        "CompileArkTS": 5257112600,
+        "ProcessCompiledResources": 554200,
+        "PackageHap": 516039400,
+        "PackingCheck": 4463400,
+        "SignHap": 2409507100,
+        "CollectDebugSymbol": 699700,
+        "assembleHap": 187800
       }
     },
     "CUSTOM_TASK_TIME": {},
@@ -89,8 +81,8 @@
       "ENABLE_CPP_FUNCTION_LEVEL_INCREMENTAL": false
     },
     "CONFIG_PROPERTIES": {},
-    "BUILD_ID": "202609270226572980",
-    "PID": 20784,
-    "TOTAL_TIME": 11855406500
+    "BUILD_ID": "202609270234417200",
+    "PID": 41716,
+    "TOTAL_TIME": 9832357400
   }
 }
