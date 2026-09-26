@@ -52,23 +52,31 @@
     "OPTIMIZATION_STRATEGY": "memory",
     "TASK_TIME": {
       "923fe53966c6cd9343e11af776cd4b05be315ea4b200b02e4d5dfb0f929b73bf": {
-        "CreateModuleInfo": 741000,
-        "ConfigureCmake": 181100,
-        "PreCheckSyscap": 359700,
-        "GeneratePkgContextInfo": 5814700,
-        "ProcessIntegratedHsp": 519000,
-        "BuildNativeWithCmake": 224800,
-        "SyscapTransform": 8446300,
-        "ProcessStartupConfig": 859000,
-        "BuildNativeWithNinja": 546400,
-        "BuildJS": 1539700,
-        "CompileArkTS": 4451229200,
-        "ProcessCompiledResources": 433300,
-        "PackageHap": 515637900,
-        "PackingCheck": 4184500,
-        "SignHap": 2438347500,
-        "CollectDebugSymbol": 802500,
-        "assembleHap": 179000
+        "CreateModuleInfo": 697200,
+        "ConfigureCmake": 186000,
+        "MergeProfile": 24058000,
+        "CreateBuildProfile": 2484100,
+        "PreCheckSyscap": 277300,
+        "GeneratePkgContextInfo": 6261200,
+        "ProcessIntegratedHsp": 520800,
+        "BuildNativeWithCmake": 204600,
+        "SyscapTransform": 9535900,
+        "ProcessProfile": 79608900,
+        "ProcessRouterMap": 2011000,
+        "ProcessShareConfig": 1622400,
+        "ProcessStartupConfig": 1011700,
+        "BuildNativeWithNinja": 485100,
+        "GenerateLoaderJson": 8348200,
+        "CompileResource": 170820900,
+        "BuildJS": 1976400,
+        "CompileArkTS": 6983631100,
+        "GeneratePkgModuleJson": 1890800,
+        "ProcessCompiledResources": 593800,
+        "PackageHap": 599926800,
+        "PackingCheck": 7156100,
+        "SignHap": 2410894300,
+        "CollectDebugSymbol": 818600,
+        "assembleHap": 119100
       }
     },
     "CUSTOM_TASK_TIME": {},
@@ -81,8 +89,8 @@
       "ENABLE_CPP_FUNCTION_LEVEL_INCREMENTAL": false
     },
     "CONFIG_PROPERTIES": {},
-    "BUILD_ID": "202609270201173370",
-    "PID": 44616,
-    "TOTAL_TIME": 8998093900
+    "BUILD_ID": "202609270226572980",
+    "PID": 20784,
+    "TOTAL_TIME": 11855406500
   }
 }
