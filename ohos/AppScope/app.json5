@@ -1,6 +1,6 @@
 {
   "app": {
-    "bundleName": "com.picacomic.harmony",
+    "bundleName": "com.jmcomic.harmony",
     "bundleType": "app",
     "versionCode": 1,
     "versionName": "1.0.0",

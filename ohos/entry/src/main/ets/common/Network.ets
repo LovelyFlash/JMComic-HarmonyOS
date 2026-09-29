@@ -1,5 +1,8 @@
 // common/Network.ets - HTTP 封装
 import http from '@ohos.net.http';
+import { request } from '@kit.BasicServicesKit';
+import fs from '@ohos.file.fs';
+import { common } from '@kit.AbilityKit';
 import { Logger } from './Logger';
 
 const TAG = 'Network';
@@ -7,6 +10,16 @@ const TAG = 'Network';
 class CacheEntry {
   data: string = '';
   time: number = 0;
+}
+
+/** 带状态码的响应（401 等非 200 也能拿到 body） */
+export class NetworkResp {
+  code: number = -1;
+  body: string = '';
+  constructor(code: number, body: string) {
+    this.code = code;
+    this.body = body;
+  }
 }
 
 export class Network {
@@ -21,6 +34,73 @@ export class Network {
   static getCookie(host: string): string {
     const val = Network.cookies.get(host);
     return val !== undefined ? val : '';
+  }
+
+  /** 清除指定 host 的 cookie（登出用） */
+  static clearHostCookies(host: string): void {
+    Network.cookies.delete(host);
+  }
+
+  /** 清除全部 cookie */
+  static clearAllCookies(): void {
+    Network.cookies.clear();
+  }
+
+  /** 从响应头捕获 Set-Cookie 并按 host 合并（值可能是 string 或 string[]） */
+  private static captureCookies(host: string, headerObj: Object): void {
+    if (host.length === 0) {
+      return;
+    }
+    const headers = headerObj as Record<string, Object>;
+    const keys: string[] = ['set-cookie', 'Set-Cookie', 'SET-COOKIE'];
+    let raw: Object | undefined = undefined;
+    for (let i = 0; i < keys.length; i++) {
+      const v: Object | undefined = headers[keys[i]];
+      if (v !== undefined && v !== null) {
+        raw = v;
+        break;
+      }
+    }
+    if (raw === undefined || raw === null) {
+      return;
+    }
+    const parts: string[] = [];
+    if (Array.isArray(raw)) {
+      const arr: Object[] = raw as Object[];
+      for (let i = 0; i < arr.length; i++) {
+        parts.push(String(arr[i]));
+      }
+    } else {
+      parts.push(String(raw));
+    }
+    // 合并 name=value 对
+    const pairs: Map<string, string> = new Map();
+    const existing: string = Network.cookies.get(host) ?? '';
+    if (existing.length > 0) {
+      const items: string[] = existing.split(';');
+      for (let i = 0; i < items.length; i++) {
+        const seg: string = items[i].trim();
+        const idx: number = seg.indexOf('=');
+        if (idx > 0) {
+          pairs.set(seg.substring(0, idx), seg.substring(idx + 1));
+        }
+      }
+    }
+    for (let i = 0; i < parts.length; i++) {
+      const seg: string = parts[i].split(';')[0].trim();
+      const idx: number = seg.indexOf('=');
+      if (idx > 0) {
+        pairs.set(seg.substring(0, idx), seg.substring(idx + 1));
+      }
+    }
+    const merged: string[] = [];
+    pairs.forEach((value: string, key: string) => {
+      merged.push(`${key}=${value}`);
+    });
+    if (merged.length > 0) {
+      Network.cookies.set(host, merged.join('; '));
+      Logger.debug(TAG, `Captured cookies for ${host}: ${merged.length} pairs`);
+    }
   }
 
   static async get(url: string, headers?: Record<string, string>, useCache: boolean = false): Promise<string> {
@@ -44,6 +124,7 @@ export class Network {
         connectTimeout: 15000,
         readTimeout: 30000
       });
+      Network.captureCookies(host, response.header);
       if (response.responseCode === 200) {
         const data = response.result as string;
         if (useCache) {
@@ -65,7 +146,133 @@ export class Network {
     }
   }
 
+  /** GET，任意状态码都返回 {code, body}（body 解析为 string，失败为 ''） */
+  static async getWithStatus(url: string, headers?: Record<string, string>): Promise<NetworkResp> {
+    const httpRequest = http.createHttp();
+    try {
+      const requestHeaders: Record<string, string> = headers ?? {};
+      const host = Network.extractHost(url);
+      const cookie = Network.getCookie(host);
+      if (cookie !== '') {
+        requestHeaders['Cookie'] = cookie;
+      }
+      const response = await httpRequest.request(url, {
+        method: http.RequestMethod.GET,
+        header: requestHeaders,
+        connectTimeout: 15000,
+        readTimeout: 30000
+      });
+      Network.captureCookies(host, response.header);
+      let body: string = '';
+      try {
+        body = response.result as string;
+      } catch (e) {
+        body = '';
+      }
+      return new NetworkResp(response.responseCode, body);
+    } catch (e) {
+      Logger.error(TAG, `GET ${url} exception: ${String(e)}`);
+      return new NetworkResp(-1, '');
+    } finally {
+      httpRequest.destroy();
+    }
+  }
+
+  /** GET 二进制数据（JM 图片分片重组用），失败返回 null */
+  static async getBytes(url: string, headers?: Record<string, string>): Promise<Uint8Array | null> {
+    const httpRequest = http.createHttp();
+    try {
+      const requestHeaders: Record<string, string> = headers ?? {};
+      const host = Network.extractHost(url);
+      const cookie = Network.getCookie(host);
+      if (cookie !== '') {
+        requestHeaders['Cookie'] = cookie;
+      }
+      const response = await httpRequest.request(url, {
+        method: http.RequestMethod.GET,
+        header: requestHeaders,
+        expectDataType: http.HttpDataType.ARRAY_BUFFER,
+        connectTimeout: 15000,
+        readTimeout: 30000
+      });
+      Network.captureCookies(host, response.header);
+      if (response.responseCode === 200) {
+        return new Uint8Array(response.result as ArrayBuffer);
+      }
+      Logger.error(TAG, `GET bytes ${url} failed: ${response.responseCode}`);
+      return null;
+    } catch (e) {
+      Logger.error(TAG, `GET bytes ${url} exception: ${String(e)}`);
+      return null;
+    } finally {
+      httpRequest.destroy();
+    }
+  }
+
+  /** 通过系统下载服务取二进制（http 栈被拒时的兜底，另一网络栈），失败返回 null */
+  static async getBytesViaDownload(url: string, headers: Record<string, string>,
+    ctx: common.Context): Promise<Uint8Array | null> {
+    const fileName: string = `jm_${Date.now()}_${Math.floor(Math.random() * 100000)}.img`;
+    const filePath: string = `${ctx.cacheDir}/${fileName}`;
+    let task: request.DownloadTask | null = null;
+    try {
+      task = await request.downloadFile(ctx, {
+        url: url,
+        header: headers,
+        filePath: filePath,
+        enableMetered: true,
+        enableRoaming: true
+      });
+    } catch (e) {
+      Logger.error(TAG, `downloadFile init failed: ${String(e)}`);
+      return null;
+    }
+    return await new Promise<Uint8Array | null>((resolve: (value: Uint8Array | null) => void) => {
+      task!.on('complete', () => {
+        try {
+          const stat: fs.Stat = fs.statSync(filePath);
+          const buf: ArrayBuffer = new ArrayBuffer(stat.size);
+          const file: fs.File = fs.openSync(filePath, fs.OpenMode.READ_ONLY);
+          fs.readSync(file.fd, buf);
+          fs.closeSync(file);
+          try {
+            fs.unlinkSync(filePath);
+          } catch (e) {
+            Logger.debug(TAG, `unlink temp file failed: ${String(e)}`);
+          }
+          resolve(new Uint8Array(buf));
+        } catch (e) {
+          Logger.error(TAG, `read downloaded file failed: ${String(e)}`);
+          try {
+            fs.unlinkSync(filePath);
+          } catch (e2) {
+            Logger.debug(TAG, `unlink temp file failed: ${String(e2)}`);
+          }
+          resolve(null);
+        }
+      });
+      task!.on('fail', (err: number) => {
+        Logger.error(TAG, `download task fail: ${err}, ${url}`);
+        try {
+          fs.unlinkSync(filePath);
+        } catch (e) {
+          Logger.debug(TAG, `unlink temp file failed: ${String(e)}`);
+        }
+        task!.delete().catch(() => {
+        });
+        resolve(null);
+      });
+    });
+  }
+
   static async post(url: string, body: string, headers?: Record<string, string>): Promise<string> {
+    const resp: NetworkResp = await Network.postWithStatus(url, body, headers);
+    return resp.code === 200 ? resp.body : '';
+  }
+
+  /** POST，任意状态码都返回 {code, body} */
+  static async postWithStatus(url: string, body: string, headers?: Record<string, string>,
+    timeoutMs: number = 15000): Promise<NetworkResp> {
     const httpRequest = http.createHttp();
     try {
       const requestHeaders: Record<string, string> = headers ?? {};
@@ -81,18 +288,20 @@ export class Network {
         method: http.RequestMethod.POST,
         header: requestHeaders,
         extraData: body,
-        connectTimeout: 15000,
-        readTimeout: 30000
+        connectTimeout: timeoutMs,
+        readTimeout: timeoutMs
       });
-      if (response.responseCode === 200) {
-        return response.result as string;
-      } else {
-        Logger.error(TAG, `POST ${url} failed: ${response.responseCode}`);
-        return '';
+      Network.captureCookies(host, response.header);
+      let respBody: string = '';
+      try {
+        respBody = response.result as string;
+      } catch (e) {
+        respBody = '';
       }
+      return new NetworkResp(response.responseCode, respBody);
     } catch (e) {
       Logger.error(TAG, `POST ${url} exception: ${String(e)}`);
-      return '';
+      return new NetworkResp(-1, '');
     } finally {
       httpRequest.destroy();
     }

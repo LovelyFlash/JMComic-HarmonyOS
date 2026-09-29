@@ -1,51 +1,58 @@
-// pages/settings/AboutPage.ets - 关于页
-import { router } from '@kit.ArkUI';
+// pages/settings/AboutPage.ets - 关于页 - NavDestination
 import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
 import { ApiConstants } from '../../common/Constants';
+import { NavTitleBar } from '../../components/NavTitleBar';
 
-@Entry
+@Builder
+export function AboutPageBuilder(name: string, param: object) {
+  AboutPage()
+}
+
 @Component
-struct AboutPage {
+export struct AboutPage {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
+  @StorageLink('themeVersion') themeVersion: number = 0
 
   build() {
-    Column({ space: 8 }) {
-      Row() {
-        Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF')
-          .onClick(() => { router.back(); })
-        Text(Translations.t('about')).fontSize(18).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').margin({ left: 16 })
-      }.width('100%').height(56).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
-
-      Column({ space: 8 }) {
-        Image($rawfile('icons/ic_explore.svg')).width(64).height(64).objectFit(ImageFit.Contain)
-        Text(ApiConstants.APP_NAME)
-          .fontSize(24)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
-          .margin({ top: 56 })
-        Text('HarmonyOS Version')
-          .fontSize(14)
-          .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
-          .margin({ top: 4 })
-        Text('v' + ApiConstants.APP_VERSION)
-          .fontSize(14)
-          .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
-          .margin({ top: 4 })
-        Text('基于 ArkTS/ArkUI 开发')
-          .fontSize(13)
-          .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
-          .margin({ top: 56 })
-        Text('原项目: ccbkv/PicaComic')
-          .fontSize(13)
-          .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
-          .margin({ top: 8 })
-      }
-      .layoutWeight(1)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
+    NavDestination() {
+      ForEach([this.themeVersion], (v: number) => {
+        Column({ space: 8 }) {
+          NavTitleBar({ title: Translations.t('about') })
+          Column({ space: 8 }) {
+            SymbolGlyph($r('sys.symbol.book'))
+              .fontSize(64)
+              .fontColor([ThemeManager.primary])
+            Text(ApiConstants.APP_NAME)
+              .fontSize(24)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(ThemeManager.textPrimary)
+              .margin({ top: 56 })
+            Text('HarmonyOS Version')
+              .fontSize(14)
+              .fontColor(ThemeManager.textSecondary)
+              .margin({ top: 4 })
+            Text('v' + ApiConstants.APP_VERSION)
+              .fontSize(14)
+              .fontColor(ThemeManager.textSecondary)
+              .margin({ top: 4 })
+            Text(Translations.t('about_desc'))
+              .fontSize(13)
+              .fontColor(ThemeManager.textSecondary)
+              .margin({ top: 56 })
+            Text(Translations.t('about_original'))
+              .fontSize(13)
+              .fontColor(ThemeManager.textSecondary)
+              .margin({ top: 8 })
+          }
+          .layoutWeight(1)
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Center)
+        }
+        .width('100%').height('100%')
+      }, (v: number) => `theme-${v}`)
     }
-    .width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
+    .hideTitleBar(true)
+    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.pageBackground : '')
   }
 }

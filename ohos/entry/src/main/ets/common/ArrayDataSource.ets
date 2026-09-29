@@ -1,9 +1,8 @@
-// common/ArrayDataSource.ets - 通用 LazyForEach 数据源
-import { IDataSource, DataChangeListener } from '@kit.ArkUI';
+// common/ArrayDataSource.ets - LazyForEach 数据源
 
 export class ArrayDataSource<T> implements IDataSource {
   private items: T[] = [];
-  private listener: DataChangeListener | null = null;
+  private listeners: DataChangeListener[] = [];
 
   constructor(data: T[] = []) {
     this.items = data;
@@ -19,36 +18,39 @@ export class ArrayDataSource<T> implements IDataSource {
 
   addData(data: T): void {
     this.items.push(data);
-    if (this.listener !== null) {
-      this.listener.onDataAdd(this.items.length - 1);
+    for (let i = 0; i < this.listeners.length; i++) {
+      this.listeners[i].onDataAdd(this.items.length - 1);
     }
   }
 
-  addDataAt(index: number, data: T): void {
-    this.items.splice(index, 0, data);
-    if (this.listener !== null) {
-      this.listener.onDataAdd(index);
+  addAll(data: T[]): void {
+    const start = this.items.length;
+    for (let i = 0; i < data.length; i++) {
+      this.items.push(data[i]);
+    }
+    for (let i = 0; i < this.listeners.length; i++) {
+      this.listeners[i].onDataAdd(start);
     }
   }
 
   setData(index: number, data: T): void {
     this.items[index] = data;
-    if (this.listener !== null) {
-      this.listener.onDataChange(index);
+    for (let i = 0; i < this.listeners.length; i++) {
+      this.listeners[i].onDataChange(index);
     }
   }
 
   deleteData(index: number): void {
     this.items.splice(index, 1);
-    if (this.listener !== null) {
-      this.listener.onDataDelete(index);
+    for (let i = 0; i < this.listeners.length; i++) {
+      this.listeners[i].onDataDelete(index);
     }
   }
 
   clearData(): void {
     this.items = [];
-    if (this.listener !== null) {
-      this.listener.onDataReloaded();
+    for (let i = 0; i < this.listeners.length; i++) {
+      this.listeners[i].onDataReloaded();
     }
   }
 
@@ -57,12 +59,15 @@ export class ArrayDataSource<T> implements IDataSource {
   }
 
   registerDataChangeListener(listener: DataChangeListener): void {
-    this.listener = listener;
+    if (this.listeners.indexOf(listener) < 0) {
+      this.listeners.push(listener);
+    }
   }
 
   unregisterDataChangeListener(listener: DataChangeListener): void {
-    if (this.listener === listener) {
-      this.listener = null;
+    const idx = this.listeners.indexOf(listener);
+    if (idx >= 0) {
+      this.listeners.splice(idx, 1);
     }
   }
 }

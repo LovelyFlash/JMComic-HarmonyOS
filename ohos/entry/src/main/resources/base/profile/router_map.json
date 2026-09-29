@@ -1,0 +1,84 @@
+{
+  "routerMap": [
+    {
+      "buildFunction": "PreSearchPageBuilder",
+      "name": "preSearch",
+      "pageSourceFile": "src/main/ets/pages/PreSearchPage.ets"
+    },
+    {
+      "buildFunction": "SearchPageBuilder",
+      "name": "search",
+      "pageSourceFile": "src/main/ets/pages/SearchPage.ets"
+    },
+    {
+      "buildFunction": "ComicDetailPageBuilder",
+      "name": "comicDetail",
+      "pageSourceFile": "src/main/ets/pages/ComicDetailPage.ets"
+    },
+    {
+      "buildFunction": "ReaderPageBuilder",
+      "name": "reader",
+      "pageSourceFile": "src/main/ets/pages/reader/ReaderPage.ets"
+    },
+    {
+      "buildFunction": "CommentsPageBuilder",
+      "name": "comments",
+      "pageSourceFile": "src/main/ets/pages/CommentsPage.ets"
+    },
+    {
+      "buildFunction": "AccountsPageBuilder",
+      "name": "accounts",
+      "pageSourceFile": "src/main/ets/pages/AccountsPage.ets"
+    },
+    {
+      "buildFunction": "SettingsPageBuilder",
+      "name": "settings",
+      "pageSourceFile": "src/main/ets/pages/settings/SettingsPage.ets"
+    },
+    {
+      "buildFunction": "HistoryPageBuilder",
+      "name": "history",
+      "pageSourceFile": "src/main/ets/pages/HistoryPage.ets"
+    },
+    {
+      "buildFunction": "DownloadPageBuilder",
+      "name": "downloads",
+      "pageSourceFile": "src/main/ets/pages/DownloadPage.ets"
+    },
+    {
+      "buildFunction": "FollowPageBuilder",
+      "name": "follows",
+      "pageSourceFile": "src/main/ets/pages/FollowPage.ets"
+    },
+    {
+      "buildFunction": "AboutPageBuilder",
+      "name": "about",
+      "pageSourceFile": "src/main/ets/pages/settings/AboutPage.ets"
+    },
+    {
+      "buildFunction": "ReadingSettingsBuilder",
+      "name": "readingSettings",
+      "pageSourceFile": "src/main/ets/pages/settings/ReadingSettings.ets"
+    },
+    {
+      "buildFunction": "JmSettingsBuilder",
+      "name": "jmSettings",
+      "pageSourceFile": "src/main/ets/pages/settings/JmSettings.ets"
+    },
+    {
+      "buildFunction": "JmPromotePageBuilder",
+      "name": "jmPromote",
+      "pageSourceFile": "src/main/ets/pages/JmPromotePage.ets"
+    },
+    {
+      "buildFunction": "JmCategoryPageBuilder",
+      "name": "jmCategory",
+      "pageSourceFile": "src/main/ets/pages/JmCategoryPage.ets"
+    },
+    {
+      "buildFunction": "JmWeekPageBuilder",
+      "name": "jmWeek",
+      "pageSourceFile": "src/main/ets/pages/JmWeekPage.ets"
+    }
+  ]
+}

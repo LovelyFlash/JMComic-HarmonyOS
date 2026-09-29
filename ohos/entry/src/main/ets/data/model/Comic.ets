@@ -1,4 +1,6 @@
 // data/model/Comic.ets - 漫画数据模型
+import { Chapter } from './Chapter';
+
 export class Comic {
   id: string = '';
   title: string = '';
@@ -23,6 +25,8 @@ export class Comic {
   type: string = '';
   time: string = '';
   enableTagsTranslation: boolean = false;
+  chapters: Chapter[] = [];
+  relatedComics: Comic[] = [];
 }
 
 export class ComicBrief {

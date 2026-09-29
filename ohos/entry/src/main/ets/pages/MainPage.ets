@@ -1,239 +1,127 @@
-// pages/MainPage.ets - 主页面（Tabs + SVG 图标 + 系统颜色 + 深色模式）
-import { router } from '@kit.ArkUI';
-import { hilog } from '@kit.PerformanceAnalysisKit';
+// pages/MainPage.ets
 import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
-
-const TAG = 'MainPage';
+import { NavUtil } from '../common/NavUtil';
+import { MePage } from './MePage';
+import { FavoritesContent } from './FavoritesContent';
+import { DiscoverPage } from './DiscoverPage';
+import { CategoryPage } from './CategoryPage';
+import { HdsTabs, HdsTabsController, hdsMaterial} from '@kit.UIDesignKit';
 
 @Entry
 @Component
 struct MainPage {
-  @State currentTab: number = 0
+  @State currentTab: number=0
   @StorageLink('isDarkMode') isDarkMode: boolean = false
-
-  aboutToAppear(): void {
-    hilog.info(0x0000, TAG, 'MainPage aboutToAppear');
-  }
-
-  @Builder
-  tabBuilder(title: string, iconRes: string, iconSelectedRes: string, index: number) {
-    Column({ space: 8 }) {
-      Image(this.currentTab === index ? $rawfile(`icons/${iconSelectedRes}`) : $rawfile(`icons/${iconRes}`))
-        .width(24)
-        .height(24)
-        .objectFit(ImageFit.Contain)
-      Text(title)
-        .fontSize(10)
-        .fontColor(this.currentTab === index ?
-          $r('sys.color.ohos_id_color_text_primary_activated') :
-          $r('sys.color.ohos_id_color_text_secondary'))
-        .margin({ top: 2 })
-    }
-    .width('100%')
-    .height('100%')
-    .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
-  }
+  @StorageLink('themeVersion') themeVersion: number = 0
+  @StorageProp('topAvoidHeight') topAvoid: number = 0
+  @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
+  @State shadowGlow: number = 0.25;
+  private controller: HdsTabsController = new HdsTabsController();
 
   build() {
-    Column({ space: 8 }) {
-      Tabs({ barPosition: BarPosition.End, index: this.currentTab }) {
-        TabContent() { this.buildExplorePage() }
-          .tabBar(this.tabBuilder(Translations.t('tab_explore'), 'ic_explore.svg', 'ic_explore_selected.svg', 0))
-
-        TabContent() { this.buildHistoryPage() }
-          .tabBar(this.tabBuilder(Translations.t('tab_history'), 'ic_history.svg', 'ic_history_selected.svg', 1))
-
-        TabContent() { this.buildFavoritesPage() }
-          .tabBar(this.tabBuilder(Translations.t('tab_favorites'), 'ic_favorites.svg', 'ic_favorites_selected.svg', 2))
-
-        TabContent() { this.buildSettingsPage() }
-          .tabBar(this.tabBuilder(Translations.t('tab_settings'), 'ic_settings.svg', 'ic_settings_selected.svg', 3))
+    Navigation(NavUtil.stack) {
+        // 底部 Tab 导航栏，使用 HdsTabs 组件
+        HdsTabs({
+          controller: this.controller,
+          index: this.currentTab
+        }) {
+          // Tab 0 - 首页
+          TabContent() {
+            Stack({ alignContent: Alignment.Bottom }){MePage()}
+          }.tabBar(this.TabBarContent(0))
+          // Tab 1 - 收藏
+          TabContent() {
+            Stack({ alignContent: Alignment.Bottom }){FavoritesContent()}
+          }.tabBar(this.TabBarContent(1))
+          // Tab 2 - 探索
+          TabContent() {
+            Stack({ alignContent: Alignment.Bottom }){DiscoverPage()}
+          }.tabBar(this.TabBarContent(2))
+          // Tab 3 - 分类
+          TabContent() {
+            Stack({ alignContent: Alignment.Bottom }){CategoryPage()}
+          }.tabBar(this.TabBarContent(3))
+        }.onAnimationStart((index :number) => {
+          this.currentTab = index;})
+        .onChange((index :number) => {
+          this.currentTab = index;})
+        .barOverlap(true)
+        .vertical(false)
+        .barPosition(BarPosition.End)
+        .barFloatingStyle({
+          barBottomMargin: 36,
+          adaptToHandedness: true,
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        })
+        this.FabContent()
       }
-      .vertical(false)
-      .barHeight(56)
-      .barMode(BarMode.Fixed)
-      .onChange((index: number) => { this.currentTab = index; })
-    }
+    .hideTitleBar(true)
+    .mode(NavigationMode.Stack)
+    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .padding({ top: this.topAvoid, bottom: this.bottomAvoid })
     .width('100%')
     .height('100%')
-    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
   }
 
   @Builder
-  buildExplorePage() {
-    Column({ space: 8 }) {
-      Text(Translations.t('app_name'))
-        .fontSize(28)
-        .fontWeight(FontWeight.Bold)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
-        .width('100%')
-        .textAlign(TextAlign.Start)
-        .padding({ left: 24, top: 64, bottom: 4 })
-
-      Text(Translations.t('tab_explore'))
-        .fontSize(14)
-        .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
-        .width('100%')
-        .padding({ left: 24, bottom: 20 })
-
-      Grid() {
-        this.sourceItem('Picacg', 'picacg')
-        this.sourceItem('EHentai', 'ehentai')
-        this.sourceItem('JinMan', 'jm')
-        this.sourceItem('Hitomi', 'hitomi')
-        this.sourceItem('HT', 'htmanga')
-        this.sourceItem('NHentai', 'nhentai')
-      }
-      .columnsTemplate('1fr 1fr 1fr')
-      .columnsGap(12)
-      .rowsGap(12)
-      .width('100%')
-      .padding(16)
-      .layoutWeight(1)
+  TabBarContent(currentTab:number){
+    if(currentTab==0)
+    Column({ space: 3 }) {
+      SymbolGlyph(this.currentTab === 0 ? $r('sys.symbol.house_fill') : $r('sys.symbol.house'))
+        .fontSize(22)
+        .fontColor([this.currentTab === 0 ? ThemeManager.primary : ThemeManager.textTertiary])
+      Text(Translations.t('tab_home'))
+        .fontSize(10)
+        .fontColor(this.currentTab === 0 ? ThemeManager.primary : ThemeManager.textTertiary)
     }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
-  }
-
-  @Builder
-  sourceItem(label: string, source: string) {
-    Column({ space: 8 }) {
-      Text(label)
-        .fontSize(15)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
-    }
-    .width('100%')
-    .height(80)
-    .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
-    .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-    .borderRadius(16)
-    .shadow({ radius: 4, color: this.isDarkMode ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)', offsetY: 2 })
-    .onClick(() => { this.navigateToSource(source); })
-  }
-
-  @Builder
-  buildHistoryPage() {
-    Column({ space: 8 }) {
-      Text(Translations.t('tab_history'))
-        .fontSize(28)
-        .fontWeight(FontWeight.Bold)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
-        .width('100%')
-        .padding({ left: 24, top: 64, bottom: 8 })
-      Column({ space: 8 }) {
-        Text(Translations.t('no_data'))
-          .fontSize(14)
-          .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
-      }
-      .layoutWeight(1)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-    }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
-  }
-
-  @Builder
-  buildFavoritesPage() {
-    Column({ space: 8 }) {
+    else if(currentTab == 1)
+    Column({ space: 3 }) {
+      SymbolGlyph(this.currentTab === 1 ? $r('sys.symbol.heart_fill') : $r('sys.symbol.heart'))
+        .fontSize(22)
+        .fontColor([this.currentTab === 1 ? ThemeManager.primary : ThemeManager.textTertiary])
       Text(Translations.t('tab_favorites'))
-        .fontSize(28)
-        .fontWeight(FontWeight.Bold)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
-        .width('100%')
-        .padding({ left: 24, top: 64, bottom: 8 })
-      Column({ space: 8 }) {
-        Text(Translations.t('no_data'))
-          .fontSize(14)
-          .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
+        .fontSize(10)
+        .fontColor(this.currentTab === 1 ? ThemeManager.primary : ThemeManager.textTertiary)
+    }
+    else if(currentTab == 2)
+    Column({ space: 3 }) {
+      SymbolGlyph($r('sys.symbol.square_grid_2x2'))
+        .fontSize(22)
+        .fontColor([this.currentTab === 2 ? ThemeManager.primary : ThemeManager.textTertiary])
+      Text(Translations.t('tab_explore'))
+        .fontColor(this.currentTab === 2 ? ThemeManager.primary : ThemeManager.textTertiary)
+        .fontSize(10)
+    }
+    else if(currentTab == 3)
+    Column({ space: 3 }) {
+      SymbolGlyph(this.currentTab === 3 ? $r('sys.symbol.folder_fill') : $r('sys.symbol.folder'))
+        .fontSize(22)
+        .fontColor([this.currentTab === 3 ? ThemeManager.primary : ThemeManager.textTertiary])
+      Text(Translations.t('tab_category'))
+        .fontSize(10)
+        .fontColor(this.currentTab === 3 ? ThemeManager.primary : ThemeManager.textTertiary)
+    }
+  }
+
+  @Builder
+  FabContent() {
+    ForEach([this.themeVersion], (v: number) => {
+      Button({ type: ButtonType.Circle, stateEffect: true }) {
+        SymbolGlyph($r('sys.symbol.magnifyingglass'))
+          .fontSize(22)
+          .fontColor([Color.White])
       }
-      .layoutWeight(1)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-    }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
-  }
-
-  @Builder
-  buildSettingsPage() {
-    Column({ space: 8 }) {
-      Text(Translations.t('tab_settings'))
-        .fontSize(28)
-        .fontWeight(FontWeight.Bold)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
-        .width('100%')
-        .padding({ left: 24, top: 64, bottom: 16 })
-
-      Scroll() {
-        Column({ space: 8 }) {
-          this.settingsSection(Translations.t('settings_appearance'))
-          this.settingsItem(Translations.t('dark_mode'), () => { ThemeManager.setDarkMode(!ThemeManager.isDark); })
-          this.settingsItem(Translations.t('theme_color'), () => {
-            const colors = ThemeManager.themePresets;
-            const current = ThemeManager.themeColor;
-            let idx = 0;
-            for (let i = 0; i < colors.length; i++) { if (colors[i] === current) { idx = i; break; } }
-            ThemeManager.setThemeColor(colors[(idx + 1) % colors.length]);
-          })
-
-          this.settingsSection(Translations.t('settings_comic_source'))
-          this.settingsItem('JM ' + Translations.t('jm_domain_update'), () => { router.pushUrl({ url: 'pages/settings/JmSettings' }); })
-          this.settingsItem('HT ' + Translations.t('ht_domain_update'), () => { router.pushUrl({ url: 'pages/settings/HtSettings' }); })
-
-          this.settingsSection(Translations.t('settings_system'))
-          this.settingsItem(Translations.t('about'), () => { router.pushUrl({ url: 'pages/settings/AboutPage' }); })
-        }.width('100%')
-      }
-      .layoutWeight(1)
-    }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
-  }
-
-  @Builder
-  settingsSection(title: string) {
-    Text(title)
-      .fontSize(13)
-      .fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
-      .width('100%')
-      .padding({ left: 16, top: 24, bottom: 8 })
-  }
-
-  @Builder
-  settingsItem(label: string, action: () => void) {
-    Row() {
-      Text(label)
-        .fontSize(16)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
-        .layoutWeight(1)
-      Image($rawfile('icons/ic_arrow_right.svg'))
-        .width(16).height(16)
-        .objectFit(ImageFit.Contain)
-    }
-    .width('100%')
-    .height(56)
-    .padding({ left: 16, right: 16 })
-    .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' })
-    .onClick(action)
-  }
-
-  private navigateToSource(source: string): void {
-    const pageMap: Record<string, string> = {
-      'picacg': 'pages/picacg/PicacgHome', 'ehentai': 'pages/ehentai/EhHome',
-      'jm': 'pages/jm/JmHome', 'hitomi': 'pages/hitomi/HitomiHome',
-      'htmanga': 'pages/htcomic/HtHome', 'nhentai': 'pages/nhentai/NhHome'
-    };
-    const page = pageMap[source];
-    if (page !== undefined) { router.pushUrl({ url: page }); }
+      .width(48)
+      .height(48)
+      .backgroundColor(ThemeManager.primary)
+      .shadow({ radius: 12, color: 'rgba(0,0,0,0.3)', offsetX: 0, offsetY: 4 })
+      .position({ right: 16, top: 12 })
+      .onClick(() => { NavUtil.push('preSearch'); })
+      .id('fabSearch')
+    }, (v: number) => `theme-${v}`)
   }
 }

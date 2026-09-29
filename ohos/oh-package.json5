@@ -1,6 +1,6 @@
 {
   "modelVersion": "5.0.0",
-  "description": "PicaComic HarmonyOS - A comic reader with multiple sources",
+  "description": "JMComic HarmonyOS - A comic reader with multiple sources",
   "dependencies": {},
   "devDependencies": {
     "@ohos/hypium": "1.0.19"

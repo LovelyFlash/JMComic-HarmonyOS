@@ -1,33 +1,14 @@
 // common/Constants.ets - API 地址、常量定义
 export class ApiConstants {
-  // Picacg
-  static readonly PICACG_API = 'https://picaapi.picacomic.com';
-  static readonly PICACG_API_KEY = 'C69BAF41DA5ABD1FFEDC6D2FEA56B';
-  static readonly PICACG_SIGN_KEY = '~d}$Q7$eIni=V)9\\RK/P.RM4;9[7|@/CA}b~OW!3?EV`:<>M7pddUBL5n|0/*Cn';
-  static readonly PICACG_VERSION = 'v1.4.1';
-  static readonly PICACG_APP_VERSION = '2.2.1.3.3.4';
-  static readonly PICACG_BUILD_VERSION = '45';
-  static readonly PICACG_APP_CHANNEL = '3';
-  static readonly PICACG_APP_PLATFORM = 'android';
-
-  // EHentai
-  static readonly EHENTAI_BASE = 'https://e-hentai.org';
-  static readonly EHENTAI_API = 'https://api.e-hentai.org/api.php';
-  static readonly EXHENTAI_BASE = 'https://exhentai.org';
-  static readonly EXHENTAI_API = 'https://exhentai.org/api.php';
-
-  // NHentai
-  static readonly NHENTAI_BASE = 'https://nhentai.net';
-  static readonly NHENTAI_API = 'https://nhentai.net/api/v2';
-
-  // Hitomi
-  static readonly HITOMI_BASE = 'https://hitomi.la';
-
   // JM (禁漫)
-  static readonly JM_DEFAULT_BASE = 'https://jmcomic.me';
-  static readonly JM_APP_VERSION = '1.7.1';
+  /** 对齐 jm_config.py JmMagicConstants.APP_VERSION（tokenparam 版本号，运行时可被 version.json 覆盖） */
+  static readonly JM_APP_VERSION = '2.1.7';
+  /** jm_config.py APP_TOKEN_SECRET_2：仅 /chapter_view_template（scramble_id）接口的 token 密钥 */
   static readonly JM_AUTH_KEY = '18comicAPPContent';
+  /** jm_config.py APP_TOKEN_SECRET = APP_DATA_SECRET：普通接口 token 密钥 + 响应 data 解密密钥 */
   static readonly JM_SECRET = '185Hcomic3PAPP7R';
+  static readonly JM_SCRAMBLE_FALLBACK = '220980';
+  /** jm_config.py API_DOMAIN_SERVER_SECRET（'diosfjckwpqpdfjkvnqQjsik' 的字节数组，域名列表解密用） */
   static readonly JM_DOMAIN_SECRET: number[] = [
     100, 105, 111, 115, 102, 106, 99, 107, 119, 112, 113, 112,
     100, 102, 106, 107, 118, 110, 113, 81, 106, 115, 105, 107
@@ -36,20 +17,35 @@ export class ApiConstants {
     'https://rup4a04-c02.tos-cn-hongkong.bytepluses.com/newsvr-2025.txt',
     'https://rup4a04-c01.tos-ap-southeast-1.bytepluses.com/newsvr-2025.txt'
   ];
-  static readonly JM_CDN_URLS: string[] = [
+  /** 内置 API 域名（裸主机名，与原版 base.dart settings[85] 一致） */
+  static readonly JM_BUILTIN_API_DOMAINS: string[] = [
+    'www.cdntwice.org',
+    'www.cdnsha.org',
+    'www.cdnaspa.cc',
+    'www.cdnntr.cc'
+  ];
+  /** 远端域名获取失败时的回退列表（与原版 jm_settings.dart builtInApiDomains 一致） */
+  static readonly JM_FALLBACK_API_DOMAINS: string[] = [
+    'www.cdnaspa.vip',
+    'www.cdnaspa.club',
+    'www.cdnplaystation6.vip',
+    'www.cdnplaystation6.cc'
+  ];
+  /** 图片分流候选（与原版 builtInImgUrls 一致，updateImgUrl 失败时回退用） */
+  static readonly JM_IMG_URLS: string[] = [
     'https://cdn-msp3.jmapiproxy1.cc',
     'https://cdn-msp.jmapiproxy3.cc',
     'https://cdn-msp2.jmapiproxy2.cc',
     'https://cdn-msp3.jmapiproxy3.cc'
   ];
-
-  // HT (绅士漫画)
-  static readonly HT_DEFAULT_BASE = 'https://www.wnacg.com';
-  static readonly HT_DOMAIN_URL = 'https://raw.githubusercontent.com/ccbkv/PicaComicapitxt/refs/heads/main/htmanga_api_list.txt';
+  /** 默认图床（与原版 settings[86] 默认值一致） */
+  static readonly JM_DEFAULT_IMG_HOST = 'https://cdn-msp.jmapiproxy3.cc';
+  static readonly JM_USER_AGENT = 'Mozilla/5.0 (Linux; Android 10; K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/138.0.0.0 Mobile Safari/537.36';
+  static readonly JM_PACKAGE_NAME = 'com.example.app';
 
   // App
   static readonly APP_VERSION = '1.0.0';
-  static readonly APP_NAME = 'PicaComic';
+  static readonly APP_NAME = 'JMComic';
 }
 
 export class DatabaseConstants {
@@ -70,6 +66,27 @@ export class SettingsKeys {
   static readonly JM_DOMAIN_INDEX = 'jmDomainIndex';
   static readonly JM_DOMAINS = 'jmDomains';
   static readonly JM_DOMAIN_UPDATE_TIME = 'jmDomainUpdateTime';
-  static readonly HT_BASE_URL = 'htBaseUrl';
-  static readonly LAST_VERSION = 'lastVersion';
+  static readonly JM_ACCOUNT = 'jm_account';
+  static readonly JM_PASSWORD = 'jm_password';
+  static readonly JM_USER_NAME = 'jm_user_name';
+  static readonly JM_USER_ID = 'jm_user_id';
+  static readonly JM_AUTO_SELECT_DOMAIN = 'jm_auto_select_domain';
+  static readonly JM_IMG_LINE_INDEX = 'jm_img_line_index';
+  static readonly JM_IMG_HOST = 'jm_img_host';
+  static readonly JM_APP_VERSION = 'jm_app_version';
+  static readonly JM_AUTO_CHECKIN = 'jm_auto_checkin';
+  static readonly JM_FAVORITE_ORDER = 'jm_favorite_order';
+  // Reading settings
+  static readonly READ_MODE = 'readMode';
+  static readonly TAP_TURN_PAGE = 'tapTurnPage';
+  static readonly INVERT_TAP = 'invertTap';
+  static readonly VOLUME_KEY_TURN = 'volumeKeyTurnPage';
+  static readonly SIDE_PAGE_TURN = 'sidePageTurn';
+  static readonly PAGE_ANIMATION = 'pageAnimation';
+  static readonly SHOW_PAGE_INFO = 'showPageInfo';
+  static readonly DOUBLE_TAP_ZOOM = 'doubleTapZoom';
+  static readonly LONG_PRESS_ZOOM = 'longPressZoom';
+  static readonly IMAGE_LAYOUT = 'imageLayout';
+  static readonly AUTO_PAGE_TIME = 'autoPageTime';
+  static readonly SEARCH_HISTORY = 'searchHistory';
 }

@@ -1,4 +1,5 @@
 ohos/entry/build/
+ohos/entry/.preview/
 ohos/.preview/
 ohos/.hvigor/
 ohos/.idea/
@@ -10,3 +11,6 @@ ohos/oh_modules/
 ohos/entry/oh_modules/
 ohos/oh-package-lock.json5
 .mimocode/
+.deveco/
+ohos/.appanalyzer/
+ohos/.codegenie/

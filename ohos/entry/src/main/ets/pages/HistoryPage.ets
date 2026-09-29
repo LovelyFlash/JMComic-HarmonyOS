@@ -1,22 +1,25 @@
-// pages/HistoryPage.ets - 阅读历史（连接数据库）
-import { router } from '@kit.ArkUI';
+// pages/HistoryPage.ets - 阅读历史（可点击进入详情）- NavDestination
 import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
+import { NavUtil } from '../common/NavUtil';
 import { Database, HistoryItem } from '../data/database/Database';
+import { NavTitleBar } from '../components/NavTitleBar';
 
-@Entry
+@Builder
+export function HistoryPageBuilder(name: string, param: object) {
+  HistoryPage()
+}
+
 @Component
-struct HistoryPage {
+export struct HistoryPage {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
+  @StorageLink('themeVersion') themeVersion: number = 0
   @State items: HistoryItem[] = []
-
-  pageTransition() {
-    PageTransitionEnter({ duration: 250, curve: Curve.FastOutSlowIn })
-    PageTransitionExit({ duration: 200, curve: Curve.FastOutSlowIn })
-  }
   @State loading: boolean = true
 
-  aboutToAppear(): void { this.loadData(); }
+  aboutToAppear(): void {
+    this.loadData();
+  }
 
   async loadData(): Promise<void> {
     this.loading = true;
@@ -25,31 +28,69 @@ struct HistoryPage {
   }
 
   build() {
-    Column({ space: 8 }) {
-      Row() {
-        Image($rawfile('icons/ic_back.svg')).width(24).height(24).objectFit(ImageFit.Contain).onClick(() => { router.back(); })
-        Text(Translations.t('tab_history')).fontSize(22).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').margin({ left: 12 })
-      }.width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
-
-      if (this.loading) { Column({ space: 8 }) { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center) }
-      else if (this.items.length === 0) { Column({ space: 8 }) { Text(Translations.t('no_data')).fontSize(14).fontColor(this.isDarkMode ? '#8E8E93' : '#666666') }.layoutWeight(1).justifyContent(FlexAlign.Center) }
-      else {
-        List({ space: 1 }) {
-          ForEach(this.items, (item: HistoryItem) => {
-            ListItem() {
-              Row() {
-                Image(item.coverUrl).width(70).height(100).objectFit(ImageFit.Cover).borderRadius(6).backgroundColor('#F0F0F0')
-                Column({ space: 8 }) {
-                  Text(item.title).fontSize(15).fontWeight(FontWeight.Medium).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%')
-                  if (item.lastChapter.length > 0) { Text(item.lastChapter).fontSize(12).fontColor(this.isDarkMode ? '#8E8E93' : '#666666').margin({ top: 4 }) }
-                  Text(item.source).fontSize(11).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF').margin({ top: 2 })
-                }.layoutWeight(1).alignItems(HorizontalAlign.Start).margin({ left: 12 })
-              }.width('100%').padding(12)
+    NavDestination() {
+      ForEach([this.themeVersion], (v: number) => {
+        Column({ space: 0 }) {
+          NavTitleBar({ title: Translations.t('tab_history') })
+          if (this.loading) {
+            Column({ space: 8 }) {
+              LoadingProgress().width(48).height(48)
             }
-          })
-        }.layoutWeight(1)
-      }
-    }.width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
+            .width('100%').layoutWeight(1)
+            .justifyContent(FlexAlign.Center)
+          } else if (this.items.length === 0) {
+            Column({ space: 8 }) {
+              Text(Translations.t('no_data'))
+                .fontSize(14).fontColor(ThemeManager.textSecondary)
+            }
+            .width('100%').layoutWeight(1)
+            .justifyContent(FlexAlign.Center)
+          } else {
+            List({ space: 1 }) {
+              ForEach(this.items, (item: HistoryItem) => {
+                ListItem() {
+                  Row() {
+                    Image(item.coverUrl)
+                      .width(70).height(100)
+                      .objectFit(ImageFit.Cover)
+                      .borderRadius(6)
+                      .backgroundColor(ThemeManager.surface)
+                    Column({ space: 8 }) {
+                      Text(item.title)
+                        .fontSize(15).fontWeight(FontWeight.Medium)
+                        .fontColor(ThemeManager.textPrimary)
+                        .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
+                        .width('100%')
+                      if (item.lastChapter.length > 0) {
+                        Text(item.lastChapter)
+                          .fontSize(12).fontColor(ThemeManager.textSecondary)
+                          .margin({ top: 4 })
+                      }
+                      Text(item.source)
+                        .fontSize(11).fontColor(ThemeManager.primary)
+                        .margin({ top: 2 })
+                    }
+                    .layoutWeight(1).alignItems(HorizontalAlign.Start).margin({ left: 12 })
+                  }
+                  .width('100%').padding(12)
+                  .onClick(() => {
+                    const param: Record<string, Object> = {
+                      'comicId': item.id, 'title': item.title, 'source': item.source
+                    };
+                    NavUtil.push('comicDetail', param);
+                  })
+                }
+                .id('history' + item.id + item.source + this.themeVersion)
+              }, (item: HistoryItem) => item.id + item.source)
+            }
+            .width('100%').layoutWeight(1)
+            .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+          }
+        }
+        .width('100%').height('100%')
+      }, (v: number) => `theme-${v}`)
+    }
+    .hideTitleBar(true)
+    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
   }
 }

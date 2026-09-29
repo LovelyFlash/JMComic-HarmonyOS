@@ -1,118 +1,362 @@
-// pages/settings/JmSettings.ets - JM 设置（域名更新）
-import { router } from '@kit.ArkUI';
+// pages/settings/JmSettings.ets - JM 设置（域名/图片分流/版本号/签到/收藏排序）- NavDestination
+import { promptAction } from '@kit.ArkUI';
 import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
-import { ApiConstants } from '../../common/Constants';
-import { AppData } from '../../viewmodel/AppData';
+import { ApiConstants, SettingsKeys } from '../../common/Constants';
+import { JmApi } from '../../data/api/JmApi';
+import { Settings } from '../../data/preferences/Settings';
 import { Logger } from '../../common/Logger';
-import { Network } from '../../common/Network';
+import { SettingSwitch } from '../../components/SettingSwitch';
+import { SettingItem } from '../../components/SettingItem';
+import { SettingsGroup } from '../../components/SettingsGroup';
+import { SettingOptions } from '../../components/SettingOptions';
+import { NavTitleBar } from '../../components/NavTitleBar';
 
 const TAG = 'JmSettings';
 
-@Entry
+@Builder
+export function JmSettingsBuilder(name: string, param: object) {
+  JmSettings()
+}
+
 @Component
-struct JmSettings {
+export struct JmSettings {
   @State currentDomain: string = ''
   @State domains: string[] = []
   @State isChecking: boolean = false
-  @State healthStatus: boolean[] = []
+  @State isUpdating: boolean = false
+  @State imgLineIndex: number = 1
+  @State appVersion: string = ''
+  @State autoSelectDomain: boolean = true
+  @State autoCheckin: boolean = false
+  @State favoriteOrder: number = 0
+  @State checkingIn: boolean = false
   @StorageLink('isDarkMode') isDarkMode: boolean = false
+  @StorageLink('themeVersion') themeVersion: number = 0
 
   aboutToAppear(): void {
-    this.domains = AppData.jmDomains;
-    const idx = AppData.jmDomainIndex;
-    if (idx >= 0 && idx < this.domains.length) {
-      this.currentDomain = this.domains[idx];
-    }
+    this.refreshState();
   }
 
-  build() {
-    Column({ space: 8 }) {
-      Row() {
-        Text('<').fontSize(20).fontColor(this.isDarkMode ? '#4DA6FF' : this.isDarkMode ? '#4DA6FF' : '#007AFF')
-          .onClick(() => { router.back(); })
-        Text('JM ' + Translations.t('jm_domain_update'))
-          .fontSize(18).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF').margin({ left: 16 })
-      }.width('100%').height(56).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
+  private async refreshState(): Promise<void> {
+    this.currentDomain = JmApi.getDomain();
+    this.domains = JmApi.getDomains();
+    this.imgLineIndex = JmApi.getImgLineIndex();
+    this.appVersion = JmApi.getAppVersion();
+    this.autoSelectDomain = await Settings.getBool(SettingsKeys.JM_AUTO_SELECT_DOMAIN, true);
+    this.autoCheckin = await Settings.getBool(SettingsKeys.JM_AUTO_CHECKIN, false);
+    this.favoriteOrder = await Settings.getNumber(SettingsKeys.JM_FAVORITE_ORDER, 0);
+  }
 
-      Scroll() {
-        Column({ space: 8 }) {
-          // Current domain
-          Text('当前域名').fontSize(13).fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
-            .width('100%').padding({ left: 16, top: 56, bottom: 8 })
-          Text(this.currentDomain).fontSize(15).fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
-            .width('100%').padding({ left: 16, bottom: 16 })
-
-          // Domain list
-          Text('可用域名').fontSize(13).fontColor(this.isDarkMode ? '#8E8E93' : '#666666')
-            .width('100%').padding({ left: 16, top: 8, bottom: 8 })
-
-          ForEach(this.domains, (domain: string, index: number) => {
-            Row() {
-              Column({ space: 8 }) {
-                Text(domain).fontSize(14).fontColor(
-                  domain === this.currentDomain ? (this.isDarkMode ? '#4DA6FF' : '#007AFF') : (this.isDarkMode ? '#FFFFFF' : '#000000'))
-                if (index < this.healthStatus.length && this.healthStatus[index]) {
-                  Text('✓ 可用').fontSize(11).fontColor(this.isDarkMode ? '#30D158' : '#34C759')
-                } else if (index < this.healthStatus.length && !this.healthStatus[index]) {
-                  Text('✗ 不可用').fontSize(11).fontColor('#FF3B30')
-                }
-              }.alignItems(HorizontalAlign.Start).layoutWeight(1)
-
-              if (domain === this.currentDomain) {
-                Text('●').fontSize(16).fontColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
-              }
-            }
-            .width('100%').height(56).padding({ left: 16, right: 16 })
-            .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-            .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' })
-            .onClick(() => {
-              AppData.jmDomainIndex = index;
-              this.currentDomain = domain;
-            })
-          })
-
-          // Health check button
-          Button(this.isChecking ? '检查中...' : '检查域名健康状态')
-            .width('90%').height(44).margin({ top: 24 })
-            .fontSize(14).fontColor('#FFFFFF')
-            .backgroundColor(this.isChecking ? '#8E8E93' : (this.isDarkMode ? '#4DA6FF' : '#007AFF'))
-            .onClick(() => { this.checkHealth(); })
-
-          // Refresh from remote
-          Button('从远程更新域名列表')
-            .width('90%').height(44).margin({ top: 12 })
-            .fontSize(14).fontColor('#FFFFFF')
-            .backgroundColor(this.isDarkMode ? '#FFB340' : '#FF9500')
-            .onClick(() => { this.refreshDomains(); })
-        }
-      }.layoutWeight(1)
-    }
-    .width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
+  private async selectDomainAt(index: number): Promise<void> {
+    await JmApi.selectDomainAt(index);
+    this.refreshState();
   }
 
   private async checkHealth(): Promise<void> {
-    this.isChecking = true;
-    this.healthStatus = [];
-    for (let i = 0; i < this.domains.length; i++) {
-      const domain = this.domains[i];
-      const url = `https://${domain}`;
-      const ok = await Network.headCheck(url, 5000);
-      this.healthStatus.push(ok);
+    if (this.isChecking) {
+      return;
     }
+    this.isChecking = true;
+    const ok: boolean = await JmApi.healthCheck();
     this.isChecking = false;
-    Logger.info(TAG, `Health check done: ${this.healthStatus.join(', ')}`);
+    if (ok) {
+      promptAction.showToast({ message: Translations.t('available'), duration: 1500 });
+    } else {
+      promptAction.showToast({ message: Translations.t('unavailable'), duration: 1500 });
+    }
   }
 
-  private async refreshDomains(): Promise<void> {
-    Logger.info(TAG, 'Refreshing JM domains from remote...');
-    for (const url of ApiConstants.JM_DOMAIN_URLS) {
-      const data = await Network.get(url);
-      if (data.length > 0) {
-        Logger.info(TAG, `Got domain data from ${url}`);
-        break;
+  private async updateDomains(): Promise<void> {
+    if (this.isUpdating) {
+      return;
+    }
+    this.isUpdating = true;
+    const fetched: string[] = await JmApi.fetchDomains();
+    this.isUpdating = false;
+    const proposal: string[] = fetched.length > 0 ? fetched : ApiConstants.JM_FALLBACK_API_DOMAINS;
+    const resultLabel: string = fetched.length > 0 ?
+      Translations.t('update_domains_success') : Translations.t('update_domains_failed');
+    const lines: string[] = [];
+    for (let i = 0; i < proposal.length; i++) {
+      lines.push(`${Translations.t('domain_label')}${i + 1}: ${proposal[i]}`);
+    }
+    this.getUIContext().showAlertDialog({
+      title: Translations.t('jm_domain_update'),
+      message: `${resultLabel}\n\n${lines.join('\n')}`,
+      primaryButton: {
+        value: Translations.t('cancel'),
+        action: () => {
+        }
+      },
+      secondaryButton: {
+        value: Translations.t('confirm'),
+        fontColor: ThemeManager.primary,
+        action: () => {
+          this.applyDomainUpdate(proposal);
+        }
+      }
+    });
+  }
+
+  private async applyDomainUpdate(proposal: string[]): Promise<void> {
+    await JmApi.applyDomains(proposal);
+    try {
+      await JmApi.getAppVersionCode();
+    } catch (e) {
+      Logger.warn(TAG, `getAppVersionCode after domain update failed: ${String(e)}`);
+    }
+    if (JmApi.isLoggedIn()) {
+      JmApi.reLogin().catch((e: Object) => {
+        Logger.warn(TAG, `reLogin after domain update failed: ${String(e)}`);
+      });
+    }
+    this.refreshState();
+  }
+
+  private async setAutoSelectDomain(value: boolean): Promise<void> {
+    this.autoSelectDomain = value;
+    await Settings.setBool(SettingsKeys.JM_AUTO_SELECT_DOMAIN, value);
+    if (value && JmApi.isLoggedIn()) {
+      JmApi.reLogin().catch((e: Object) => {
+        Logger.warn(TAG, `reLogin after autoSelectDomain on failed: ${String(e)}`);
+      });
+    }
+  }
+
+  private async selectImgLine(index: number): Promise<void> {
+    if (this.imgLineIndex === index) {
+      return;
+    }
+    if (JmApi.isLoggedIn()) {
+      const ok: boolean = await JmApi.updateImgUrl(index);
+      this.imgLineIndex = JmApi.getImgLineIndex();
+      if (!ok) {
+        promptAction.showToast({ message: Translations.t('image_line_fallback'), duration: 1500 });
+      }
+    } else {
+      await JmApi.setImgLineIndex(index);
+      this.imgLineIndex = JmApi.getImgLineIndex();
+    }
+  }
+
+  private async updateVersion(): Promise<void> {
+    try {
+      const version: string = await JmApi.getAppVersionCode();
+      this.appVersion = JmApi.getAppVersion();
+      promptAction.showToast({
+        message: version.length > 0 ? `${Translations.t('update_version')}: ${version}` : Translations.t('error'),
+        duration: 2000
+      });
+    } catch (e) {
+      promptAction.showToast({ message: `${Translations.t('error')}: ${String(e)}`, duration: 2000 });
+    }
+  }
+
+  private async setAutoCheckin(value: boolean): Promise<void> {
+    this.autoCheckin = value;
+    await Settings.setBool(SettingsKeys.JM_AUTO_CHECKIN, value);
+    if (value && JmApi.isLoggedIn()) {
+      try {
+        await JmApi.dailyChk();
+      } catch (e) {
+        Logger.warn(TAG, `auto check-in on toggle failed: ${String(e)}`);
       }
     }
+  }
+
+  private async doCheckIn(): Promise<void> {
+    if (this.checkingIn) {
+      return;
+    }
+    if (!JmApi.isLoggedIn()) {
+      promptAction.showToast({ message: Translations.t('please_login'), duration: 1500 });
+      return;
+    }
+    this.checkingIn = true;
+    try {
+      const msg: string = await JmApi.dailyChk();
+      this.getUIContext().showAlertDialog({
+        title: Translations.t('check_in'),
+        message: msg,
+        confirm: {
+          value: Translations.t('confirm'),
+          action: () => {
+          }
+        }
+      });
+    } catch (e) {
+      this.getUIContext().showAlertDialog({
+        title: Translations.t('check_in'),
+        message: `${Translations.t('check_in_failed')}: ${String(e)}`,
+        confirm: {
+          value: Translations.t('confirm'),
+          action: () => {
+          }
+        }
+      });
+    }
+    this.checkingIn = false;
+  }
+
+  private async setFavoriteOrder(order: number): Promise<void> {
+    if (this.favoriteOrder === order) {
+      return;
+    }
+    this.favoriteOrder = order;
+    await Settings.putNumber(SettingsKeys.JM_FAVORITE_ORDER, order);
+  }
+
+  /** 域名显示去协议前缀（存储值为 normalizeDomain 后的完整 URL，与原版显示一致） */
+  private stripProtocol(url: string): string {
+    return url.replace(/^https?:\/\//, '');
+  }
+
+  @Builder
+  domainRow(domain: string, index: number) {
+    Row({ space: 12 }) {
+      Text(this.stripProtocol(domain))
+        .fontSize(16)
+        .fontColor(this.currentDomain === domain ? ThemeManager.primary : ThemeManager.textPrimary)
+        .layoutWeight(1)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+      if (this.currentDomain === domain) {
+        SymbolGlyph($r('sys.symbol.checkmark'))
+          .fontSize(20)
+          .fontColor([ThemeManager.primary])
+      }
+    }
+    .width('100%')
+    .height(52)
+    .padding({ left: 20, right: 20 })
+    .border({ width: { bottom: 0.5 }, color: ThemeManager.divider })
+    .opacity(this.autoSelectDomain ? 0.4 : 1)
+    .id('domainRow' + index + this.themeVersion)
+    .onClick(() => {
+      if (!this.autoSelectDomain) {
+        this.selectDomainAt(index);
+      }
+    })
+  }
+
+  @Builder
+  infoRow(label: string, value: string, isPrimary: boolean) {
+    Row({ space: 12 }) {
+      Text(label)
+        .fontSize(17)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(ThemeManager.textPrimary)
+        .layoutWeight(1)
+      Text(value)
+        .fontSize(14)
+        .fontColor(isPrimary ? ThemeManager.primary : ThemeManager.textSecondary)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .constraintSize({ maxWidth: '60%' })
+    }
+    .width('100%')
+    .height(52)
+    .padding({ left: 20, right: 20 })
+    .border({ width: { bottom: 0.5 }, color: ThemeManager.divider })
+    .id('infoRow' + label + this.themeVersion)
+  }
+
+  build() {
+    NavDestination() {
+      ForEach([this.themeVersion], (v: number) => {
+        Column() {
+          NavTitleBar({ title: Translations.t('jm_name') })
+          Scroll() {
+            Column({ space: 0 }) {
+              SettingsGroup({ title: Translations.t('api_line') }) {
+                SettingSwitch({
+                  icon: $r('sys.symbol.arrow_clockwise'),
+                  title: Translations.t('auto_select_domain'),
+                  isOn: this.autoSelectDomain,
+                  onToggle: (value: boolean) => {
+                    this.setAutoSelectDomain(value);
+                  }
+                })
+                ForEach(this.domains, (domain: string, index: number) => {
+                  this.domainRow(domain, index)
+                }, (domain: string) => domain)
+                this.infoRow(Translations.t('current_domain'), this.stripProtocol(this.currentDomain), true)
+                SettingItem({
+                  icon: $r('sys.symbol.checkmark_circle'),
+                  title: Translations.t('check_domain_health'),
+                  onTap: () => {
+                    this.checkHealth();
+                  }
+                })
+                SettingItem({
+                  icon: $r('sys.symbol.gearshape'),
+                  title: Translations.t('update_domains_remote'),
+                  showDivider: false,
+                  onTap: () => {
+                    this.updateDomains();
+                  }
+                })
+              }
+              SettingsGroup({ title: Translations.t('image_line') }) {
+                SettingOptions({
+                  options: [`${Translations.t('shunt')} 1`, `${Translations.t('shunt')} 2`, `${Translations.t('shunt')} 3`, `${Translations.t('shunt')} 4`],
+                  selectedIndex: this.imgLineIndex,
+                  onSelect: (index: number) => {
+                    this.selectImgLine(index);
+                  }
+                })
+              }
+              SettingsGroup({ title: Translations.t('app_version') }) {
+                this.infoRow(Translations.t('app_version'), this.appVersion, false)
+                SettingItem({
+                  icon: $r('sys.symbol.timer'),
+                  title: Translations.t('update_version'),
+                  showDivider: false,
+                  onTap: () => {
+                    this.updateVersion();
+                  }
+                })
+              }
+              SettingsGroup({ title: Translations.t('check_in') }) {
+                SettingSwitch({
+                  icon: $r('sys.symbol.checkmark_circle'),
+                  title: Translations.t('auto_checkin'),
+                  isOn: this.autoCheckin,
+                  onToggle: (value: boolean) => {
+                    this.setAutoCheckin(value);
+                  }
+                })
+                SettingItem({
+                  icon: $r('sys.symbol.checkmark'),
+                  title: Translations.t('check_in_now'),
+                  showDivider: false,
+                  onTap: () => {
+                    this.doCheckIn();
+                  }
+                })
+              }
+              SettingsGroup({ title: Translations.t('favorite_order') }) {
+                SettingOptions({
+                  options: [Translations.t('favorite_order_latest'), Translations.t('favorite_order_update')],
+                  selectedIndex: this.favoriteOrder,
+                  onSelect: (index: number) => {
+                    this.setFavoriteOrder(index);
+                  }
+                })
+              }
+            }
+            .width('100%')
+            .padding({ bottom: 24 })
+          }
+          .width('100%').layoutWeight(1)
+          .scrollBar(BarState.Off)
+          .edgeEffect(EdgeEffect.Spring)
+        }
+        .width('100%').height('100%')
+      }, (v: number) => `theme-${v}`)
+    }
+    .hideTitleBar(true)
+    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.pageBackground : '')
   }
 }

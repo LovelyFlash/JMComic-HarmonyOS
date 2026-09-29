@@ -1,31 +1,50 @@
-# PicaComic HarmonyOS - Agent 开发指南
+# JMComic HarmonyOS - Agent 开发指南
 
 ## 项目概述
 
-PicaComic 鸿蒙版是一款基于 ArkTS/ArkUI 开发的多源漫画阅读器应用，支持 HarmonyOS NEXT (API 26+)。
+禁漫天堂（JMComic）鸿蒙原生漫画阅读器，基于 ArkTS/ArkUI，HarmonyOS NEXT (API 26+)。
+单漫画源（JM），包名 `com.jmcomic.harmony`，无第三方依赖。
+
+**参考基准（只读，本机路径）**：`D:\desktop\JMComic-Crawler-Python-master`
+- `src/jmcomic/jm_toolkit.py` — `JmCryptoTool`（token / decode_resp_data / md5hex）、`get_num` / `decode_and_save`（图片分段与反打乱）
+- `src/jmcomic/jm_config.py` — 密钥与版本参数（APP_TOKEN_SECRET / APP_TOKEN_SECRET_2 / APP_DATA_SECRET / API_DOMAIN_SERVER_SECRET / APP_VERSION）
+- `src/jmcomic/jm_client_impl.py` — `fetch_scramble_id`、`req_api_domain_server`
+- 一致性对照：PicaComic `lib/foundation/image_loader/image_recombine.dart`、jmcomic-downloader `download_manager.rs::stitch_img`
 
 ## 项目架构
 
 ```
-ohos/
-├── entry/src/main/ets/
-│   ├── common/          -- 通用工具 (Logger, ThemeManager, Constants, Translations)
-│   ├── data/
-│   │   ├── api/         -- API 客户端 (Network, NhentaiApi, HitomiApi, PicacgApi, EhentaiApi, JmApi, HtcomicApi)
-│   │   ├── database/    -- SQLite 数据库
-│   │   └── preferences/ -- SharedPreferences
-│   ├── viewmodel/       -- 状态管理 (AppData, HistoryManager, FavoritesManager, DownloadManager)
-│   ├── components/      -- UI 组件 (ComicTile, ComicGrid, LoadingView, ErrorView, SearchBar, FloatingTabBar)
-│   ├── pages/           -- 页面 (MainPage, ExplorePage, SearchPage, HistoryPage, FavoritesPage, DownloadPage, ComicDetailPage, reader/)
-│   ├── pages/settings/  -- 设置页 (SettingsPage, AboutPage, 6个漫画源设置)
-│   ├── pages/nhentai/   -- NHentai 首页
-│   ├── pages/hitomi/    -- Hitomi 首页
-│   ├── pages/picacg/    -- Picacg 首页
-│   ├── pages/ehentai/   -- EHentai 首页
-│   ├── pages/jm/        -- JM 首页
-│   ├── pages/htcomic/   -- HT 首页
-│   ├── plugin/          -- 原生插件 (Device, Battery, Widget, Decor, Continuation, UrlLauncher, Share, FilePicker, Download, Volume, Screenshot, KeepScreenOn, Proxy, FullScreen)
-│   └── entryability/    -- 入口 Ability
+ohos/entry/src/main/ets/
+├── common/
+│   ├── Constants.ets      -- ApiConstants（JM 密钥/域名/UA）、SettingsKeys、DatabaseConstants
+│   ├── JmImage.ets        -- JM 图片管线：请求头、魔数嗅探、分段数、decode、recombine（反打乱）
+│   ├── Network.ets        -- HTTP 封装：get/getWithStatus/getBytes/getBytesViaDownload/post
+│   ├── Logger.ets         -- hilog 封装（TAG 过滤：JmApi/JmImage/ReaderImage/Network）
+│   ├── ThemeManager.ets   -- 亮/暗主题颜色
+│   ├── Translations.ets   -- 中英文案
+│   ├── ReadingConfig.ets  -- 阅读配置
+│   ├── NavUtil.ets        -- 导航工具
+│   └── ArrayDataSource.ets-- LazyForEach 数据源
+├── data/
+│   ├── api/JmApi.ets      -- 禁漫 API 客户端（token/data 加解密对照 jm_toolkit.py）
+│   ├── database/Database.ets   -- SQLite（pica_comic.db: history/favorites/downloads）
+│   ├── model/             -- Comic, Chapter, Comment, ComicPageData, ReaderParam
+│   └── preferences/Settings.ets -- 键值存储
+├── viewmodel/AppData.ets  -- 全局状态
+├── components/
+│   ├── ReaderImage.ets    -- 阅读器图片（下载→解码→反打乱→LRU 缓存，失败可重试）
+│   ├── NetworkImage.ets   -- 普通网络图片（封面等，无需反打乱）
+│   ├── ComicTile/ComicGrid/LoadingView/NavTitleBar/AppTopBar/AppIcon
+│   └── SettingItem/SettingSection/SettingSwitch/SettingOptions/SettingsGroup
+├── pages/
+│   ├── MainPage.ets       -- 底部 Tab 主页
+│   ├── DiscoverPage / SearchPage / PreSearchPage / CategoryPage / JmCategoryPage
+│   ├── JmWeekPage / JmPromotePage / ComicDetailPage / CommentsPage
+│   ├── HistoryPage / FollowPage / FavoritesContent / DownloadPage
+│   ├── MePage / AccountsPage
+│   ├── reader/ReaderPage.ets  -- 阅读器（单页 Swiper / 条漫 List 双模式）
+│   └── settings/          -- SettingsPage, ReadingSettings, JmSettings, AboutPage
+└── entryability/EntryAbility.ets
 ```
 
 ## 开发规范
@@ -38,129 +57,95 @@ ohos/
 5. **类型断言**: 使用 `as` 而非 `!`
 
 ### 组件规范
-1. **使用 `@Component` 装饰器**: 定义组件
-2. **使用 `@StorageLink`**: 响应全局状态变化
-3. **使用 `@Prop`**: 传递数据
-4. **使用 `@State`**: 管理组件状态
-5. **图片加载**: 必须指定 `alt` 占位图
+1. **使用 `@Component` 装饰器**: V1 状态管理（@State/@Prop/@StorageLink 等），禁止与 V2 混用
+2. **图片加载**: 必须指定占位/错误态
+3. **ForEach/LazyForEach**: 必须提供稳定 key
 
 ### API 调用规范
-1. **使用 `@ohos.net.http`**: HTTP 请求
-2. **使用 `@ohos.data.relationalStore`**: SQLite 数据库
-3. **使用 `@ohos.data.preferences`**: 键值存储
-4. **异步操作**: 使用 `async/await`
-5. **错误处理**: 必须 try-catch
+1. **HTTP**: 统一走 `Network` 封装（@ohos.net.http），文本用 `get`/`post`，二进制用 `getBytes`（ARRAY_BUFFER）
+2. **SQLite**: @ohos.data.relationalStore，见 `Database.ets`
+3. **Preferences**: @ohos.data.preferences，见 `Settings.ets`
+4. **异步操作**: async/await + try-catch；Promise 结果必须 await 后再取属性
+5. **图片**: Image Kit（@kit.ImageKit），解码显式传 `desiredPixelFormat: RGBA_8888`
 
 ## 构建流程
 
-### 开发环境
-- DevEco Studio: 26.0.0.821
-- HarmonyOS SDK: 26.0.0 (API 26)
-- Node.js: 内置
+### 构建命令（devecocli，在 ohos/ 目录下执行）
 
-### 构建命令
-```bash
-# 设置环境变量
-$env:DEVECO_SDK_HOME = "F:\DevEco Studio\sdk"
-$env:HOS_SDK_HOME = "F:\DevEco Studio\sdk\default\openharmony"
-
-# 构建 HAP
-cd ohos
-F:\DevEco Studio\tools\hvigor\bin\hvigorw.bat assembleHap --mode module -p module=entry -p product=default --no-daemon
+```powershell
+devecocli build                    # 构建 HAP（约 6 分钟）
+devecocli run                      # 构建 + 安装 + 启动
+devecocli run --skip-build         # 跳过构建，部署已有产物
+devecocli run --uninstall          # 先卸载再装（解决签名不一致）
+devecocli device list              # 查看设备
+devecocli build clean              # 清理构建产物
 ```
 
 ### 调试工具
-```bash
-# 安装 HAP
-F:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe install entry-default-unsigned.hap
 
-# 启动应用
-hdc shell aa start -a EntryAbility -b com.picacomic.harmony
-
-# 查看日志
-hdc shell hilog | grep pica_comic
-
-# 强制停止
-hdc shell aa force-stop com.picacomic.harmony
+```powershell
+devecocli log --keyword JmImage --from 5m       # 图片管线日志（recombine ok/skip、non-image bytes）
+devecocli log --keyword ReaderImage --from 5m   # 阅读器图片加载日志（load failed 等）
+devecocli log --crash --bundle-name com.jmcomic.harmony  # 崩溃日志
+devecocli log clear                # 清空 hilog（复现问题前先清）
+devecocli ui screenshot --path ./shot.png       # 截图
+devecocli ui layout                --format json # UI 树检查
 ```
 
-## 漫画源 API 配置
+注意：真机锁屏时 `devecocli run` 启动会报 10106102，需先解锁屏幕。
 
-### NHentai
-- 主域名: `https://nhentai.net`
-- API: `/api/galleries?page={page}`
-- 搜索: `/api/galleries/search?query={keyword}`
+## JM API 要点（JmApi.ets）
 
-### Hitomi
-- 主域名: `https://hitomi.la`
-- 列表: `/n/{page}.json`
-- 详情: `/galleries/{id}.js`
+### 加解密（对照 jm_toolkit.py JmCryptoTool）
+- **token**: 普通接口 `md5Hex(time + JM_SECRET)`（APP_TOKEN_SECRET=`185Hcomic3PAPP7R`）；`/chapter_view_template` 必须用 `md5Hex(time + JM_AUTH_KEY)`（APP_TOKEN_SECRET_2=`18comicAPPContent`），混用会 403
+- **data 解密**: 响应 `data` 字段为 Base64 密文；key = `md5Hex(time + JM_SECRET)`（APP_DATA_SECRET，time 与请求头一致），AES256-ECB 解密后按 Python `data[:-data[-1]]` 去尾部 padding，再 UTF-8 解码
+- **域名密文**: ts 传空串，key = `md5Hex(JM_DOMAIN_SECRET)`（API_DOMAIN_SERVER_SECRET），解密前先去掉头部非 ASCII 字符
+- md5Hex 为纯 ArkTS 实现（已与 Python/Node hashlib 逐位对拍验证），AES 用 @ohos.security.cryptoFramework
 
-### Picacg
-- 主域名: `https://api.picacg.com`
-- 列表: `/comics?page={page}&sort={sort}`
-- 搜索: `/comics/advanced-search?page={page}&q={keyword}`
+### 域名策略
+1. 内置 API 域名（JM_BUILTIN_API_DOMAINS）
+2. 远端域名列表（JM_DOMAIN_URLS，密文解密），24h 自动更新
+3. 回退列表（JM_FALLBACK_API_DOMAINS）
+图片分流：JM_IMG_URLS 候选 + JM_DEFAULT_IMG_HOST 默认值，可在 JM 设置页切换。
 
-### EHentai
-- 主域名: `https://e-hentai.org`
-- 列表: `/?page={page}`
-- 搜索: `/?f_search={keyword}`
+### 主要接口
+- `/latest`（最新）、`/search`（搜索）、`/album`（详情+章节）、`/chapter`（章节图片文件名）
+- `/hot_tags`（热搜词）、`/week` + `/week/filter`（每周必看）、`/categories`（分类）
+- `/login`（登录）、`/favorite`（收藏夹）、`/check_in`（签到）、评论相关
+- scramble_id：GET `/chapter_view_template?id={photoId}&...`，正则抓 `var scramble_id = (\d+);`，失败回退 `'220980'`
 
-### JM (禁漫)
-- 主域名: 动态域名 (自动获取)
-- API: `/latest`, `/search`, `/album`
-- CDN: 4个分流节点
+## JM 图片管线（JmImage.ets + ReaderImage.ets）
 
-### HT (绅士漫画)
-- 主域名: `https://www.wnacg.com`
-- 列表: `/albums-index-page-{page}.html`
-- 搜索: `/search?q={keyword}`
-
-## 主题系统
-
-### 颜色定义
-```typescript
-// 亮色主题
-PRIMARY: '#007AFF'
-BACKGROUND: '#FFFFFF'
-TEXT_PRIMARY: '#000000DE'
-
-// 暗色主题
-PRIMARY: '#0A84FF'
-BACKGROUND: '#000000'
-TEXT_PRIMARY: '#FFFFFFDE'
+```
+URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
+    → 失败则 getBytesViaDownload(下载服务栈) → 再嗅探
+    → JmImage.decode(RGBA_8888) → JmImage.recombine(反打乱) → Image(PixelMap)
 ```
 
-### 使用方式
-```typescript
-import { ThemeManager } from '../common/ThemeManager';
-
-@Component
-struct MyComponent {
-  @StorageLink('isDarkMode') isDarkMode: boolean = false;
-  
-  build() {
-    Column() {
-      Text('Hello')
-        .fontColor(ThemeManager.colors.TEXT_PRIMARY)
-        .backgroundColor(ThemeManager.colors.BACKGROUND)
-    }
-  }
-}
-```
+- **分段数 getSegmentationNum**: `aid < scrambleId → 0`；`< 268850 → 10`；否则 md5(`aid+文件名去扩展名`) 的**末字符取 ASCII 码（ord）**，`< 421926 → ord%10*2+2`，否则 `ord%8*2+2`
+- **反打乱 recombine**: 对齐 `decode_and_save` / `_segmentationPicture` / `stitch_img`——源图按 `floor(h/num)` 切段，末段附带 `h%num` 余数行；目标图从末段开始**整段逆序**贴合，**段内不旋转**；全量 `readAllPixelsToBuffer` 后 `createPixelMapFromPixels` 重建（显式 `srcPixelFormat: RGBA_8888`）
+- **注意**: `createPixelMap()` 默认 `editable: false`，`writePixels` 会失败 —— 不要对解码产物原地写像素，必须重建
+- **缓存**: ReaderImage 内置 LRU（12 张 PixelMap，按 URL）
+- **GIF**: 跳过反打乱直接 `Image(url)` 显示
 
 ## 常见问题
 
-### Q: 如何添加新的漫画源？
-1. 在 `data/api/` 下创建新的 API 客户端
-2. 在 `pages/` 下创建对应的首页
-3. 在 `pages/settings/` 下创建设置页
-4. 更新 `main_pages.json` 路由配置
+### Q: 如何添加/修改设置项？
+1. `common/Constants.ets` 的 `SettingsKeys` 加键
+2. `pages/settings/` 对应页面加 UI
+3. `data/preferences/Settings.ets` 读写
 
 ### Q: 如何修改主题颜色？
-编辑 `common/ThemeManager.ets` 中的 `LightColors` 和 `DarkColors` 类。
+编辑 `common/ThemeManager.ets` 中的颜色定义。
 
-### Q: 如何添加新的设置项？
-1. 在 `common/Constants.ets` 中添加设置键
-2. 在 `pages/settings/SettingsPage.ets` 中添加 UI
-3. 使用 `Settings.getBool/setBool` 读写设置
+### Q: 如何排查图片显示问题？
+```powershell
+devecocli log clear
+# 复现问题后：
+devecocli log --keyword JmImage --from 2m
+devecocli log --keyword ReaderImage --from 2m
+```
+关注：`recombine ok/skip: num=...`（分段数）、`non-image bytes`（反爬页）、`load failed`（解码异常）。
+
+### Q: API 请求全部失败怎么办？
+检查域名切换（JM 设置页换线路）、查看 `devecocli log --keyword JmApi`，确认 token/时间戳生成与 AES 解密是否正常。

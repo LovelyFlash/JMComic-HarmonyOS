@@ -1,117 +1,290 @@
-// pages/SearchPage.ets - 搜索页
-import { router } from '@kit.ArkUI';
+// pages/SearchPage.ets - 搜索页（禁漫 JM-only + 7 种排序 + maxPage 分页）- NavDestination
 import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
-import { Comic, ComicBrief } from '../data/model/Comic';
-import { NhentaiApi } from '../data/api/NhentaiApi';
+import { NavUtil } from '../common/NavUtil';
+import { Comic } from '../data/model/Comic';
 import { JmApi } from '../data/api/JmApi';
-import { HtcomicApi } from '../data/api/HtcomicApi';
+import { Settings } from '../data/preferences/Settings';
+import { ArrayDataSource } from '../common/ArrayDataSource';
+import { NavTitleBar } from '../components/NavTitleBar';
 
-@Entry
+class SortOption {
+  key: string = '';
+  labelKey: string = '';
+  constructor(key: string, labelKey: string) {
+    this.key = key;
+    this.labelKey = labelKey;
+  }
+}
+
+@Builder
+export function SearchPageBuilder(name: string, param: object) {
+  SearchPage({ pageParam: param })
+}
+
 @Component
-struct SearchPage {
+export struct SearchPage {
+  pageParam: object | undefined = undefined;
   @State keyword: string = ''
-  @State comics: Comic[] = []
+  @State dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
   @State loading: boolean = false
-
-  pageTransition() {
-    PageTransitionEnter({ duration: 250, curve: Curve.FastOutSlowIn })
-    PageTransitionExit({ duration: 200, curve: Curve.FastOutSlowIn })
-  }
+  @State loadingMore: boolean = false
   @State error: string = ''
-  @State selectedSource: number = 0
+  @State currentPage: number = 1
+  @State maxPage: number = 1
+  @State searched: boolean = false
+  @State sort: string = 'mr'
   @StorageLink('isDarkMode') isDarkMode: boolean = false
-  private sources: string[] = ['NHentai', 'JinMan', 'HT']
+  @StorageLink('themeVersion') themeVersion: number = 0
 
-  @Builder
-  header() {
-    Row() {
-      Image($rawfile('icons/ic_back.svg')).width(24).height(24).objectFit(ImageFit.Contain)
-        .onClick(() => { router.back(); })
-      Text(Translations.t('search_hint')).fontSize(22).fontWeight(FontWeight.Bold)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').margin({ left: 12 })
-    }.width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
+  private makeSorts(): SortOption[] {
+    const list: SortOption[] = [];
+    list.push(new SortOption('mr', 'order_mr'));
+    list.push(new SortOption('mv', 'order_mv'));
+    list.push(new SortOption('mv_m', 'order_mv_m'));
+    list.push(new SortOption('mv_w', 'order_mv_w'));
+    list.push(new SortOption('mv_t', 'order_mv_t'));
+    list.push(new SortOption('mp', 'order_mp'));
+    list.push(new SortOption('tf', 'order_tf'));
+    return list;
+  }
+
+  aboutToAppear(): void {
+    if (this.pageParam !== undefined && this.pageParam !== null) {
+      const params = this.pageParam as Record<string, Object>;
+      const kw = params['keyword'] !== undefined && params['keyword'] !== null ? String(params['keyword']) : '';
+      const srt = params['sort'] !== undefined && params['sort'] !== null ? String(params['sort']) : '';
+      if (kw.length > 0) { this.keyword = kw; }
+      if (srt.length > 0) { this.sort = srt; }
+      if (kw.length > 0 || srt.length > 0) { this.doSearch(); }
+    }
+  }
+
+  private async saveHistory(kw: string): Promise<void> {
+    const raw = await Settings.getString('searchHistory', '');
+    const parts = raw.length > 0 ? raw.split('|') : [];
+    const filtered: string[] = [];
+    filtered.push(kw);
+    for (let i = 0; i < parts.length && filtered.length < 20; i++) {
+      if (parts[i] !== kw && parts[i].length > 0) {
+        filtered.push(parts[i]);
+      }
+    }
+    await Settings.putString('searchHistory', filtered.join('|'));
+  }
+
+  async doSearch(): Promise<void> {
+    if (this.keyword.length === 0) {
+      return;
+    }
+    this.loading = true;
+    this.error = '';
+    this.dataSource = new ArrayDataSource<Comic>();
+    this.currentPage = 1;
+    this.searched = true;
+    this.saveHistory(this.keyword);
+    try {
+      await this.loadPage(1, true);
+    } catch (e) {
+      this.error = String(e);
+    }
+    this.loading = false;
+  }
+
+  async loadPage(page: number, replace: boolean): Promise<void> {
+    const result = await JmApi.search(this.keyword, page, this.sort);
+    this.maxPage = result.maxPage > 0 ? result.maxPage : page;
+    this.currentPage = page;
+    if (replace) {
+      this.dataSource = new ArrayDataSource<Comic>(result.comics);
+    } else {
+      this.dataSource.addAll(result.comics);
+    }
+  }
+
+  async loadMore(): Promise<void> {
+    if (this.loadingMore || this.loading) return;
+    if (this.currentPage >= this.maxPage) return;
+    this.loadingMore = true;
+    try {
+      await this.loadPage(this.currentPage + 1, false);
+    } catch (e) {
+      this.error = String(e);
+    }
+    this.loadingMore = false;
   }
 
   @Builder
-  sourceTabs() {
+  searchInput() {
     Row({ space: 8 }) {
-      ForEach(this.sources, (src: string, idx: number) => {
-        Text(src).fontSize(13).padding({ left: 12, right: 12, top: 6, bottom: 6 })
-          .borderRadius(16)
-          .fontColor(this.selectedSource === idx ? '#FFFFFF' : (this.isDarkMode ? '#999999' : '#666666'))
-          .backgroundColor(this.selectedSource === idx ? (this.isDarkMode ? '#4DA6FF' : '#007AFF') : 'transparent')
-          .onClick(() => { this.selectedSource = idx; })
-      })
-    }.width('100%').padding({ left: 16, right: 16, bottom: 8 })
+      SymbolGlyph($r('sys.symbol.magnifyingglass'))
+        .fontSize(20)
+        .fontColor([ThemeManager.textSecondary])
+      TextInput({ text: this.keyword, placeholder: Translations.t('search_hint') })
+        .layoutWeight(1)
+        .height(36)
+        .fontSize(14)
+        .backgroundColor(Color.Transparent)
+        .fontColor(ThemeManager.textPrimary)
+        .placeholderColor(ThemeManager.textSecondary)
+        .caretColor(ThemeManager.primary)
+        .onChange((value: string) => { this.keyword = value; })
+        .onSubmit(() => { this.doSearch(); })
+      if (this.keyword.length > 0) {
+        SymbolGlyph($r('sys.symbol.xmark_circle_fill'))
+          .fontSize(18)
+          .fontColor([ThemeManager.textTertiary])
+          .onClick(() => {
+            this.keyword = '';
+            this.dataSource = new ArrayDataSource<Comic>();
+            this.searched = false;
+          })
+      }
+    }
+    .width('100%')
+    .height(44)
+    .padding({ left: 12, right: 12 })
+    .margin({ left: 16, right: 16, bottom: 8 })
+    .backgroundColor(ThemeManager.surface)
+    .borderRadius(22)
+    .id('searchInput' + this.themeVersion)
+  }
+
+  @Builder
+  sortBar() {
+    Scroll() {
+      Row({ space: 8 }) {
+        ForEach(this.makeSorts(), (opt: SortOption) => {
+          Text(Translations.t(opt.labelKey))
+            .fontSize(12)
+            .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+            .borderRadius(14)
+            .fontColor(this.sort === opt.key ? '#FFFFFF' : ThemeManager.textSecondary)
+            .backgroundColor(this.sort === opt.key ? ThemeManager.primary : ThemeManager.surface)
+            .onClick(() => {
+              if (this.sort !== opt.key) {
+                this.sort = opt.key;
+                if (this.keyword.length > 0) {
+                  this.doSearch();
+                }
+              }
+            })
+            .id('sort' + opt.key + this.themeVersion)
+        }, (opt: SortOption) => opt.key)
+      }
+      .padding({ left: 16, right: 16, bottom: 8 })
+    }
+    .scrollable(ScrollDirection.Horizontal)
+    .scrollBar(BarState.Off)
+    .width('100%')
+    .id('sortBar' + this.themeVersion)
   }
 
   @Builder
   results() {
     if (this.loading) {
-      Column({ space: 8 }) { LoadingProgress().width(48).height(48) }.layoutWeight(1).justifyContent(FlexAlign.Center)
+      Column({ space: 8 }) {
+        LoadingProgress().width(48).height(48)
+      }
+      .layoutWeight(1).justifyContent(FlexAlign.Center)
     } else if (this.error.length > 0) {
-      Column({ space: 8 }) { Text(this.error).fontSize(14).fontColor('#FF3B30') }.layoutWeight(1).justifyContent(FlexAlign.Center)
-    } else if (this.comics.length === 0) {
-      Column({ space: 8 }) { Text(Translations.t('search_hint')).fontSize(14).fontColor(this.isDarkMode ? '#999999' : '#666666') }
-        .layoutWeight(1).justifyContent(FlexAlign.Center)
+      Column({ space: 12 }) {
+        Text(this.error).fontSize(14).fontColor(ThemeManager.danger)
+        Button(Translations.t('retry'))
+          .fontSize(14)
+          .backgroundColor(ThemeManager.primary)
+          .fontColor('#FFFFFF')
+          .onClick(() => { this.doSearch(); })
+      }
+      .layoutWeight(1).justifyContent(FlexAlign.Center)
+      .id('results' + this.themeVersion)
+    } else if (!this.searched) {
+      Column({ space: 8 }) {
+        Text(Translations.t('search_hint'))
+          .fontSize(14).fontColor(ThemeManager.textSecondary)
+      }
+      .layoutWeight(1).justifyContent(FlexAlign.Center)
+      .id('results' + this.themeVersion)
+    } else if (this.dataSource.totalCount() === 0) {
+      Column({ space: 8 }) {
+        Text(Translations.t('no_data'))
+          .fontSize(14).fontColor(ThemeManager.textSecondary)
+      }
+      .layoutWeight(1).justifyContent(FlexAlign.Center)
+      .id('results' + this.themeVersion)
     } else {
       List({ space: 1 }) {
-        ForEach(this.comics, (comic: Comic) => {
+        LazyForEach(this.dataSource, (comic: Comic) => {
           ListItem() {
-            Row() {
-              Image(comic.coverUrl).width(80).height(110).objectFit(ImageFit.Cover)
-                .borderRadius(6).backgroundColor(this.isDarkMode ? '#2C2C2E' : '#F0F0F0')
-              Column({ space: 8 }) {
-                Text(comic.title).fontSize(15).fontWeight(FontWeight.Medium)
-                  .fontColor(this.isDarkMode ? '#FFFFFF' : '#000000')
-                  .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%')
+            Row({ space: 12 }) {
+              Image(comic.coverUrl)
+                .width(80).height(110)
+                .objectFit(ImageFit.Cover)
+                .borderRadius(6)
+                .backgroundColor(ThemeManager.surface)
+              Column({ space: 6 }) {
+                Text(comic.title)
+                  .fontSize(15).fontWeight(FontWeight.Medium)
+                  .fontColor(ThemeManager.textPrimary)
+                  .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .width('100%')
                 if (comic.author.length > 0) {
-                  Text(comic.author).fontSize(12).fontColor(this.isDarkMode ? '#999999' : '#666666')
-                    .margin({ top: 4 }).maxLines(1)
+                  Text(comic.author)
+                    .fontSize(12).fontColor(ThemeManager.textSecondary)
+                    .maxLines(1)
                 }
-              }.layoutWeight(1).alignItems(HorizontalAlign.Start).margin({ left: 12 })
-            }.width('100%').padding(12).onClick(() => {
-              router.pushUrl({ url: 'pages/ComicDetailPage', params: { comicId: comic.id, title: comic.title, source: comic.source } });
+              }
+              .layoutWeight(1).alignItems(HorizontalAlign.Start)
+            }
+            .width('100%').padding(12)
+            .onClick(() => {
+              const param: Record<string, Object> = {
+                'comicId': comic.id, 'title': comic.title, 'source': 'jm'
+              };
+              NavUtil.push('comicDetail', param);
             })
           }
-        })
-      }.layoutWeight(1).divider({ strokeWidth: 0.5, color: this.isDarkMode ? '#333333' : '#E5E5EA' })
-        .edgeEffect(EdgeEffect.Spring)
+          .id('comic' + comic.id + this.themeVersion)
+        }, (comic: Comic) => comic.id)
+
+        ListItem() {
+          if (this.loadingMore) {
+            Column({ space: 8 }) {
+              LoadingProgress().width(32).height(32)
+            }
+            .width('100%').height(48).justifyContent(FlexAlign.Center)
+          } else if (this.currentPage < this.maxPage) {
+            Text(Translations.t('load_more'))
+              .fontSize(13)
+              .fontColor(ThemeManager.primary)
+              .width('100%').height(48)
+              .textAlign(TextAlign.Center)
+              .onClick(() => { this.loadMore(); })
+          }
+        }
+      }
+      .layoutWeight(1)
+      .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+      .edgeEffect(EdgeEffect.Spring)
+      .onReachEnd(() => { this.loadMore(); })
+      .id('results' + this.themeVersion)
     }
   }
 
   build() {
-    Column({ space: 8 }) {
-      this.header()
-      Search({ value: $$this.keyword, placeholder: Translations.t('search_hint') })
-        .layoutWeight(1).height(40).margin({ left: 16, right: 16, bottom: 8 })
-        .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#F5F5F5').borderRadius(20)
-        .onChange((value: string) => { this.keyword = value; })
-        .onSubmit(() => { this.doSearch(); })
-      this.sourceTabs()
-      this.results()
-    }.width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#F5F5F5')
-  }
-
-  async doSearch(): Promise<void> {
-    if (this.keyword.length === 0) return;
-    this.loading = true; this.error = ''; this.comics = [];
-    try {
-      if (this.selectedSource === 0) {
-        const result = await NhentaiApi.search(this.keyword, 1);
-        this.comics = result.comics.map((b: ComicBrief) => {
-          const c = new Comic(); c.id = b.id; c.title = b.title; c.coverUrl = b.cover; c.source = 'nhentai'; return c;
-        });
-      } else if (this.selectedSource === 1) {
-        this.comics = await JmApi.search(this.keyword, 1);
-      } else {
-        const result = await HtcomicApi.search(this.keyword, 1);
-        this.comics = result.comics.map((b: ComicBrief) => {
-          const c = new Comic(); c.id = b.id; c.title = b.title; c.coverUrl = b.cover; c.source = 'htcomic'; return c;
-        });
-      }
-    } catch (e) { this.error = String(e); }
-    this.loading = false;
+    NavDestination() {
+      ForEach([this.themeVersion], (v: number) => {
+        Column({ space: 0 }) {
+          NavTitleBar({ title: Translations.t('search') })
+          this.searchInput()
+          this.sortBar()
+          this.results()
+        }
+        .width('100%').height('100%')
+        .backgroundColor(ThemeManager.background)
+      }, (v: number) => `theme-${v}`)
+    }
+    .hideTitleBar(true)
+    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
   }
 }

@@ -1,32 +1,37 @@
-// components/SettingSwitch.ets - 开关设置项组件
+// components/SettingSwitch.ets - 开关设置项（分组卡片内透明行 + 可选分隔线）
+import { ThemeManager } from '../common/ThemeManager';
+
 @Component
 export struct SettingSwitch {
-  @Prop icon: string = ''
+  @Prop icon: Resource = $r('sys.symbol.gearshape')
   @Prop title: string = ''
   @Prop isOn: boolean = false
+  @Prop showDivider: boolean = true
   @StorageLink('isDarkMode') isDarkMode: boolean = false
+  @StorageLink('themeVersion') themeVersion: number = 0
   onToggle: (value: boolean) => void = () => {}
 
   build() {
-    Row() {
-      if (this.icon.length > 0) {
-        Text(this.icon).fontSize(20).margin({ right: 12 })
-      }
+    Row({ space: 12 }) {
+      SymbolGlyph(this.icon)
+        .fontSize(24)
+        .fontColor([ThemeManager.primary])
       Text(this.title)
-        .fontSize(16)
-        .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
+        .fontSize(17)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(ThemeManager.textPrimary)
         .layoutWeight(1)
       Toggle({ type: ToggleType.Switch, isOn: this.isOn })
-        .selectedColor(this.isDarkMode ? '#4DA6FF' : '#007AFF')
+        .selectedColor(ThemeManager.primary)
         .switchPointColor('#FFFFFF')
         .onChange((isOn: boolean) => {
           this.onToggle(isOn);
         })
     }
     .width('100%')
-    .height(56)
-    .padding({ left: 16, right: 16 })
-    .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' })
+    .height(52)
+    .padding({ left: 20, right: 20 })
+    .border({ width: { bottom: this.showDivider ? 0.5 : 0 }, color: ThemeManager.divider })
   }
 }
+

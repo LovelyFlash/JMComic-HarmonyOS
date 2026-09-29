@@ -1,63 +1,173 @@
-// pages/settings/SettingsPage.ets - 设置主页
-import { router, promptAction } from '@kit.ArkUI';
+// pages/settings/SettingsPage.ets - 设置主页（深色/主题色选择器 + 子设置）- NavDestination
 import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
+import { NavUtil } from '../../common/NavUtil';
+import { SettingItem } from '../../components/SettingItem';
+import { SettingsGroup } from '../../components/SettingsGroup';
+import { SettingOptions } from '../../components/SettingOptions';
+import { NavTitleBar } from '../../components/NavTitleBar';
 
-@Entry
+@Builder
+export function SettingsPageBuilder(name: string, param: object) {
+  SettingsPage()
+}
+
 @Component
-struct SettingsPage {
+export struct SettingsPage {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
+  @StorageLink('themeVersion') themeVersion: number = 0
+  @State showColorSheet: boolean = false
+  @State title: string = '设置'
+
+  private darkModeIndex(): number {
+    const mode = ThemeManager.darkMode;
+    if (mode === 'enabled') {
+      return 1;
+    }
+    if (mode === 'disabled') {
+      return 2;
+    }
+    return 0;
+  }
+
+  private setDarkMode(mode: string): void {
+    if (mode === 'system') {
+      const isSysDark = AppStorage.get<boolean>('systemIsDark') ?? false;
+      ThemeManager.setDarkModePolicy('system', isSysDark);
+    } else if (mode === 'enabled') {
+      ThemeManager.setDarkModePolicy('enabled', false);
+    } else {
+      ThemeManager.setDarkModePolicy('disabled', false);
+    }
+  }
+
+  @Builder
+  colorSheetContent() {
+    ForEach([this.themeVersion], (v: number) => {
+      Column({ space: 16 }) {
+        Text(Translations.t('select_theme_color'))
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(ThemeManager.textPrimary)
+          .width('100%')
+          .padding({ left: 20, top: 8 })
+        Grid() {
+          ForEach(ThemeManager.themePresets, (color: string) => {
+            GridItem() {
+              Column() {
+                if (ThemeManager.themeColor === color) {
+                  SymbolGlyph($r('sys.symbol.checkmark'))
+                    .fontSize(20)
+                    .fontColor(['#FFFFFF'])
+                }
+              }
+              .width(44).height(44)
+              .borderRadius(22)
+              .backgroundColor(color)
+              .justifyContent(FlexAlign.Center)
+              .alignItems(HorizontalAlign.Center)
+              .onClick(() => {
+                ThemeManager.setThemeColor(color);
+                this.showColorSheet = false;
+              })
+            }
+          }, (color: string) => color)
+        }
+        .columnsTemplate('1fr 1fr 1fr')
+        .columnsGap(16)
+        .rowsGap(16)
+        .width('100%')
+        .height(168)
+        .padding({ left: 20, right: 20 })
+      }
+      .width('100%')
+      .padding({ bottom: 32 })
+      .id('colorSheet')
+    }, (v: number) => `theme-${v}`)
+  }
 
   build() {
-    Column({ space: 8 }) {
-      Row() {
-        Image($rawfile('icons/ic_back.svg'))
-          .width(24).height(24).objectFit(ImageFit.Contain)
-          .onClick(() => { router.back(); })
-        Text(Translations.t('tab_settings'))
-          .fontSize(22).fontWeight(FontWeight.Bold)
-          .fontColor(this.isDarkMode ? '#FFFFFF' : this.isDarkMode ? '#000000' : '#FFFFFF')
-          .margin({ left: 12 })
-      }.width('100%').height(64).padding({ left: 16, right: 16 }).alignItems(VerticalAlign.Center)
-
-      Scroll() {
-        Column({ space: 8 }) {
-          this.section('外观')
-          this.item(Translations.t('dark_mode'), ThemeManager.isDark ? '开启' : '关闭', () => {
-            ThemeManager.setDarkMode(!ThemeManager.isDark);
-            promptAction.showToast({ message: this.isDarkMode ? '已切换深色模式' : '已切换浅色模式', duration: 2000 });
-          })
-          this.item(Translations.t('theme_color'), '', () => {
-            const colors = ThemeManager.themePresets;
-            const cur = ThemeManager.themeColor;
-            let idx = 0;
-            for (let i = 0; i < colors.length; i++) { if (colors[i] === cur) { idx = i; break; } }
-            ThemeManager.setThemeColor(colors[(idx + 1) % colors.length]);
-          })
-
-          this.section('漫画源')
-          this.item('JM 禁漫 域名更新', '→', () => { router.pushUrl({ url: 'pages/settings/JmSettings' }); })
-          this.item('HT 绅士漫画 域名更新', '→', () => { router.pushUrl({ url: 'pages/settings/HtSettings' }); })
-
-          this.section('系统')
-          this.item(Translations.t('about'), 'v' + '1.0.0', () => { router.pushUrl({ url: 'pages/settings/AboutPage' }); })
-        }.width('100%')
-      }.layoutWeight(1)
-    }.width('100%').height('100%').backgroundColor(this.isDarkMode ? '#000000' : '#FFFFFF')
-  }
-
-  @Builder section(title: string) {
-    Text(title).fontSize(13).fontColor(this.isDarkMode ? '#8E8E93' : '#666666').width('100%').padding({ left: 16, top: 24, bottom: 8 })
-  }
-
-  @Builder item(label: string, value: string, action: () => void) {
-    Row() {
-      Text(label).fontSize(16).fontColor(this.isDarkMode ? '#FFFFFF' : '#000000').layoutWeight(1)
-      if (value.length > 0) { Text(value).fontSize(14).fontColor(this.isDarkMode ? '#8E8E93' : '#666666').margin({ right: 4 }) }
-      Image($rawfile('icons/ic_arrow_right.svg')).width(16).height(16).objectFit(ImageFit.Contain)
-    }.width('100%').height(56).padding({ left: 16, right: 16 })
-    .backgroundColor(this.isDarkMode ? '#1C1C1E' : '#FFFFFF')
-    .border({ width: { bottom: 0.5 }, color: this.isDarkMode ? '#38383A' : '#E5E5EA' })
-    .onClick(action)
+    NavDestination() {
+      ForEach([this.themeVersion], (v: number) => {
+        Column() {
+          Scroll() {
+            Column({ space: 0 }) {
+              SettingsGroup({ title: Translations.t('settings_appearance') }) {
+                SettingOptions({
+                  label: Translations.t('dark_mode'),
+                  options: [Translations.t('dark_mode_system'), Translations.t('dark_mode_dark'), Translations.t('dark_mode_light')],
+                  selectedIndex: this.darkModeIndex(),
+                  onSelect: (index: number) => {
+                    if (index === 0) {
+                      this.setDarkMode('system');
+                    } else if (index === 1) {
+                      this.setDarkMode('enabled');
+                    } else {
+                      this.setDarkMode('disabled');
+                    }
+                  }
+                })
+                SettingItem({
+                  icon: $r('sys.symbol.brightness'),
+                  title: Translations.t('theme_color'),
+                  showDivider: false,
+                  onTap: () => {
+                    this.showColorSheet = true;
+                  }
+                })
+              }
+              SettingsGroup({ title: Translations.t('settings_reading') }) {
+                SettingItem({
+                  icon: $r('sys.symbol.list_bullet'),
+                  title: Translations.t('reading_settings'),
+                  showDivider: false,
+                  onTap: () => {
+                    NavUtil.push('readingSettings');
+                  }
+                })
+              }
+              SettingsGroup({ title: Translations.t('settings_comic_source') }) {
+                SettingItem({
+                  icon: $r('sys.symbol.arrow_clockwise'),
+                  title: Translations.t('jm_name'),
+                  showDivider: false,
+                  onTap: () => {
+                    NavUtil.push('jmSettings');
+                  }
+                })
+              }
+              SettingsGroup({ title: Translations.t('settings_system') }) {
+                SettingItem({
+                  icon: $r('sys.symbol.questionmark_circle'),
+                  title: Translations.t('about'),
+                  value: 'v1.0.0',
+                  showDivider: false,
+                  onTap: () => {
+                    NavUtil.push('about');
+                  }
+                })
+              }
+            }
+            .width('100%')
+            .padding({ bottom: 24 })
+          }
+          .width('100%').layoutWeight(1)
+          .scrollBar(BarState.Off)
+          .edgeEffect(EdgeEffect.Spring)
+        }
+        .width('100%').height('100%')
+      }, (v: number) => `theme-${v}`)
+    }
+    .hideTitleBar(true)
+    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.pageBackground : '')
+    .bindSheet($$this.showColorSheet, this.colorSheetContent(), {
+      detents: [SheetSize.MEDIUM],
+      blurStyle: BlurStyle.COMPONENT_THICK,
+      showClose: false,
+      width: '100%'
+    })
+    .title(this.title)                    // 设置标题文本
+    .hideTitleBar(false)
   }
 }
+
