@@ -1,6 +1,8 @@
 // pages/MePage.ets - 我的页（资料卡 + 历史 + 功能入口）
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
+import { SettingsKeys } from '../common/Constants';
+import { Settings } from '../data/preferences/Settings';
 import { JmApi } from '../data/api/JmApi';
 import { Database, HistoryItem } from '../data/database/Database';
 
@@ -25,7 +27,7 @@ export struct MePage {
   @State userName: string = ''
   @State accountName: string = ''
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
-  
+  @StorageProp('showHistoryImages') showHistoryImages: boolean = true
   @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   static tabnum():number {return tabnum}
@@ -33,6 +35,10 @@ export struct MePage {
   aboutToAppear(): void {
     this.loadHistory();
     this.refreshLoginState();
+    // 首页历史图片显示开关（持久化 -> AppStorage，设置页/本页实时联动）
+    Settings.getBool(SettingsKeys.SHOW_HISTORY_IMAGES, true).then((v: boolean) => {
+      AppStorage.setOrCreate('showHistoryImages', v);
+    });
   }
 
   private onAccountChanged(): void {
@@ -152,7 +158,7 @@ export struct MePage {
           .width('100%')
           .textAlign(TextAlign.Center)
           .padding(16)
-      } else {
+      } else if (this.showHistoryImages) {
         List({ space: 8 }) {
           ForEach(this.historyItems.slice(0, 10), (item: HistoryItem) => {
             ListItem() {
@@ -181,6 +187,32 @@ export struct MePage {
         }
         .listDirection(Axis.Horizontal)
         .height(140)
+        .width('100%')
+      } else {
+        List({ space: 8 }) {
+          ForEach(this.historyItems.slice(0, 10), (item: HistoryItem) => {
+            ListItem() {
+              Text(item.title)
+                .fontSize(13)
+                .fontColor($r('app.color.text_primary'))
+                .maxLines(2)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+                .constraintSize({ maxWidth: 160 })
+                .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+                .backgroundColor($r('app.color.bg_fill'))
+                .borderRadius(8)
+                .onClick(() => {
+                  const param: Record<string, Object> = {
+                    'comicId': item.id, 'title': item.title, 'source': item.source
+                  };
+                  NavUtil.push('comicDetail', param);
+                })
+            }
+            .id('historyChip' + item.id)
+          }, (item: HistoryItem) => item.id)
+        }
+        .listDirection(Axis.Horizontal)
+        .height(56)
         .width('100%')
       }
     }
@@ -244,24 +276,6 @@ export struct MePage {
           .borderRadius(12)
           .onClick(() => { NavUtil.push('settings'); })
           .id('settingsEntry')
-
-          Row({ space: 12 }) {
-            SymbolGlyph($r('sys.symbol.questionmark_circle'))
-              .fontSize(22)
-              .fontColor([$r('app.color.text_secondary')])
-            Text(Translations.t('about'))
-              .fontSize(15)
-              .fontColor($r('app.color.text_primary'))
-              .layoutWeight(1)
-            SymbolGlyph($r('sys.symbol.chevron_right'))
-              .fontSize(16)
-              .fontColor([$r('app.color.text_tertiary')])
-          }
-          .width('100%')
-          .height(52)
-          .padding({ left: 14, right: 14 })
-          .borderRadius(12)
-          .onClick(() => { NavUtil.push('about'); })
         }
         .width('100%')
         .padding({ left: 16, right: 16, top: 16, bottom: 96 })

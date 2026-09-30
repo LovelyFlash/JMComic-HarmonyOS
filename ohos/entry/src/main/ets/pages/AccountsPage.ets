@@ -19,6 +19,7 @@ export struct AccountsPage {
   @State userId: string = ''
   @State checkingIn: boolean = false
   
+  @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = '#2563EB'
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
 
@@ -229,15 +230,18 @@ export struct AccountsPage {
               }
             }
             .width('100%')
-            .padding(16)
+            .padding({ left: 16, right: 16, top: 16, bottom: this.bottomAvoid + 16 })
           }
           .width('100%').layoutWeight(1)
           .scrollBar(BarState.Off)
           .edgeEffect(EdgeEffect.Spring)
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
         }
         .width('100%').height('100%')
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
   }

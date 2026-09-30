@@ -30,6 +30,7 @@ export struct JmWeekPage {
   @State loading: boolean = false
   @State error: string = ''
   
+  @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
@@ -170,6 +171,8 @@ export struct JmWeekPage {
     .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
     .edgeEffect(EdgeEffect.Spring)
     .scrollBar(BarState.Off)
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+    .padding({ bottom: this.bottomAvoid })
     .id('jmWeekComicRows')
   }
 
@@ -224,8 +227,10 @@ export struct JmWeekPage {
         }
         .width('100%').height('100%')
         .backgroundColor($r('app.color.bg_page'))
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
   }

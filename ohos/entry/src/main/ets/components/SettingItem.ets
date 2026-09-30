@@ -1,4 +1,4 @@
-// components/SettingItem.ets - 设置项（分组卡片内透明行 + 可选分隔线）
+// components/SettingItem.ets - 设置项（ListItem 内容行：图标 + 标题 + 值 + 箭头）
 
 @Component
 export struct SettingItem {
@@ -6,8 +6,6 @@ export struct SettingItem {
   @Prop title: string = ''
   @Prop value: string = ''
   @Prop showArrow: boolean = true
-  @Prop showDivider: boolean = true
-  
   @StorageProp('themeColor') themeColor: string = '#2563EB'
   onTap: () => void = () => {}
 

@@ -23,6 +23,7 @@ export struct JmPromotePage {
   @State currentPage: number = 1
   @State maxPage: number = 1
   
+  @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
@@ -125,6 +126,8 @@ export struct JmPromotePage {
     .layoutWeight(1)
     .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
     .edgeEffect(EdgeEffect.Spring)
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+    .padding({ bottom: this.bottomAvoid })
     .onReachEnd(() => { this.loadMore(); })
     .id('jmPromoteComicRows')
   }
@@ -155,8 +158,10 @@ export struct JmPromotePage {
         }
         .width('100%').height('100%')
         .backgroundColor($r('app.color.bg_page'))
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
   }

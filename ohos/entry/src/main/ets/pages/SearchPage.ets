@@ -34,6 +34,7 @@ export struct SearchPage {
   @State searched: boolean = false
   @State sort: string = 'mr'
   
+  @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   private makeSorts(): SortOption[] {
@@ -267,6 +268,8 @@ export struct SearchPage {
       .edgeEffect(EdgeEffect.Spring)
       .onReachEnd(() => { this.loadMore(); })
       .id('resultsList')
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+      .padding({ bottom: this.bottomAvoid })
     }
   }
 
@@ -281,8 +284,10 @@ export struct SearchPage {
         }
         .width('100%').height('100%')
         .backgroundColor($r('app.color.bg_page'))
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
   }

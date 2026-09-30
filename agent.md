@@ -35,7 +35,7 @@ ohos/entry/src/main/ets/
 │   ├── ReaderImage.ets    -- 阅读器图片（下载→解码→反打乱→LRU 缓存，失败可重试）
 │   ├── NetworkImage.ets   -- 普通网络图片（封面等，无需反打乱）
 │   ├── ComicTile/ComicGrid/LoadingView/NavTitleBar/AppTopBar/AppIcon
-│   └── SettingItem/SettingSection/SettingSwitch/SettingOptions/SettingsGroup
+│   └── SettingItem/SettingSection/SettingSwitch/SettingSelect
 ├── pages/
 │   ├── MainPage.ets       -- 底部 Tab 主页
 │   ├── DiscoverPage / SearchPage / PreSearchPage / CategoryPage / JmCategoryPage
@@ -43,7 +43,7 @@ ohos/entry/src/main/ets/
 │   ├── HistoryPage / FollowPage / FavoritesContent / DownloadPage
 │   ├── MePage / AccountsPage
 │   ├── reader/ReaderPage.ets  -- 阅读器（单页 Swiper / 条漫 List 双模式）
-│   └── settings/          -- SettingsPage, ReadingSettings, JmSettings, AboutPage
+│   └── settings/          -- SettingsPage(List+Select), ReadingSettings, JmSettings, AboutPage（均为内置标题栏 .title().hideTitleBar(false)）
 └── entryability/EntryAbility.ets
 ```
 
@@ -164,7 +164,7 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 
 ### Q: 如何添加/修改设置项？
 1. `common/Constants.ets` 的 `SettingsKeys` 加键
-2. `pages/settings/` 对应页面加 UI
+2. `pages/settings/` 对应页面加 UI：设置行放进 `ListItemGroup`（`groupHeader` 分组标题），每项一个 `ListItem`（`bg_surface` + 组首/末项圆角 16），组内分隔线用 `ListItemGroup.divider`；多选项设置用 `SettingSelect`（下拉菜单），开关用 `SettingSwitch`
 3. `data/preferences/Settings.ets` 读写
 
 ### Q: 如何修改主题颜色？

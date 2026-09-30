@@ -1,10 +1,9 @@
 // pages/settings/ReadingSettings.ets - 阅读设置 - NavDestination
+// 主干为 List + ListItemGroup（分组 + 粘性标题 + 组内分割线）
 import { Translations } from '../../common/Translations';
 import { ReadingConfig } from '../../common/ReadingConfig';
 import { SettingSwitch } from '../../components/SettingSwitch';
-import { SettingsGroup } from '../../components/SettingsGroup';
-import { SettingOptions } from '../../components/SettingOptions';
-import { NavTitleBar } from '../../components/NavTitleBar';
+import { SettingSelect } from '../../components/SettingSelect';
 
 @Builder
 export function ReadingSettingsBuilder(name: string, param: object) {
@@ -13,8 +12,8 @@ export function ReadingSettingsBuilder(name: string, param: object) {
 
 @Component
 export struct ReadingSettings {
-  
-  
+  @State title: string = Translations.t('reading_settings')
+  @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @State readMode: number = 2
   @State tapTurnPage: boolean = true
   @State volumeKeyTurnPage: boolean = true
@@ -93,98 +92,183 @@ export struct ReadingSettings {
     return labels;
   }
 
+  /** 分组标题（bg_page 垫底，随列表滚动） */
+  @Builder
+  groupHeader(title: string) {
+    Text(title)
+      .fontSize(13)
+      .fontColor($r('app.color.text_secondary'))
+      .width('100%')
+      .padding({ left: 4, top: 16, bottom: 8 })
+      .backgroundColor($r('app.color.bg_page'))
+  }
+
   build() {
     NavDestination() {
-      
-        Column() {
-          NavTitleBar({ title: Translations.t('reading_settings') })
-          Scroll() {
-            Column({ space: 0 }) {
-              SettingsGroup({ title: Translations.t('section_turn_method') }) {
-                SettingOptions({
-                  options: this.readModeLabels(),
-                  selectedIndex: this.readMode,
-                  onSelect: (index: number) => {
-                    this.readMode = index;
-                    this.save();
-                  }
-                })
+      List({ space: 24 }) {
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_turn_method')) }) {
+          ListItem() {
+            SettingSelect({
+              icon: $r('sys.symbol.arrowshape_turn_up_left'),
+              title: Translations.t('section_turn_method'),
+              options: this.readModeLabels(),
+              selectedIndex: this.readMode,
+              onSelect: (index: number) => {
+                this.readMode = index;
+                this.save();
               }
-              SettingsGroup({ title: Translations.t('section_turn_control') }) {
-                SettingSwitch({ icon: $r('sys.symbol.hand_tap'), title: Translations.t('tap_turn_page'), isOn: this.tapTurnPage, onToggle: (v: boolean) => {
-                  this.tapTurnPage = v; this.save();
-                }})
-                SettingSwitch({ icon: $r('sys.symbol.arrowshape_turn_up_left'), title: Translations.t('invert_tap'), isOn: this.invertTap, onToggle: (v: boolean) => {
-                  this.invertTap = v; this.save();
-                }})
-                SettingSwitch({ icon: $r('sys.symbol.speaker_wave_2'), title: Translations.t('volume_key'), isOn: this.volumeKeyTurnPage, onToggle: (v: boolean) => {
-                  this.volumeKeyTurnPage = v; this.save();
-                }})
-                SettingSwitch({ icon: $r('sys.symbol.rectangle_3_group'), title: Translations.t('side_page_turn'), isOn: this.sidePageTurn, showDivider: false, onToggle: (v: boolean) => {
-                  this.sidePageTurn = v; this.save();
-                }})
-              }
-              SettingsGroup({ title: Translations.t('section_display') }) {
-                SettingSwitch({ icon: $r('sys.symbol.brightness'), title: Translations.t('keep_screen_on'), isOn: this.keepScreenOn, onToggle: (v: boolean) => {
-                  this.keepScreenOn = v; this.save();
-                }})
-                SettingSwitch({ icon: $r('sys.symbol.play'), title: Translations.t('page_animation'), isOn: this.pageAnimation, onToggle: (v: boolean) => {
-                  this.pageAnimation = v; this.save();
-                }})
-                SettingSwitch({ icon: $r('sys.symbol.info_circle'), title: Translations.t('show_page_info'), isOn: this.showPageInfo, showDivider: false, onToggle: (v: boolean) => {
-                  this.showPageInfo = v; this.save();
-                }})
-              }
-              SettingsGroup({ title: Translations.t('section_zoom') }) {
-                SettingSwitch({ icon: $r('sys.symbol.magnifyingglass'), title: Translations.t('double_tap_zoom'), isOn: this.doubleTapZoom, onToggle: (v: boolean) => {
-                  this.doubleTapZoom = v; this.save();
-                }})
-                SettingSwitch({ icon: $r('sys.symbol.hand_tap'), title: Translations.t('long_press_zoom'), isOn: this.longPressZoom, showDivider: false, onToggle: (v: boolean) => {
-                  this.longPressZoom = v; this.save();
-                }})
-              }
-              SettingsGroup({ title: Translations.t('section_image') }) {
-                SettingOptions({
-                  options: this.imageQualities,
-                  selectedIndex: this.imageQuality,
-                  onSelect: (index: number) => {
-                    this.imageQuality = index;
-                    this.save();
-                  }
-                })
-                SettingOptions({
-                  options: this.imageLayoutLabels(),
-                  selectedIndex: this.imageLayout,
-                  onSelect: (index: number) => {
-                    this.imageLayout = index;
-                    this.save();
-                  }
-                })
-              }
-              SettingsGroup({ title: Translations.t('section_auto') }) {
-                SettingOptions({
-                  options: this.autoPageTimeLabels(),
-                  selectedIndex: this.autoPageTimes.indexOf(this.autoPageTime),
-                  onSelect: (index: number) => {
-                    this.autoPageTime = this.autoPageTimes[index];
-                    this.save();
-                  }
-                })
-              }
-            }.width('100%').padding({ bottom: 24 })
+            })
           }
-          .width('100%').layoutWeight(1)
-          .scrollBar(BarState.Off)
-          .edgeEffect(EdgeEffect.Spring)
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius(16)
+          .clip(true)
         }
-        .width('100%').height('100%')
-      
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_turn_control')) }) {
+          ListItem() {
+            SettingSwitch({ icon: $r('sys.symbol.hand_tap'), title: Translations.t('tap_turn_page'), isOn: this.tapTurnPage, onToggle: (v: boolean) => {
+              this.tapTurnPage = v; this.save();
+            }})
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ topLeft: 16, topRight: 16 })
+          .clip(true)
+          ListItem() {
+            SettingSwitch({ icon: $r('sys.symbol.arrowshape_turn_up_left'), title: Translations.t('invert_tap'), isOn: this.invertTap, onToggle: (v: boolean) => {
+              this.invertTap = v; this.save();
+            }})
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          ListItem() {
+            SettingSwitch({ icon: $r('sys.symbol.speaker_wave_2'), title: Translations.t('volume_key'), isOn: this.volumeKeyTurnPage, onToggle: (v: boolean) => {
+              this.volumeKeyTurnPage = v; this.save();
+            }})
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          ListItem() {
+            SettingSwitch({ icon: $r('sys.symbol.rectangle_3_group'), title: Translations.t('side_page_turn'), isOn: this.sidePageTurn, onToggle: (v: boolean) => {
+              this.sidePageTurn = v; this.save();
+            }})
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
+          .clip(true)
+        }
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_display')) }) {
+          ListItem() {
+            SettingSwitch({ icon: $r('sys.symbol.brightness'), title: Translations.t('keep_screen_on'), isOn: this.keepScreenOn, onToggle: (v: boolean) => {
+              this.keepScreenOn = v; this.save();
+            }})
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ topLeft: 16, topRight: 16 })
+          .clip(true)
+          ListItem() {
+            SettingSwitch({ icon: $r('sys.symbol.play'), title: Translations.t('page_animation'), isOn: this.pageAnimation, onToggle: (v: boolean) => {
+              this.pageAnimation = v; this.save();
+            }})
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          ListItem() {
+            SettingSwitch({ icon: $r('sys.symbol.info_circle'), title: Translations.t('show_page_info'), isOn: this.showPageInfo, onToggle: (v: boolean) => {
+              this.showPageInfo = v; this.save();
+            }})
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
+          .clip(true)
+        }
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_zoom')) }) {
+          ListItem() {
+            SettingSwitch({ icon: $r('sys.symbol.magnifyingglass'), title: Translations.t('double_tap_zoom'), isOn: this.doubleTapZoom, onToggle: (v: boolean) => {
+              this.doubleTapZoom = v; this.save();
+            }})
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ topLeft: 16, topRight: 16 })
+          .clip(true)
+          ListItem() {
+            SettingSwitch({ icon: $r('sys.symbol.hand_tap'), title: Translations.t('long_press_zoom'), isOn: this.longPressZoom, onToggle: (v: boolean) => {
+              this.longPressZoom = v; this.save();
+            }})
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
+          .clip(true)
+        }
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_image')) }) {
+          ListItem() {
+            SettingSelect({
+              icon: $r('sys.symbol.camera'),
+              title: Translations.t('image_quality'),
+              options: this.imageQualities,
+              selectedIndex: this.imageQuality,
+              onSelect: (index: number) => {
+                this.imageQuality = index;
+                this.save();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ topLeft: 16, topRight: 16 })
+          .clip(true)
+          ListItem() {
+            SettingSelect({
+              icon: $r('sys.symbol.square_grid_2x2'),
+              title: Translations.t('image_layout'),
+              options: this.imageLayoutLabels(),
+              selectedIndex: this.imageLayout,
+              onSelect: (index: number) => {
+                this.imageLayout = index;
+                this.save();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
+          .clip(true)
+        }
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_auto')) }) {
+          ListItem() {
+            SettingSelect({
+              icon: $r('sys.symbol.timer'),
+              title: Translations.t('auto_page_interval'),
+              options: this.autoPageTimeLabels(),
+              selectedIndex: this.autoPageTimes.indexOf(this.autoPageTime),
+              onSelect: (index: number) => {
+                this.autoPageTime = this.autoPageTimes[index];
+                this.save();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius(16)
+          .clip(true)
+        }
+      }
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring)
+      .width('100%')
+      .height('100%')
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+      .padding({ left: 16, right: 16, bottom: this.bottomAvoid + 24 })
     }
-    .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
+    .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+    .hideTitleBar(false)
     .onBackPressed(() => {
       this.save();
       return false;
     })
+    .id('readingSettingsPage')
   }
 }

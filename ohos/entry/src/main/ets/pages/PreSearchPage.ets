@@ -17,6 +17,7 @@ export struct PreSearchPage {
   @State hotLoading: boolean = false
   @State inputText: string = ''
   
+  @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
@@ -147,15 +148,18 @@ export struct PreSearchPage {
               }
             }
             .width('100%')
-            .padding({ left: 16, right: 16, bottom: 32 })
+            .padding({ left: 16, right: 16, bottom: this.bottomAvoid + 32 })
           }
           .layoutWeight(1)
           .align(Alignment.Top)
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
         }
         .width('100%').height('100%')
         .backgroundColor($r('app.color.bg_page'))
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
   }

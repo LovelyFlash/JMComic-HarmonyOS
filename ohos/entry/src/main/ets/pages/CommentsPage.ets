@@ -23,6 +23,7 @@ export struct CommentsPage {
   @State maxPage: number = 1
   @State sending: boolean = false
   
+  @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
@@ -244,6 +245,8 @@ export struct CommentsPage {
             .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
             .edgeEffect(EdgeEffect.Spring)
             .onReachEnd(() => { this.loadMore(); })
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+            .padding({ bottom: this.bottomAvoid })
           }
 
           Row({ space: 8 }) {
@@ -266,13 +269,16 @@ export struct CommentsPage {
                 this.sendComment();
               })
           }
-          .width('100%').padding(12)
+          .width('100%').padding({ left: 12, right: 12, top: 12, bottom: this.bottomAvoid + 12 })
           .backgroundColor($r('app.color.bg_page'))
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
         }
         .width('100%').height('100%')
         .backgroundColor($r('app.color.bg_page'))
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
   }

@@ -1,7 +1,6 @@
 // pages/settings/AboutPage.ets - 关于页 - NavDestination
 import { Translations } from '../../common/Translations';
 import { ApiConstants } from '../../common/Constants';
-import { NavTitleBar } from '../../components/NavTitleBar';
 
 @Builder
 export function AboutPageBuilder(name: string, param: object) {
@@ -10,14 +9,13 @@ export function AboutPageBuilder(name: string, param: object) {
 
 @Component
 export struct AboutPage {
-  
+  @State title: string = Translations.t('about')
   @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   build() {
     NavDestination() {
       
         Column({ space: 8 }) {
-          NavTitleBar({ title: Translations.t('about') })
           Column({ space: 8 }) {
             SymbolGlyph($r('sys.symbol.book'))
               .fontSize(64)
@@ -49,9 +47,13 @@ export struct AboutPage {
           .alignItems(HorizontalAlign.Center)
         }
         .width('100%').height('100%')
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
-    .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
+    .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+    .hideTitleBar(false)
+    .id('aboutPage')
   }
 }

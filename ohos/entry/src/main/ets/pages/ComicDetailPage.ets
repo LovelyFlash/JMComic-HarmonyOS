@@ -283,6 +283,7 @@ export struct ComicDetailPage {
           .blur(24)
       }
       .width('100%').height('100%')
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
       // 前景：封面 + 基础信息
       Row({ space: 16 }) {
@@ -332,6 +333,7 @@ export struct ComicDetailPage {
     .width('100%')
     .height(280 + this.topAvoid)
     .id('heroSection')
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   @Builder
@@ -504,6 +506,7 @@ export struct ComicDetailPage {
     .backgroundColor($r('app.color.bg_page'))
     .alignItems(VerticalAlign.Center)
     .id('bottomBar')
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
   }
 
   private primaryLabel(): string {
@@ -685,10 +688,12 @@ export struct ComicDetailPage {
                 Blank().height(120 + this.bottomAvoid)
               }
               .width('100%')
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
             }
             .layoutWeight(1)
             .scrollBar(BarState.Off)
             .edgeEffect(EdgeEffect.Spring)
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
             this.floatingTopBar()
             Column() {
@@ -696,10 +701,12 @@ export struct ComicDetailPage {
               this.bottomBar()
             }
             .width('100%').height('100%')
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
           }
         }
         .width('100%').height('100%')
         .backgroundColor($r('app.color.bg_page'))
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         .bindSheet($$this.showFavSheet, this.favSheetContent(), {
           detents: [SheetSize.MEDIUM, SheetSize.LARGE],
           blurStyle: BlurStyle.COMPONENT_THICK,
@@ -711,6 +718,7 @@ export struct ComicDetailPage {
         })
       
     }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
   }

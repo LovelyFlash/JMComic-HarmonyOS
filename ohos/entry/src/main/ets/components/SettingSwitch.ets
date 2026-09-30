@@ -1,12 +1,10 @@
-// components/SettingSwitch.ets - 开关设置项（分组卡片内透明行 + 可选分隔线）
+// components/SettingSwitch.ets - 开关设置项（ListItem 内容行：图标 + 标题 + 开关）
 
 @Component
 export struct SettingSwitch {
   @Prop icon: Resource = $r('sys.symbol.gearshape')
   @Prop title: string = ''
   @Prop isOn: boolean = false
-  @Prop showDivider: boolean = true
-  
   @StorageProp('themeColor') themeColor: string = '#2563EB'
   onToggle: (value: boolean) => void = () => {}
 
@@ -30,7 +28,6 @@ export struct SettingSwitch {
     .width('100%')
     .height(52)
     .padding({ left: 20, right: 20 })
-    .border({ width: { bottom: this.showDivider ? 0.5 : 0 }, color: $r('app.color.divider') })
   }
 }
 

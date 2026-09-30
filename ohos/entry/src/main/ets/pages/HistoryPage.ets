@@ -12,6 +12,7 @@ export function HistoryPageBuilder(name: string, param: object) {
 @Component
 export struct HistoryPage {
   
+  @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = '#2563EB'
   @State items: HistoryItem[] = []
   @State loading: boolean = true
@@ -84,11 +85,15 @@ export struct HistoryPage {
             }
             .width('100%').layoutWeight(1)
             .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+            .padding({ bottom: this.bottomAvoid })
           }
         }
         .width('100%').height('100%')
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
   }

@@ -58,6 +58,7 @@ export class DatabaseConstants {
 export class SettingsKeys {
   static readonly DARK_MODE = 'darkMode';
   static readonly THEME_COLOR = 'themeColor';
+  static readonly SHOW_HISTORY_IMAGES = 'showHistoryImages';
   static readonly LANGUAGE = 'language';
   static readonly VOLUME_KEY = 'volumeKey';
   static readonly KEEP_SCREEN_ON = 'keepScreenOn';
