@@ -33,6 +33,7 @@ export class ReadingConfig {
     ReadingConfig.imageLayout = await Settings.getNumber(SettingsKeys.IMAGE_LAYOUT, 0);
     ReadingConfig.fontSize = await Settings.getNumber(SettingsKeys.FONT_SIZE, 16);
     ReadingConfig.autoPageTime = await Settings.getNumber(SettingsKeys.AUTO_PAGE_TIME, 5);
+    AppStorage.setOrCreate('imageQuality', ReadingConfig.imageQuality);
   }
 
   static async saveAll(): Promise<void> {
@@ -50,5 +51,6 @@ export class ReadingConfig {
     await Settings.putNumber(SettingsKeys.IMAGE_LAYOUT, ReadingConfig.imageLayout);
     await Settings.putNumber(SettingsKeys.FONT_SIZE, ReadingConfig.fontSize);
     await Settings.putNumber(SettingsKeys.AUTO_PAGE_TIME, ReadingConfig.autoPageTime);
+    AppStorage.setOrCreate('imageQuality', ReadingConfig.imageQuality);
   }
 }

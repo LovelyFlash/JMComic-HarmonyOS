@@ -54,6 +54,13 @@ export class ArrayDataSource<T> implements IDataSource {
     }
   }
 
+  replaceAll(data: T[]): void {
+    this.items = data;
+    for (let i = 0; i < this.listeners.length; i++) {
+      this.listeners[i].onDataReloaded();
+    }
+  }
+
   getAllData(): T[] {
     return this.items;
   }
