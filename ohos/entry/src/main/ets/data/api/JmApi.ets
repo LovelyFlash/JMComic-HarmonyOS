@@ -183,6 +183,20 @@ export class JmApi {
     return JmApi.userId;
   }
 
+  static getAccount(): string {
+    return JmApi.account;
+  }
+
+  /** 登录态变更广播：bump AppStorage jmAccountChanged，驱动 MePage/FavoritesContent/AccountsPage 等页面刷新 */
+  private static notifyAccountChanged(): void {
+    try {
+      const prev: number | undefined = AppStorage.get<number>('jmAccountChanged');
+      AppStorage.setOrCreate('jmAccountChanged', prev === undefined ? 1 : prev + 1);
+    } catch (e) {
+      Logger.warn(TAG, `notifyAccountChanged failed: ${String(e)}`);
+    }
+  }
+
   // ========== Init ==========
 
   static async init(): Promise<void> {
@@ -216,6 +230,8 @@ export class JmApi {
     JmApi.userName = await Settings.getString(SettingsKeys.JM_USER_NAME, '');
     JmApi.userId = await Settings.getString(SettingsKeys.JM_USER_ID, '');
     JmApi.loggedIn = JmApi.account !== '' && JmApi.password !== '';
+    // 持久化恢复完成，广播登录态（驱动已创建页面刷新，避免"重进显示未登录"）
+    JmApi.notifyAccountChanged();
     if (JmApi.loggedIn) {
       // cookie 短效，每次启动重新登录（与原版一致），后台执行不阻塞启动
       JmApi.reLogin().catch((e: Object) => {
@@ -799,6 +815,7 @@ export class JmApi {
       await Settings.putString(SettingsKeys.JM_PASSWORD, pwd);
       await Settings.putString(SettingsKeys.JM_USER_NAME, JmApi.userName);
       await Settings.putString(SettingsKeys.JM_USER_ID, JmApi.userId);
+      JmApi.notifyAccountChanged();
     } finally {
       JmApi.performingLogin = false;
       // 登录后更新图片分流（须在 performingLogin=false 之后，避免 apiGet 等待死锁）
@@ -818,7 +835,11 @@ export class JmApi {
 
   /** 登出：清 cookie + 清账号持久化 */
   static async logout(): Promise<void> {
-    Network.clearAllCookies();
+    try {
+      Network.clearAllCookies();
+    } catch (e) {
+      Logger.warn(TAG, `clearAllCookies failed: ${String(e)}`);
+    }
     JmApi.account = '';
     JmApi.password = '';
     JmApi.userName = '';
@@ -828,6 +849,7 @@ export class JmApi {
     await Settings.putString(SettingsKeys.JM_PASSWORD, '');
     await Settings.putString(SettingsKeys.JM_USER_NAME, '');
     await Settings.putString(SettingsKeys.JM_USER_ID, '');
+    JmApi.notifyAccountChanged();
   }
 
   /** 用持久化账号重新登录 */

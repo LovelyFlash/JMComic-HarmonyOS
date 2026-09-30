@@ -137,6 +137,7 @@ export struct DiscoverPage {
             NavUtil.push('jmPromote', param);
           })
       }
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       .width('100%')
 
       Scroll() {
@@ -161,8 +162,10 @@ export struct DiscoverPage {
       .scrollable(ScrollDirection.Horizontal)
       .scrollBar(BarState.Off)
       .width('100%')
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .width('100%')
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .padding({ left: 16, right: 16, top: 6, bottom: 6 })
     .id('section' + section.id + this.themeVersion)
   }
@@ -176,6 +179,7 @@ export struct DiscoverPage {
             this.homeSectionItem(section)
           }, (section: JmHomeSection) => section.id + section.title)
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         .width('100%')
         .padding({ top: 4, bottom: 96 })
       }
@@ -183,7 +187,9 @@ export struct DiscoverPage {
       .scrollBar(BarState.Off)
       .width('100%')
       .height('100%')
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .layoutWeight(1)
     .onRefreshing(() => { this.loadHome(); })
   }
@@ -229,8 +235,10 @@ export struct DiscoverPage {
                     .maxLines(1)
                 }
               }
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
               .layoutWeight(1).alignItems(HorizontalAlign.Start)
             }
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
             .width('100%').padding(12)
             .backgroundColor(ThemeManager.surfaceSecondary)
             .borderRadius(10)
@@ -290,10 +298,10 @@ export struct DiscoverPage {
     }) {
       TabContent() {
         this.homeContent()
-      }.tabBar(Translations.t('explore_home'))
+      }.tabBar(Translations.t('explore_home')).expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
       TabContent() {
         this.latestContent()
-      }.tabBar(Translations.t('explore_latest'))
+      }.tabBar(Translations.t('explore_latest')).expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
     }
     .onChange((index: number) => {
       this.switchMode(index);
@@ -302,5 +310,6 @@ export struct DiscoverPage {
     .scrollable(false)                     // 禁止横向滑动
     .width('100%')
     .vertical(false)
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 }

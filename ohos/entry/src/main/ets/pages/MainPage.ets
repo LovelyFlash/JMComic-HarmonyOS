@@ -29,20 +29,35 @@ struct MainPage {
           // Tab 0 - 首页
           TabContent() {
             Stack({ alignContent: Alignment.Bottom }){MePage()}
+            .height('100%')
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           }.tabBar(this.TabBarContent(0))
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           // Tab 1 - 收藏
           TabContent() {
             Stack({ alignContent: Alignment.Bottom }){FavoritesContent()}
+            .height('100%')
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           }.tabBar(this.TabBarContent(1))
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           // Tab 2 - 探索
           TabContent() {
             Stack({ alignContent: Alignment.Bottom }){DiscoverPage()}
+            .height('100%')
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           }.tabBar(this.TabBarContent(2))
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           // Tab 3 - 分类
           TabContent() {
             Stack({ alignContent: Alignment.Bottom }){CategoryPage()}
+            .height('100%')
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           }.tabBar(this.TabBarContent(3))
-        }.onAnimationStart((index :number) => {
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+        }
+        .height('105%')
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+        .onAnimationStart((index :number) => {
           this.currentTab = index;})
         .onChange((index :number) => {
           this.currentTab = index;})
@@ -59,6 +74,7 @@ struct MainPage {
         })
         this.FabContent()
       }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .mode(NavigationMode.Stack)
     .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')

@@ -26,7 +26,9 @@ export default class EntryAbility extends UIAbility {
     await Database.init(this.context);
     await ThemeManager.restore();
     await ReadingConfig.load();
-    JmApi.init();
+    // 必须 await：登录态/用户名从持久化恢复完成后才能加载页面，
+    // 否则 MePage 首帧读到未登录（网络重登仍在 init 内后台执行，不阻塞）
+    await JmApi.init();
   }
 
   onDestroy(): void {
@@ -45,6 +47,7 @@ export default class EntryAbility extends UIAbility {
     }
   }
 
+
   onWindowStageCreate(windowStage: window.WindowStage): void {
     hilog.info(DOMAIN, TAG, 'Ability onWindowStageCreate');
     // 串行化：初始化 → 同步系统深色 → 加载页面，避免首帧主题竞态闪烁
@@ -57,6 +60,7 @@ export default class EntryAbility extends UIAbility {
       this.loadMainPage(windowStage);
     });
   }
+
 
   /** 加载主页面；loadContent 回调承载窗口设置（须在初始化完成后调用） */
   private loadMainPage(windowStage: window.WindowStage): void {
@@ -107,6 +111,9 @@ export default class EntryAbility extends UIAbility {
       const bottomVp: number = navArea.bottomRect.height / density;
       AppStorage.setOrCreate('topAvoidHeight', topVp);
       AppStorage.setOrCreate('bottomAvoidHeight', bottomVp);
+      // 兼容别名（CategoryPage 等使用），与 topAvoidHeight/bottomAvoidHeight 同为 vp
+      AppStorage.setOrCreate('topRectHeight', topVp);
+      AppStorage.setOrCreate('bottomRectHeight', bottomVp);
       hilog.info(DOMAIN, TAG, 'avoidArea top=%{public}f bottom=%{public}f', topVp, bottomVp);
     } catch (e) {
       hilog.warn(DOMAIN, TAG, 'updateAvoidAreas failed: %{public}s', String(e));

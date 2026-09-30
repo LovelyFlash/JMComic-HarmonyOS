@@ -21,8 +21,14 @@ export struct AccountsPage {
   @State checkingIn: boolean = false
   @StorageLink('isDarkMode') isDarkMode: boolean = false
   @StorageLink('themeVersion') themeVersion: number = 0
+  @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
 
   aboutToAppear(): void {
+    this.refreshLoginState();
+  }
+
+  /** 登录态变更（含启动恢复、自动重登）时刷新本页 */
+  private onAccountChanged(): void {
     this.refreshLoginState();
   }
 
@@ -30,11 +36,6 @@ export struct AccountsPage {
     this.loggedIn = JmApi.isLoggedIn();
     this.userName = JmApi.getUserName();
     this.userId = JmApi.getUserId();
-  }
-
-  private notifyAccountChanged(): void {
-    const prev: number | undefined = AppStorage.get<number>('jmAccountChanged');
-    AppStorage.setOrCreate('jmAccountChanged', prev === undefined ? 1 : prev + 1);
   }
 
   async doLogin(): Promise<void> {
@@ -46,7 +47,6 @@ export struct AccountsPage {
     try {
       await JmApi.login(this.account, this.password);
       this.refreshLoginState();
-      this.notifyAccountChanged();
       promptAction.showToast({ message: Translations.t('login_success'), duration: 1500 });
     } catch (e) {
       promptAction.showToast({ message: `${Translations.t('login_failed')}: ${String(e)}`, duration: 2000 });
@@ -61,7 +61,6 @@ export struct AccountsPage {
       // 忽略登出网络错误
     }
     this.refreshLoginState();
-    this.notifyAccountChanged();
     promptAction.showToast({ message: Translations.t('logout_success'), duration: 1500 });
   }
 

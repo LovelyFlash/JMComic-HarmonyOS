@@ -24,6 +24,7 @@ export struct MePage {
   @State historyCount: number = 0
   @State loggedIn: boolean = false
   @State userName: string = ''
+  @State accountName: string = ''
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
   @StorageLink('isDarkMode') isDarkMode: boolean = false
   @StorageLink('themeVersion') themeVersion: number = 0
@@ -42,6 +43,18 @@ export struct MePage {
   private refreshLoginState(): void {
     this.loggedIn = JmApi.isLoggedIn();
     this.userName = JmApi.getUserName();
+    this.accountName = JmApi.getAccount();
+  }
+
+  /** 已登录时必须显示用户标识（用户名缺失回退账号名），避免误显示"点击登录" */
+  private displayName(): string {
+    if (!this.loggedIn) {
+      return Translations.t('tap_to_login');
+    }
+    if (this.userName.length > 0) {
+      return this.userName;
+    }
+    return this.accountName.length > 0 ? this.accountName : Translations.t('jm_name');
   }
 
   async loadHistory(): Promise<void> {
@@ -90,7 +103,7 @@ export struct MePage {
       .borderRadius(28)
       .backgroundColor(this.loggedIn ? ThemeManager.primary : ThemeManager.textTertiary)
       Column({ space: 4 }) {
-        Text(this.loggedIn && this.userName.length > 0 ? this.userName : Translations.t('tap_to_login'))
+        Text(this.displayName())
           .fontSize(17).fontWeight(FontWeight.Bold)
           .fontColor(ThemeManager.textPrimary)
           .maxLines(1)
@@ -107,7 +120,6 @@ export struct MePage {
     }
     .width('100%')
     .padding(16)
-    .backgroundColor(ThemeManager.surfaceSecondary)
     .borderRadius(16)
     .onClick(() => {
       NavUtil.push('accounts');
@@ -230,7 +242,6 @@ export struct MePage {
           .width('100%')
           .height(52)
           .padding({ left: 14, right: 14 })
-          .backgroundColor(ThemeManager.surfaceSecondary)
           .borderRadius(12)
           .onClick(() => { NavUtil.push('settings'); })
           .id('settingsEntry' + this.themeVersion)
@@ -250,7 +261,6 @@ export struct MePage {
           .width('100%')
           .height(52)
           .padding({ left: 14, right: 14 })
-          .backgroundColor(ThemeManager.surfaceSecondary)
           .borderRadius(12)
           .onClick(() => { NavUtil.push('about'); })
         }

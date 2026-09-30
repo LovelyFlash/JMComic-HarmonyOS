@@ -13,7 +13,7 @@ export struct SettingItem {
   onTap: () => void = () => {}
 
   build() {
-    Row({ space: 12 }) {
+    Row({ space: 8 }) {
       SymbolGlyph(this.icon)
         .fontSize(24)
         .fontColor([ThemeManager.primary])
@@ -36,8 +36,7 @@ export struct SettingItem {
     }
     .width('100%')
     .height(52)
-    .padding({ left: 20, right: 20 })
-    .border({ width: { bottom: this.showDivider ? 0.5 : 0 }, color: ThemeManager.divider })
+    .padding({ left: 14, right: 14 })
     .onClick(() => { this.onTap(); })
   }
 }

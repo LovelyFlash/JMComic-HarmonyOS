@@ -27,6 +27,7 @@ class CategorySection {
 export struct CategoryPage {
   @StorageLink('isDarkMode') isDarkMode: boolean = false
   @StorageLink('themeVersion') themeVersion: number = 0
+  @StorageLink('bottomRectHeight') bottomRectHeight: number = 0;
 
   private makeSections(): CategorySection[] {
     const list: CategorySection[] = [];
@@ -176,6 +177,7 @@ export struct CategoryPage {
                   .width('100%')
                 this.entryChips(section)
               }
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
               .width('100%')
               .id('section' + section.title + this.themeVersion)
             }, (section: CategorySection) => section.title)
@@ -191,14 +193,19 @@ export struct CategoryPage {
                 NavUtil.push('jmWeek');
               })
             }
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
             .width('100%')
           }
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           .width('100%')
           .padding({ left: 16, right: 16, top: 12, bottom: 96 })
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+        .padding({ bottom: this.bottomRectHeight })
         .layoutWeight(1)
         .scrollBar(BarState.Off)
       }
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       .width('100%')
       .height('100%')
       .backgroundColor(ThemeManager.background)
