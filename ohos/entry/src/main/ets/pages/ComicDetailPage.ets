@@ -428,7 +428,7 @@ export struct ComicDetailPage {
               .height(44)
               .textAlign(TextAlign.Center)
               .backgroundColor(this.resumeChapterOrder === chapter.order ? $r('app.color.bg_fill') : $r('app.color.bg_surface'))
-              .borderRadius(10)
+              .borderRadius(22)
               .onClick(() => { this.startReading(chapter.order); })
             }
             .id('chapter' + chapter.id)

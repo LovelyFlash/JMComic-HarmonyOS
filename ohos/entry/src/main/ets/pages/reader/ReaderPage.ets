@@ -1,5 +1,6 @@
 // pages/reader/ReaderPage.ets - 阅读器（6 阅读模式 + 手势缩放 + bindSheet 设置/章节 + 续读 + 进度保存）- NavDestination
 import { window } from '@kit.ArkUI';
+import { uiMaterial } from '@kit.ArkUI';
 import { promptAction } from '@kit.ArkUI';
 import { inputConsumer, KeyCode, KeyEvent } from '@kit.InputKit';
 import { Translations } from '../../common/Translations';
@@ -12,6 +13,8 @@ import { JmApi } from '../../data/api/JmApi';
 import { Logger } from '../../common/Logger';
 import { ReaderImage, ReaderImageCache } from '../../components/ReaderImage';
 import { ArrayDataSource } from '../../common/ArrayDataSource';
+import { SettingSwitch } from '../../components/SettingSwitch';
+import { SettingSelect } from '../../components/SettingSelect';
 
 const MAX_ZOOM = 4.0;
 const DOUBLE_TAP_ZOOM = 2.5;
@@ -696,7 +699,7 @@ export struct ReaderPage {
   @Builder
   buildStripList() {
     List({ scroller: this.stripScroller, initialIndex: this.currentIndex }) {
-      LazyForEach(this.stripDS, (url: string, idx: number) => {
+      ForEach(this.stripDS.getAllData(), (url: string, idx?: number) => {
         ListItem() {
           if (url.length > 0) {
             ReaderImage({ url: url, imageLayout: this.imageLayout, fill: false })
@@ -710,10 +713,9 @@ export struct ReaderPage {
           }
         }
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-      }, (url: string, idx: number) => `${idx}-${url}`)
+      }, (url: string, idx?: number) => `${idx}-${url}`)
     }
     .width('100%').height('100%')
-    .cachedCount(3)
     .scrollBar(BarState.Off)
     .edgeEffect(EdgeEffect.Spring)
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
@@ -988,198 +990,290 @@ export struct ReaderPage {
   }
 
   // ---------- bindSheet：设置 / 章节 ----------
-  private readModeLabel(): string {
-    const labels: string[] = [
-      Translations.t('mode_ltr'),
-      Translations.t('mode_rtl'),
-      Translations.t('mode_ttb'),
-      Translations.t('mode_continuous'),
-      Translations.t('mode_dual'),
-      Translations.t('mode_dual_rtl')
-    ];
-    return labels[this.readMode];
-  }
-
-  private imageLayoutLabel(): string {
-    const labels: string[] = [
-      Translations.t('layout_contain'),
-      Translations.t('layout_fill'),
-      Translations.t('layout_cover')
-    ];
-    return labels[this.imageLayout];
-  }
-
-  private imageQualityLabel(): string {
-    const labels: string[] = ['Original', 'High', 'Medium'];
-    if (this.imageQuality >= 0 && this.imageQuality < labels.length) {
-      return labels[this.imageQuality];
+  private readModeLabels(): string[] {
+    const keys: string[] = ['mode_ltr', 'mode_rtl', 'mode_ttb', 'mode_continuous', 'mode_dual', 'mode_dual_rtl'];
+    const labels: string[] = [];
+    for (let i = 0; i < keys.length; i++) {
+      labels.push(Translations.t(keys[i]));
     }
-    return labels[0];
+    return labels;
   }
 
-  private autoTimeLabel(): string {
-    return `${this.autoPageTime}${Translations.t('seconds_suffix')}`;
+  private imageLayoutLabels(): string[] {
+    const keys: string[] = ['layout_contain', 'layout_fill', 'layout_cover'];
+    const labels: string[] = [];
+    for (let i = 0; i < keys.length; i++) {
+      labels.push(Translations.t(keys[i]));
+    }
+    return labels;
   }
 
+  private imageQualityLabels(): string[] {
+    return ['Original', 'High', 'Medium'];
+  }
+
+  private autoPageTimeLabels(): string[] {
+    const labels: string[] = [];
+    for (let i = 0; i < AUTO_TIMES.length; i++) {
+      labels.push(`${AUTO_TIMES[i]}${Translations.t('seconds_suffix')}`);
+    }
+    return labels;
+  }
+
+
+  /** 分组标题（bg_page 垫底，随列表滚动） */
   @Builder
-  sheetHeader(title: string) {
-    Row({ space: 8 }) {
-      Text(title)
-        .fontSize(17).fontWeight(FontWeight.Medium)
-        .fontColor($r('app.color.text_primary'))
-        .layoutWeight(1)
-      Button({ type: ButtonType.Circle, stateEffect: true }) {
-        SymbolGlyph($r('sys.symbol.xmark'))
-          .fontSize(16)
-          .fontColor([$r('app.color.text_secondary')])
-      }
-      .width(32).height(32)
-      .backgroundColor(Color.Transparent)
-      .onClick(() => {
-        this.showSheet = false;
-      })
-    }
-    .width('100%')
-    .padding({ left: 16, right: 12, top: 14, bottom: 6 })
-    .alignItems(VerticalAlign.Center)
-    .id('sheetHeader')
-  }
-
-  @Builder
-  settingRow(label: string, value: string, action: () => void) {
-    Row({ space: 8 }) {
-      Text(label)
-        .fontSize(15).fontColor($r('app.color.text_primary'))
-        .layoutWeight(1)
-      Text(value)
-        .fontSize(13).fontColor(this.themeColor)
-      SymbolGlyph($r('sys.symbol.chevron_right'))
-        .fontSize(13)
-        .fontColor([$r('app.color.text_tertiary')])
-    }
-    .width('100%').height(50)
-    .padding({ left: 16, right: 16 })
-    .onClick(action)
-    .id('settingRow' + label)
-  }
-
-  @Builder
-  settingToggle(label: string, isOn: boolean, onChange: (v: boolean) => void) {
-    Row({ space: 8 }) {
-      Text(label)
-        .fontSize(15).fontColor($r('app.color.text_primary'))
-        .layoutWeight(1)
-      Toggle({ type: ToggleType.Switch, isOn: isOn })
-        .selectedColor(this.themeColor)
-        .switchPointColor('#FFFFFF')
-        .onChange((v: boolean) => {
-          onChange(v);
-        })
-    }
-    .width('100%').height(50)
-    .padding({ left: 16, right: 16 })
-    .id('settingToggle' + label)
+  groupHeader(title: string) {
+    Text(title)
+      .fontSize(13)
+      .fontColor($r('app.color.text_secondary'))
+      .width('100%')
+      .padding({ left: 4, top: 16, bottom: 8 })
+      .backgroundColor($r('app.color.bg_page'))
   }
 
   @Builder
   settingsSheetContent() {
-    
-      Column({ space: 0 }) {
-        this.sheetHeader(Translations.t('reading_settings'))
-      Scroll() {
-        Column({ space: 0 }) {
-          this.settingRow(Translations.t('reading_mode'), this.readModeLabel(), () => {
-            this.readMode = (this.readMode + 1) % 6;
-            this.zoomScale = 1.0;
-            this.refreshDataSources();
-            if (this.isStrip()) {
-              this.stripScrollTo(this.currentIndex);
-            }
-            ReadingConfig.readMode = this.readMode;
-            ReadingConfig.saveAll();
-          })
-          this.settingToggle(Translations.t('tap_turn_page'), this.tapTurnPage, (v: boolean) => {
-            this.tapTurnPage = v;
-            ReadingConfig.tapTurnPage = v;
-            ReadingConfig.saveAll();
-          })
-          this.settingToggle(Translations.t('invert_tap'), this.invertTap, (v: boolean) => {
-            this.invertTap = v;
-            ReadingConfig.invertTap = v;
-            ReadingConfig.saveAll();
-          })
-          this.settingToggle(Translations.t('show_page_info'), this.showPageInfo, (v: boolean) => {
-            this.showPageInfo = v;
-            ReadingConfig.showPageInfo = v;
-            ReadingConfig.saveAll();
-          })
-          this.settingToggle(Translations.t('page_animation'), this.pageAnimation, (v: boolean) => {
-            this.pageAnimation = v;
-            ReadingConfig.pageAnimation = v;
-            ReadingConfig.saveAll();
-          })
-          this.settingRow(Translations.t('image_layout'), this.imageLayoutLabel(), () => {
-            this.imageLayout = (this.imageLayout + 1) % 3;
-            ReadingConfig.imageLayout = this.imageLayout;
-            ReadingConfig.saveAll();
-          })
-          this.settingToggle(Translations.t('keep_screen_on'), this.keepScreenOn, (v: boolean) => {
-            this.keepScreenOn = v;
-            ReadingConfig.keepScreenOn = v;
-            ReadingConfig.saveAll();
-            this.setKeepScreenOn(v);
-          })
-          this.settingToggle(Translations.t('double_tap_zoom'), this.doubleTapZoom, (v: boolean) => {
-            this.doubleTapZoom = v;
-            ReadingConfig.doubleTapZoom = v;
-            ReadingConfig.saveAll();
-          })
-          this.settingToggle(Translations.t('long_press_zoom'), this.longPressZoom, (v: boolean) => {
-            this.longPressZoom = v;
-            ReadingConfig.longPressZoom = v;
-            ReadingConfig.saveAll();
-          })
-          this.settingToggle(Translations.t('volume_key'), this.volumeKeyTurnPage, (v: boolean) => {
-            this.volumeKeyTurnPage = v;
-            ReadingConfig.volumeKeyTurnPage = v;
-            ReadingConfig.saveAll();
-            this.updateVolumeKeySubscription();
-          })
-          this.settingToggle(Translations.t('side_page_turn'), this.sidePageTurn, (v: boolean) => {
-            this.sidePageTurn = v;
-            ReadingConfig.sidePageTurn = v;
-            ReadingConfig.saveAll();
-          })
-          this.settingRow(Translations.t('image_quality'), this.imageQualityLabel(), () => {
-            this.imageQuality = (this.imageQuality + 1) % 3;
-            ReadingConfig.imageQuality = this.imageQuality;
-            ReadingConfig.saveAll();  // 触发 AppStorage 同步 → ReaderImage 重载
-          })
-          this.settingRow(Translations.t('auto_page_interval'), this.autoTimeLabel(), () => {
-            const idx: number = AUTO_TIMES.indexOf(this.autoPageTime);
-            this.autoPageTime = AUTO_TIMES[(idx + 1) % AUTO_TIMES.length];
-            ReadingConfig.autoPageTime = this.autoPageTime;
-            ReadingConfig.saveAll();
-            this.restartAutoPlayIfOn();
-          })
+    Column({ space: 0 }) {
+      List({ space: 24 }) {
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_turn_method')) }) {
+          ListItem() {
+            SettingSelect({
+              icon: $r('sys.symbol.arrowshape_turn_up_left'),
+              title: Translations.t('reading_mode'),
+              options: this.readModeLabels(),
+              selectedIndex: this.readMode,
+              onSelect: (index: number) => {
+                this.readMode = index;
+                this.zoomScale = 1.0;
+                this.refreshDataSources();
+                if (this.isStrip()) {
+                  this.stripScrollTo(this.currentIndex);
+                }
+                ReadingConfig.readMode = index;
+                ReadingConfig.saveAll();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius(16)
+          .clip(true)
         }
-        .width('100%')
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_turn_control')) }) {
+          ListItem() {
+            SettingSwitch({
+              icon: $r('sys.symbol.hand_tap'),
+              title: Translations.t('tap_turn_page'),
+              isOn: this.tapTurnPage,
+              onToggle: (v: boolean) => {
+                this.tapTurnPage = v;
+                ReadingConfig.tapTurnPage = v;
+                ReadingConfig.saveAll();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ topLeft: 16, topRight: 16 })
+          .clip(true)
+          ListItem() {
+            SettingSwitch({
+              icon: $r('sys.symbol.arrowshape_turn_up_left'),
+              title: Translations.t('invert_tap'),
+              isOn: this.invertTap,
+              onToggle: (v: boolean) => {
+                this.invertTap = v;
+                ReadingConfig.invertTap = v;
+                ReadingConfig.saveAll();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          ListItem() {
+            SettingSwitch({
+              icon: $r('sys.symbol.speaker_wave_2'),
+              title: Translations.t('volume_key'),
+              isOn: this.volumeKeyTurnPage,
+              onToggle: (v: boolean) => {
+                this.volumeKeyTurnPage = v;
+                ReadingConfig.volumeKeyTurnPage = v;
+                ReadingConfig.saveAll();
+                this.updateVolumeKeySubscription();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          ListItem() {
+            SettingSwitch({
+              icon: $r('sys.symbol.rectangle_3_group'),
+              title: Translations.t('side_page_turn'),
+              isOn: this.sidePageTurn,
+              onToggle: (v: boolean) => {
+                this.sidePageTurn = v;
+                ReadingConfig.sidePageTurn = v;
+                ReadingConfig.saveAll();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
+          .clip(true)
+        }
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_display')) }) {
+          ListItem() {
+            SettingSwitch({
+              icon: $r('sys.symbol.brightness'),
+              title: Translations.t('keep_screen_on'),
+              isOn: this.keepScreenOn,
+              onToggle: (v: boolean) => {
+                this.keepScreenOn = v;
+                ReadingConfig.keepScreenOn = v;
+                ReadingConfig.saveAll();
+                this.setKeepScreenOn(v);
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ topLeft: 16, topRight: 16 })
+          .clip(true)
+          ListItem() {
+            SettingSwitch({
+              icon: $r('sys.symbol.play'),
+              title: Translations.t('page_animation'),
+              isOn: this.pageAnimation,
+              onToggle: (v: boolean) => {
+                this.pageAnimation = v;
+                ReadingConfig.pageAnimation = v;
+                ReadingConfig.saveAll();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          ListItem() {
+            SettingSwitch({
+              icon: $r('sys.symbol.info_circle'),
+              title: Translations.t('show_page_info'),
+              isOn: this.showPageInfo,
+              onToggle: (v: boolean) => {
+                this.showPageInfo = v;
+                ReadingConfig.showPageInfo = v;
+                ReadingConfig.saveAll();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
+          .clip(true)
+        }
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_zoom')) }) {
+          ListItem() {
+            SettingSwitch({
+              icon: $r('sys.symbol.magnifyingglass'),
+              title: Translations.t('double_tap_zoom'),
+              isOn: this.doubleTapZoom,
+              onToggle: (v: boolean) => {
+                this.doubleTapZoom = v;
+                ReadingConfig.doubleTapZoom = v;
+                ReadingConfig.saveAll();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ topLeft: 16, topRight: 16 })
+          .clip(true)
+          ListItem() {
+            SettingSwitch({
+              icon: $r('sys.symbol.hand_tap'),
+              title: Translations.t('long_press_zoom'),
+              isOn: this.longPressZoom,
+              onToggle: (v: boolean) => {
+                this.longPressZoom = v;
+                ReadingConfig.longPressZoom = v;
+                ReadingConfig.saveAll();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
+          .clip(true)
+        }
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_image')) }) {
+          ListItem() {
+            SettingSelect({
+              icon: $r('sys.symbol.camera'),
+              title: Translations.t('image_quality'),
+              options: this.imageQualityLabels(),
+              selectedIndex: this.imageQuality,
+              onSelect: (index: number) => {
+                this.imageQuality = index;
+                ReadingConfig.imageQuality = index;
+                ReadingConfig.saveAll();  // 触发 AppStorage 同步 → ReaderImage 重载
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ topLeft: 16, topRight: 16 })
+          .clip(true)
+          ListItem() {
+            SettingSelect({
+              icon: $r('sys.symbol.square_grid_2x2'),
+              title: Translations.t('image_layout'),
+              options: this.imageLayoutLabels(),
+              selectedIndex: this.imageLayout,
+              onSelect: (index: number) => {
+                this.imageLayout = index;
+                ReadingConfig.imageLayout = index;
+                ReadingConfig.saveAll();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
+          .clip(true)
+        }
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_auto')) }) {
+          ListItem() {
+            SettingSelect({
+              icon: $r('sys.symbol.timer'),
+              title: Translations.t('auto_page_interval'),
+              options: this.autoPageTimeLabels(),
+              selectedIndex: AUTO_TIMES.indexOf(this.autoPageTime),
+              onSelect: (index: number) => {
+                this.autoPageTime = AUTO_TIMES[index];
+                ReadingConfig.autoPageTime = this.autoPageTime;
+                ReadingConfig.saveAll();
+                this.restartAutoPlayIfOn();
+              }
+            })
+          }
+          .backgroundColor($r('app.color.bg_surface'))
+          .borderRadius(16)
+          .clip(true)
+        }
       }
-      .padding(SafeAreaEdge.BOTTOM)
-      .layoutWeight(1)
       .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring)
+      .width('100%')
+      .layoutWeight(1)
+      .padding({ left: 16, right: 16, bottom: 24 })
     }
     .width('100%')
     .height('100%')
+    .padding({ bottom: this.bottomAvoid })
     .id('settingsSheet')
-    
   }
 
   @Builder
   chaptersSheetContent() {
     
       Column({ space: 0 }) {
-        this.sheetHeader(Translations.t('select_chapter'))
       if (this.loadingChapter) {
         Column({ space: 8 }) {
           LoadingProgress().width(36).height(36)
@@ -1187,16 +1281,19 @@ export struct ReaderPage {
         .width('100%').height('100%')
         .justifyContent(FlexAlign.Center)
       } else {
-        List({ space: 0 }) {
+        Grid() {
           ForEach(this.chapters, (chapter: Chapter) => {
-            ListItem() {
+            GridItem() {
               Text(chapter.title.length > 0 ? chapter.title : `${chapter.order}`)
-                .fontSize(14)
+                .fontSize(13)
                 .fontColor(chapter.order === this.currentChapterOrder ? this.themeColor : $r('app.color.text_primary'))
                 .maxLines(1)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
-                .width('100%').height(48)
-                .padding({ left: 16, right: 16 })
+                .width('100%')
+                .height(44)
+                .textAlign(TextAlign.Center)
+                .backgroundColor(chapter.order === this.currentChapterOrder ? $r('app.color.bg_fill') : $r('app.color.bg_surface'))
+                .borderRadius(22)
                 .onClick(() => {
                   if (chapter.order !== this.currentChapterOrder) {
                     this.loadChapter(chapter.order, false);
@@ -1204,23 +1301,23 @@ export struct ReaderPage {
                     this.showSheet = false;
                   }
                 })
-                .id('chapterItem' + chapter.id)
             }
+            .id('chapterItem' + chapter.id)
           }, (chapter: Chapter) => `${chapter.id}-${chapter.order}`)
         }
+        .columnsTemplate('1fr 1fr 1fr')
+        .columnsGap(8)
+        .rowsGap(8)
         .width('100%')
         .height('100%')
         .scrollBar(BarState.Off)
-        .divider({
-          strokeWidth: 0.5,
-          color: $r('app.color.divider'),
-          startMargin: 16,
-          endMargin: 16
-        })
+        .edgeEffect(EdgeEffect.Spring)
+        .padding({ left: 16, right: 16, bottom: 24 })
       }
     }
     .width('100%')
     .height('100%')
+    .padding({ bottom: this.bottomAvoid })
     .id('chaptersSheet')
     
   }
@@ -1247,21 +1344,28 @@ export struct ReaderPage {
         }
       }
       .width('100%').height('100%')
-      .backgroundColor('#000000')
+      .backgroundColor($r('sys.color.black'))
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       .bindSheet($$this.showSheet, this.sheetContent(), {
         detents: [SheetSize.MEDIUM, SheetSize.LARGE],
         blurStyle: BlurStyle.COMPONENT_THICK,
-        showClose: false,
+        showClose: true,
+        title:{title: Translations.t('reading_settings')},
         dragBar: true,
         shouldDismiss: () => {
           this.showSheet = false;
-        }
+        },
+        systemMaterial: new uiMaterial.ImmersiveMaterial({
+          style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+        })
       })
     }
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
-    .backgroundColor('#000000')
+    .backgroundColor($r('sys.color.black'))
     .onBackPressed(() => {
       this.saveProgress();
       return false;
