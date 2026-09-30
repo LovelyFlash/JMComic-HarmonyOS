@@ -1,8 +1,8 @@
 {
   "color": [
     { "name": "start_window_background", "value": "#111827" },
-    { "name": "bg_page", "value": "#111827" },
-    { "name": "bg_surface", "value": "#1F2937" },
+    { "name": "bg_page", "value": "#131416" },
+    { "name": "bg_surface", "value": "#2B2D30" },
     { "name": "bg_elevated", "value": "#374151" },
     { "name": "bg_fill", "value": "#374151" },
     { "name": "text_primary", "value": "#F3F4F6" },
