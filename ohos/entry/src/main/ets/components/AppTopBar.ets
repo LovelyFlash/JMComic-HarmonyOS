@@ -1,13 +1,12 @@
 // components/AppTopBar.ets - 统一顶栏（返回 + 标题 + 动作按钮）
-import { ThemeManager } from '../common/ThemeManager';
 
 @Component
 export struct AppTopBar {
   @Prop title: string = ''
   @Prop showBack: boolean = true
   @Prop actionCount: number = 0
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  
   onBack: () => void = () => {}
   onAction1: () => void = () => {}
   onAction2: () => void = () => {}
@@ -22,7 +21,7 @@ export struct AppTopBar {
         Button({ type: ButtonType.Circle, stateEffect: true }) {
           SymbolGlyph($r('sys.symbol.chevron_left'))
             .fontSize(22)
-            .fontColor([ThemeManager.textPrimary])
+            .fontColor([$r('app.color.text_primary')])
         }
         .width(40).height(40)
         .backgroundColor(Color.Transparent)
@@ -32,7 +31,7 @@ export struct AppTopBar {
       Text(this.title)
         .fontSize(20)
         .fontWeight(FontWeight.Bold)
-        .fontColor(ThemeManager.textPrimary)
+        .fontColor($r('app.color.text_primary'))
         .layoutWeight(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .maxLines(1)
@@ -42,7 +41,7 @@ export struct AppTopBar {
         Button({ type: ButtonType.Circle, stateEffect: true }) {
           SymbolGlyph(this.action1Symbol)
             .fontSize(22)
-            .fontColor([ThemeManager.textPrimary])
+            .fontColor([$r('app.color.text_primary')])
         }
         .width(40).height(40)
         .backgroundColor(Color.Transparent)
@@ -52,7 +51,7 @@ export struct AppTopBar {
         Button({ type: ButtonType.Circle, stateEffect: true }) {
           SymbolGlyph(this.action2Symbol)
             .fontSize(22)
-            .fontColor([ThemeManager.textPrimary])
+            .fontColor([$r('app.color.text_primary')])
         }
         .width(40).height(40)
         .backgroundColor(Color.Transparent)
@@ -62,7 +61,7 @@ export struct AppTopBar {
         Button({ type: ButtonType.Circle, stateEffect: true }) {
           SymbolGlyph(this.action3Symbol)
             .fontSize(22)
-            .fontColor([ThemeManager.textPrimary])
+            .fontColor([$r('app.color.text_primary')])
         }
         .width(40).height(40)
         .backgroundColor(Color.Transparent)

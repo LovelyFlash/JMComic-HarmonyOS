@@ -1,5 +1,4 @@
 // pages/CategoryPage.ets - 分类页（禁漫固定分类 + 排行榜 + 每周推荐入口）
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 
@@ -25,8 +24,8 @@ class CategorySection {
 
 @Component
 export struct CategoryPage {
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
   @StorageLink('bottomRectHeight') bottomRectHeight: number = 0;
 
   private makeSections(): CategorySection[] {
@@ -119,9 +118,9 @@ export struct CategoryPage {
       ForEach(section.entries, (entry: CategoryEntry) => {
         Text(entry.label)
           .fontSize(13)
-          .fontColor(ThemeManager.textPrimary)
+          .fontColor($r('app.color.text_primary'))
           .padding({ left: 16, right: 16, top: 10, bottom: 10 })
-          .backgroundColor(ThemeManager.surfaceSecondary)
+          .backgroundColor($r('app.color.bg_surface'))
           .borderRadius(20)
           .margin({ right: 8, bottom: 8 })
           .onClick(() => {
@@ -133,11 +132,11 @@ export struct CategoryPage {
               NavUtil.push('search', param);
             }
           })
-          .id('chip' + section.title + entry.label + this.themeVersion)
+          .id('chip' + section.title + entry.label)
       }, (entry: CategoryEntry) => section.title + entry.label)
     }
     .width('100%')
-    .id('entryChips' + section.title + this.themeVersion)
+    .id('entryChips' + section.title)
   }
 
   @Builder
@@ -145,26 +144,26 @@ export struct CategoryPage {
     Row({ space: 12 }) {
       SymbolGlyph(icon)
         .fontSize(22)
-        .fontColor([ThemeManager.primary])
+        .fontColor([this.themeColor])
       Text(label)
         .fontSize(15)
-        .fontColor(ThemeManager.textPrimary)
+        .fontColor($r('app.color.text_primary'))
         .layoutWeight(1)
       SymbolGlyph($r('sys.symbol.chevron_right'))
         .fontSize(16)
-        .fontColor([ThemeManager.textTertiary])
+        .fontColor([$r('app.color.text_tertiary')])
     }
     .width('100%')
     .height(52)
     .padding({ left: 14, right: 14 })
-    .backgroundColor(ThemeManager.surfaceSecondary)
+    .backgroundColor($r('app.color.bg_surface'))
     .borderRadius(12)
     .onClick(() => { onTap(); })
-    .id('entryRow' + label + this.themeVersion)
+    .id('entryRow' + label)
   }
 
   build() {
-    ForEach([this.themeVersion], (v: number) => {
+    
       Column({ space: 0 }) {
         Scroll() {
           Column({ space: 16 }) {
@@ -173,13 +172,13 @@ export struct CategoryPage {
                 Text(section.title)
                   .fontSize(15)
                   .fontWeight(FontWeight.Bold)
-                  .fontColor(ThemeManager.textPrimary)
+                  .fontColor($r('app.color.text_primary'))
                   .width('100%')
                 this.entryChips(section)
               }
               .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
               .width('100%')
-              .id('section' + section.title + this.themeVersion)
+              .id('categorySection' + section.title)
             }, (section: CategorySection) => section.title)
 
             Column({ space: 12 }) {
@@ -208,7 +207,7 @@ export struct CategoryPage {
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       .width('100%')
       .height('100%')
-      .backgroundColor(ThemeManager.background)
-    }, (v: number) => `theme-${v}`)
+      .backgroundColor($r('app.color.bg_page'))
+    
   }
 }

@@ -1,5 +1,4 @@
 // pages/JmWeekPage.ets - 禁漫每周必看（周分类 × 类型 单页网格）- NavDestination
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Comic } from '../data/model/Comic';
@@ -30,8 +29,8 @@ export struct JmWeekPage {
   @State catError: string = ''
   @State loading: boolean = false
   @State error: string = ''
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
     this.loadCategories();
@@ -84,15 +83,15 @@ export struct JmWeekPage {
             .fontSize(13)
             .padding({ left: 14, right: 14, top: 7, bottom: 7 })
             .borderRadius(16)
-            .fontColor(this.currentId === cat.id ? '#FFFFFF' : ThemeManager.textSecondary)
-            .backgroundColor(this.currentId === cat.id ? ThemeManager.primary : ThemeManager.surface)
+            .fontColor(this.currentId === cat.id ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
+            .backgroundColor(this.currentId === cat.id ? this.themeColor : $r('app.color.bg_fill'))
             .onClick(() => {
               if (this.currentId !== cat.id) {
                 this.currentId = cat.id;
                 this.loadComics();
               }
             })
-            .id('cat' + cat.id + this.themeVersion)
+            .id('cat' + cat.id)
         }, (cat: JmWeekCategory) => cat.id)
       }
       .padding({ left: 16, right: 16, top: 10, bottom: 10 })
@@ -100,7 +99,7 @@ export struct JmWeekPage {
     .scrollable(ScrollDirection.Horizontal)
     .scrollBar(BarState.Off)
     .width('100%')
-    .id('categoryChips' + this.themeVersion)
+    .id('categoryChips')
   }
 
   @Builder
@@ -112,15 +111,15 @@ export struct JmWeekPage {
             .fontSize(12)
             .padding({ left: 12, right: 12, top: 6, bottom: 6 })
             .borderRadius(14)
-            .fontColor(this.currentType === t.key ? '#FFFFFF' : ThemeManager.textSecondary)
-            .backgroundColor(this.currentType === t.key ? ThemeManager.primary : ThemeManager.surface)
+            .fontColor(this.currentType === t.key ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
+            .backgroundColor(this.currentType === t.key ? this.themeColor : $r('app.color.bg_fill'))
             .onClick(() => {
               if (this.currentType !== t.key) {
                 this.currentType = t.key;
                 this.loadComics();
               }
             })
-            .id('type' + t.key + this.themeVersion)
+            .id('type' + t.key)
         }, (t: WeekType) => t.key)
       }
       .padding({ left: 16, right: 16, bottom: 8 })
@@ -128,7 +127,7 @@ export struct JmWeekPage {
     .scrollable(ScrollDirection.Horizontal)
     .scrollBar(BarState.Off)
     .width('100%')
-    .id('typeChips' + this.themeVersion)
+    .id('typeChips')
   }
 
   @Builder
@@ -141,16 +140,16 @@ export struct JmWeekPage {
               .width(80).height(110)
               .objectFit(ImageFit.Cover)
               .borderRadius(6)
-              .backgroundColor(ThemeManager.surface)
+              .backgroundColor($r('app.color.bg_fill'))
             Column({ space: 6 }) {
               Text(comic.title)
                 .fontSize(15).fontWeight(FontWeight.Medium)
-                .fontColor(ThemeManager.textPrimary)
+                .fontColor($r('app.color.text_primary'))
                 .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                 .width('100%')
               if (comic.author.length > 0) {
                 Text(comic.author)
-                  .fontSize(12).fontColor(ThemeManager.textSecondary)
+                  .fontSize(12).fontColor($r('app.color.text_secondary'))
                   .maxLines(1)
               }
             }
@@ -164,19 +163,19 @@ export struct JmWeekPage {
             NavUtil.push('comicDetail', param);
           })
         }
-        .id('comic' + comic.id + this.themeVersion)
+        .id('jmWeekComic' + comic.id)
       }, (comic: Comic) => comic.id)
     }
     .layoutWeight(1)
-    .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+    .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
     .edgeEffect(EdgeEffect.Spring)
     .scrollBar(BarState.Off)
-    .id('comicRows' + this.themeVersion)
+    .id('jmWeekComicRows')
   }
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column({ space: 0 }) {
           NavTitleBar({ title: Translations.t('week_recommendation') })
           if (this.catLoading) {
@@ -186,11 +185,11 @@ export struct JmWeekPage {
             .layoutWeight(1).justifyContent(FlexAlign.Center)
           } else if (this.catError.length > 0) {
             Column({ space: 12 }) {
-              Text(this.catError).fontSize(14).fontColor(ThemeManager.danger)
+              Text(this.catError).fontSize(14).fontColor($r('app.color.danger'))
               Button(Translations.t('retry'))
                 .fontSize(14)
-                .backgroundColor(ThemeManager.primary)
-                .fontColor('#FFFFFF')
+                .backgroundColor(this.themeColor)
+                .fontColor($r('app.color.text_on_brand'))
                 .onClick(() => { this.loadCategories(); })
             }
             .layoutWeight(1).justifyContent(FlexAlign.Center)
@@ -204,18 +203,18 @@ export struct JmWeekPage {
               .layoutWeight(1).justifyContent(FlexAlign.Center)
             } else if (this.error.length > 0) {
               Column({ space: 12 }) {
-                Text(this.error).fontSize(14).fontColor(ThemeManager.danger)
+                Text(this.error).fontSize(14).fontColor($r('app.color.danger'))
                 Button(Translations.t('retry'))
                   .fontSize(14)
-                  .backgroundColor(ThemeManager.primary)
-                  .fontColor('#FFFFFF')
+                  .backgroundColor(this.themeColor)
+                  .fontColor($r('app.color.text_on_brand'))
                   .onClick(() => { this.loadComics(); })
               }
               .layoutWeight(1).justifyContent(FlexAlign.Center)
             } else if (this.comics.length === 0) {
               Column({ space: 8 }) {
                 Text(Translations.t('no_data'))
-                  .fontSize(14).fontColor(ThemeManager.textSecondary)
+                  .fontSize(14).fontColor($r('app.color.text_secondary'))
               }
               .layoutWeight(1).justifyContent(FlexAlign.Center)
             } else {
@@ -224,10 +223,10 @@ export struct JmWeekPage {
           }
         }
         .width('100%').height('100%')
-        .backgroundColor(ThemeManager.background)
-      }, (v: number) => `theme-${v}`)
+        .backgroundColor($r('app.color.bg_page'))
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

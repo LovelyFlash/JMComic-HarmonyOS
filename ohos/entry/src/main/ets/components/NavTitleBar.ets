@@ -1,5 +1,4 @@
 // components/NavTitleBar.ets - Navigation 页面公共标题栏（SymbolGlyph + 主题令牌）
-import { ThemeManager } from '../common/ThemeManager';
 import { NavUtil } from '../common/NavUtil';
 
 @Builder
@@ -10,8 +9,8 @@ export function EmptyBuilder() {
 export struct NavTitleBar {
   @Prop title: string = '';
   @Prop showBack: boolean = true;
-  @StorageLink('themeVersion') themeVersion: number = 0;
-  @StorageLink('isDarkMode') isDarkMode: boolean = false;
+  
+  
   @BuilderParam rightContent: () => void = EmptyBuilder;
 
   build() {
@@ -19,13 +18,13 @@ export struct NavTitleBar {
       if (this.showBack) {
         SymbolGlyph($r('sys.symbol.chevron_left'))
           .fontSize(26)
-          .fontColor([ThemeManager.textPrimary])
+          .fontColor([$r('app.color.text_primary')])
           .onClick(() => { NavUtil.back(); })
       }
       Text(this.title)
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor(ThemeManager.textPrimary)
+        .fontColor($r('app.color.text_primary'))
         .layoutWeight(1)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })

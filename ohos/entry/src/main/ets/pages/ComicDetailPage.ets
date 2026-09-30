@@ -1,7 +1,6 @@
 // pages/ComicDetailPage.ets - 漫画详情页（JM：沉浸式头图 + 章节 + 相关推荐 + 云收藏 + 点赞）- NavDestination
 import { pasteboard } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Comic } from '../data/model/Comic';
@@ -41,8 +40,8 @@ export struct ComicDetailPage {
   @State loadingFolders: boolean = false
   @State newFolderName: string = ''
   @State favOperating: boolean = false
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
   @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
 
@@ -291,38 +290,38 @@ export struct ComicDetailPage {
           .width(130).height(180)
           .objectFit(ImageFit.Cover)
           .borderRadius(10)
-          .backgroundColor(ThemeManager.surface)
-          .shadow({ radius: 12, color: 'rgba(0,0,0,0.25)' })
+          .backgroundColor($r('app.color.bg_fill'))
+          .shadow({ radius: 12, color: $r('app.color.shadow') })
         Column({ space: 8 }) {
           Text(this.comic.title)
             .fontSize(18).fontWeight(FontWeight.Bold)
-            .fontColor(ThemeManager.textPrimary)
+            .fontColor($r('app.color.text_primary'))
             .maxLines(3).textOverflow({ overflow: TextOverflow.Ellipsis })
           if (this.comic.author.length > 0) {
             Text(Translations.t('author') + ': ' + this.comic.author)
-              .fontSize(13).fontColor(ThemeManager.textSecondary)
+              .fontSize(13).fontColor($r('app.color.text_secondary'))
               .maxLines(2)
           }
           Row({ space: 12 }) {
             Row({ space: 4 }) {
               SymbolGlyph($r('sys.symbol.heart'))
                 .fontSize(14)
-                .fontColor([ThemeManager.danger])
+                .fontColor([$r('app.color.danger')])
               Text(this.comic.likes.toString())
-                .fontSize(13).fontColor(ThemeManager.danger)
+                .fontSize(13).fontColor($r('app.color.danger'))
             }
             Row({ space: 4 }) {
               SymbolGlyph($r('sys.symbol.message'))
                 .fontSize(14)
-                .fontColor([ThemeManager.textSecondary])
+                .fontColor([$r('app.color.text_secondary')])
               Text(this.comic.comments.toString())
-                .fontSize(13).fontColor(ThemeManager.textSecondary)
+                .fontSize(13).fontColor($r('app.color.text_secondary'))
             }
           }
           Text(Translations.t('jm_name'))
-            .fontSize(12).fontColor(ThemeManager.primary)
+            .fontSize(12).fontColor(this.themeColor)
             .padding({ left: 8, right: 8, top: 3, bottom: 3 })
-            .backgroundColor(ThemeManager.surface)
+            .backgroundColor($r('app.color.bg_fill'))
             .borderRadius(10)
         }
         .layoutWeight(1).alignItems(HorizontalAlign.Start)
@@ -332,7 +331,7 @@ export struct ComicDetailPage {
     }
     .width('100%')
     .height(280 + this.topAvoid)
-    .id('heroSection' + this.themeVersion)
+    .id('heroSection')
   }
 
   @Builder
@@ -351,7 +350,7 @@ export struct ComicDetailPage {
       Button({ type: ButtonType.Circle, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.star'))
           .fontSize(20)
-          .fontColor([this.isFavorite ? ThemeManager.primary : Color.White])
+          .fontColor([this.isFavorite ? this.themeColor : Color.White])
       }
       .width(40).height(40)
       .backgroundColor('rgba(0,0,0,0.25)')
@@ -360,7 +359,7 @@ export struct ComicDetailPage {
     }
     .width('100%')
     .padding({ left: 12, right: 12, top: this.topAvoid + 8 })
-    .id('floatingTopBar' + this.themeVersion)
+    .id('floatingTopBar')
   }
 
   @Builder
@@ -368,7 +367,7 @@ export struct ComicDetailPage {
     Column({ space: 10 }) {
       Text(Translations.t('related_comics'))
         .fontSize(16).fontWeight(FontWeight.Medium)
-        .fontColor(ThemeManager.textPrimary)
+        .fontColor($r('app.color.text_primary'))
         .width('100%')
       Scroll() {
         Row({ space: 10 }) {
@@ -376,14 +375,14 @@ export struct ComicDetailPage {
             Column({ space: 6 }) {
               NetworkImage({ url: c.coverUrl, imgWidth: 104, imgHeight: 146, imgBorderRadius: 8 })
               Text(c.title)
-                .fontSize(12).fontColor(ThemeManager.textPrimary)
+                .fontSize(12).fontColor($r('app.color.text_primary'))
                 .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                 .width(104)
                 .textAlign(TextAlign.Start)
             }
             .width(104)
             .onClick(() => { this.openRelated(c.id, c.source); })
-            .id('related' + c.id + this.themeVersion)
+            .id('related' + c.id)
           }, (c: Comic) => c.id)
         }
       }
@@ -394,7 +393,7 @@ export struct ComicDetailPage {
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 16 })
-    .id('relatedSection' + this.themeVersion)
+    .id('relatedSection')
   }
 
   @Builder
@@ -403,13 +402,13 @@ export struct ComicDetailPage {
       Row({ space: 8 }) {
         Text(`${Translations.t('chapters')} (${this.chapters.length})`)
           .fontSize(16).fontWeight(FontWeight.Medium)
-          .fontColor(ThemeManager.textPrimary)
+          .fontColor($r('app.color.text_primary'))
           .layoutWeight(1)
         Text(Translations.t('sort'))
           .fontSize(13)
-          .fontColor(ThemeManager.primary)
+          .fontColor(this.themeColor)
           .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-          .backgroundColor(ThemeManager.surface)
+          .backgroundColor($r('app.color.bg_fill'))
           .borderRadius(12)
           .onClick(() => { this.chaptersReversed = !this.chaptersReversed; })
       }
@@ -420,17 +419,17 @@ export struct ComicDetailPage {
           GridItem() {
             Text(chapter.title.length > 0 ? chapter.title : `${chapter.order}`)
               .fontSize(13)
-              .fontColor(this.resumeChapterOrder === chapter.order ? ThemeManager.primary : ThemeManager.textPrimary)
+              .fontColor(this.resumeChapterOrder === chapter.order ? this.themeColor : $r('app.color.text_primary'))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .width('100%')
               .height(44)
               .textAlign(TextAlign.Center)
-              .backgroundColor(this.resumeChapterOrder === chapter.order ? ThemeManager.surface : ThemeManager.surfaceSecondary)
+              .backgroundColor(this.resumeChapterOrder === chapter.order ? $r('app.color.bg_fill') : $r('app.color.bg_surface'))
               .borderRadius(10)
               .onClick(() => { this.startReading(chapter.order); })
             }
-            .id('chapter' + chapter.id + this.themeVersion)
+            .id('chapter' + chapter.id)
           }, (chapter: Chapter) => chapter.id + chapter.order.toString() + this.chaptersReversed.toString())
       }
       .columnsTemplate('1fr 1fr 1fr')
@@ -441,7 +440,7 @@ export struct ComicDetailPage {
       if (this.chapters.length > CHAPTER_COLLAPSE_THRESHOLD && !this.showAllChapters) {
         Text(`${Translations.t('show_all')} (${this.chapters.length})`)
           .fontSize(13)
-          .fontColor(ThemeManager.primary)
+          .fontColor(this.themeColor)
           .width('100%').height(40)
           .textAlign(TextAlign.Center)
           .onClick(() => { this.showAllChapters = true; })
@@ -449,7 +448,7 @@ export struct ComicDetailPage {
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-    .id('chapterGrid' + this.themeVersion)
+    .id('chapterGrid')
   }
 
   @Builder
@@ -458,53 +457,53 @@ export struct ComicDetailPage {
       Button({ type: ButtonType.Circle, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.message'))
           .fontSize(20)
-          .fontColor([ThemeManager.textPrimary])
+          .fontColor([$r('app.color.text_primary')])
       }
       .width(46).height(46)
-      .backgroundColor(ThemeManager.surfaceSecondary)
+      .backgroundColor($r('app.color.bg_surface'))
       .onClick(() => { this.openComments(); })
 
       Button({ type: ButtonType.Circle, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.share'))
           .fontSize(20)
-          .fontColor([ThemeManager.textPrimary])
+          .fontColor([$r('app.color.text_primary')])
       }
       .width(46).height(46)
-      .backgroundColor(ThemeManager.surfaceSecondary)
+      .backgroundColor($r('app.color.bg_surface'))
       .onClick(() => { this.share(); })
 
       Button({ type: ButtonType.Circle, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.heart'))
           .fontSize(20)
-          .fontColor([this.isLiked ? ThemeManager.danger : ThemeManager.textPrimary])
+          .fontColor([this.isLiked ? $r('app.color.danger') : $r('app.color.text_primary')])
       }
       .width(46).height(46)
-      .backgroundColor(ThemeManager.surfaceSecondary)
+      .backgroundColor($r('app.color.bg_surface'))
       .onClick(() => { this.toggleLike(); })
 
       Button({ type: ButtonType.Circle, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.arrow_down_circle'))
           .fontSize(20)
-          .fontColor([ThemeManager.textPrimary])
+          .fontColor([$r('app.color.text_primary')])
       }
       .width(46).height(46)
-      .backgroundColor(ThemeManager.surfaceSecondary)
+      .backgroundColor($r('app.color.bg_surface'))
       .onClick(() => { this.download(); })
 
       Button(this.primaryLabel())
         .layoutWeight(1)
         .height(46)
         .fontSize(15)
-        .fontColor('#FFFFFF')
-        .backgroundColor(ThemeManager.primary)
+        .fontColor($r('app.color.text_on_brand'))
+        .backgroundColor(this.themeColor)
         .borderRadius(23)
         .onClick(() => { this.primaryRead(); })
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 8, bottom: this.bottomAvoid + 8 })
-    .backgroundColor(ThemeManager.background)
+    .backgroundColor($r('app.color.bg_page'))
     .alignItems(VerticalAlign.Center)
-    .id('bottomBar' + this.themeVersion)
+    .id('bottomBar')
   }
 
   private primaryLabel(): string {
@@ -519,35 +518,35 @@ export struct ComicDetailPage {
     Row({ space: 8 }) {
       SymbolGlyph($r('sys.symbol.folder'))
         .fontSize(18)
-        .fontColor([ThemeManager.primary])
+        .fontColor([this.themeColor])
       Text(label)
-        .fontSize(15).fontColor(ThemeManager.textPrimary)
+        .fontSize(15).fontColor($r('app.color.text_primary'))
         .layoutWeight(1)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
       SymbolGlyph($r('sys.symbol.chevron_right'))
         .fontSize(13)
-        .fontColor([ThemeManager.textTertiary])
+        .fontColor([$r('app.color.text_tertiary')])
     }
     .width('100%').height(50)
     .padding({ left: 16, right: 16 })
     .onClick(() => { this.pickFolder(folderId); })
-    .id('favFolderRow' + folderId + this.themeVersion)
+    .id('favFolderRow' + folderId)
   }
 
   @Builder
   favSheetContent() {
-    ForEach([this.themeVersion], (v: number) => {
+    
       Column({ space: 0 }) {
         Row({ space: 8 }) {
           Text(Translations.t('favorite_select_folder'))
             .fontSize(17).fontWeight(FontWeight.Medium)
-            .fontColor(ThemeManager.textPrimary)
+            .fontColor($r('app.color.text_primary'))
             .layoutWeight(1)
           Button({ type: ButtonType.Circle, stateEffect: true }) {
             SymbolGlyph($r('sys.symbol.xmark'))
               .fontSize(16)
-              .fontColor([ThemeManager.textSecondary])
+              .fontColor([$r('app.color.text_secondary')])
           }
           .width(32).height(32)
           .backgroundColor(Color.Transparent)
@@ -570,9 +569,9 @@ export struct ComicDetailPage {
                 Row({ space: 8 }) {
                   SymbolGlyph($r('sys.symbol.star_slash'))
                     .fontSize(18)
-                    .fontColor([ThemeManager.danger])
+                    .fontColor([$r('app.color.danger')])
                   Text(Translations.t('cancel_favorite'))
-                    .fontSize(15).fontColor(ThemeManager.danger)
+                    .fontSize(15).fontColor($r('app.color.danger'))
                     .layoutWeight(1)
                 }
                 .width('100%').height(50)
@@ -589,22 +588,22 @@ export struct ComicDetailPage {
               }, (folder: JmFolder) => folder.id + folder.name)
 
               Divider()
-                .color(ThemeManager.divider)
+                .color($r('app.color.divider'))
                 .margin({ top: 8, bottom: 8 })
 
               Row({ space: 8 }) {
                 TextInput({ placeholder: Translations.t('folder_name_hint'), text: this.newFolderName })
                   .fontSize(14)
-                  .fontColor(ThemeManager.textPrimary)
-                  .placeholderColor(ThemeManager.textSecondary)
-                  .caretColor(ThemeManager.primary)
+                  .fontColor($r('app.color.text_primary'))
+                  .placeholderColor($r('app.color.text_secondary'))
+                  .caretColor(this.themeColor)
                   .layoutWeight(1)
-                  .backgroundColor(ThemeManager.surfaceSecondary)
+                  .backgroundColor($r('app.color.bg_surface'))
                   .onChange((v: string) => { this.newFolderName = v; })
                 Button(Translations.t('confirm'))
                   .fontSize(14)
-                  .backgroundColor(ThemeManager.primary)
-                  .fontColor('#FFFFFF')
+                  .backgroundColor(this.themeColor)
+                  .fontColor($r('app.color.text_on_brand'))
                   .onClick(() => { this.createFolder(); })
               }
               .width('100%')
@@ -618,13 +617,13 @@ export struct ComicDetailPage {
       }
       .width('100%')
       .height('100%')
-      .id('favSheetContent' + this.themeVersion)
-    }, (v: number) => `theme-${v}`)
+      .id('favSheetContent')
+    
   }
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Stack({ alignContent: Alignment.Top }) {
           if (this.loading) {
             Column({ space: 8 }) {
@@ -634,11 +633,11 @@ export struct ComicDetailPage {
             .justifyContent(FlexAlign.Center)
           } else if (this.error.length > 0) {
             Column({ space: 12 }) {
-              Text(this.error).fontSize(14).fontColor(ThemeManager.danger)
+              Text(this.error).fontSize(14).fontColor($r('app.color.danger'))
               Button(Translations.t('retry'))
                 .fontSize(14)
-                .backgroundColor(ThemeManager.primary)
-                .fontColor('#FFFFFF')
+                .backgroundColor(this.themeColor)
+                .fontColor($r('app.color.text_on_brand'))
                 .onClick(() => { this.loadDetail(); })
             }
             .width('100%').height('100%')
@@ -651,7 +650,7 @@ export struct ComicDetailPage {
                 if (this.comic.description.length > 0) {
                   Text(this.comic.description)
                     .fontSize(14)
-                    .fontColor(ThemeManager.textPrimary)
+                    .fontColor($r('app.color.text_primary'))
                     .lineHeight(22)
                     .width('100%')
                     .padding({ left: 16, right: 16, top: 14 })
@@ -662,13 +661,13 @@ export struct ComicDetailPage {
                     ForEach(this.comic.categories, (tag: string) => {
                       Text(tag)
                         .fontSize(12)
-                        .fontColor(ThemeManager.primary)
-                        .backgroundColor(ThemeManager.surface)
+                        .fontColor(this.themeColor)
+                        .backgroundColor($r('app.color.bg_fill'))
                         .borderRadius(12)
                         .padding({ left: 10, right: 10, top: 5, bottom: 5 })
                         .margin({ right: 6, bottom: 6 })
                         .onClick(() => { this.searchTag(tag); })
-                        .id('tag' + tag + this.themeVersion)
+                        .id('detailTag' + tag)
                     }, (tag: string) => tag)
                   }
                   .width('100%')
@@ -700,7 +699,7 @@ export struct ComicDetailPage {
           }
         }
         .width('100%').height('100%')
-        .backgroundColor(ThemeManager.background)
+        .backgroundColor($r('app.color.bg_page'))
         .bindSheet($$this.showFavSheet, this.favSheetContent(), {
           detents: [SheetSize.MEDIUM, SheetSize.LARGE],
           blurStyle: BlurStyle.COMPONENT_THICK,
@@ -710,9 +709,9 @@ export struct ComicDetailPage {
             this.showFavSheet = false;
           }
         })
-      }, (v: number) => `theme-${v}`)
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

@@ -1,7 +1,6 @@
 // pages/reader/ReaderPage.ets - 阅读器（6 阅读模式 + 手势缩放 + bindSheet 设置/章节 + 续读 + 进度保存）- NavDestination
 import { window } from '@kit.ArkUI';
 import { promptAction } from '@kit.ArkUI';
-import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
 import { NavUtil } from '../../common/NavUtil';
 import { ReadingConfig } from '../../common/ReadingConfig';
@@ -48,8 +47,8 @@ export struct ReaderPage {
   // 缩放
   @State zoomScale: number = 1.0;
   private pinchBaseScale: number = 1.0;
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
   @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
 
@@ -116,7 +115,7 @@ export struct ReaderPage {
         },
         secondaryButton: {
           value: Translations.t('resume_reading'),
-          fontColor: ThemeManager.primary,
+          fontColor: this.themeColor,
           action: () => {
             this.currentIndex = page;
           }
@@ -528,7 +527,7 @@ export struct ReaderPage {
 
   @Builder
   buildToolbar() {
-    ForEach([this.themeVersion], (v: number) => {
+    
       Column({ space: 0 }) {
         Row({ space: 12 }) {
         Button({ type: ButtonType.Circle, stateEffect: true }) {
@@ -604,7 +603,7 @@ export struct ReaderPage {
           step: 1,
           style: SliderStyle.OutSet
         })
-        .selectedColor(ThemeManager.primary)
+        .selectedColor(this.themeColor)
         .trackColor('rgba(255,255,255,0.3)')
         .width('92%')
         .onChange((value: number) => {
@@ -649,7 +648,7 @@ export struct ReaderPage {
     }
     .width('100%').height('100%')
     .id('toolbar')
-    }, (v: number) => `theme-${v}`)
+    
   }
 
   // ---------- bindSheet：设置 / 章节 ----------
@@ -679,12 +678,12 @@ export struct ReaderPage {
     Row({ space: 8 }) {
       Text(title)
         .fontSize(17).fontWeight(FontWeight.Medium)
-        .fontColor(ThemeManager.textPrimary)
+        .fontColor($r('app.color.text_primary'))
         .layoutWeight(1)
       Button({ type: ButtonType.Circle, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.xmark'))
           .fontSize(16)
-          .fontColor([ThemeManager.textSecondary])
+          .fontColor([$r('app.color.text_secondary')])
       }
       .width(32).height(32)
       .backgroundColor(Color.Transparent)
@@ -695,35 +694,35 @@ export struct ReaderPage {
     .width('100%')
     .padding({ left: 16, right: 12, top: 14, bottom: 6 })
     .alignItems(VerticalAlign.Center)
-    .id('sheetHeader' + this.themeVersion)
+    .id('sheetHeader')
   }
 
   @Builder
   settingRow(label: string, value: string, action: () => void) {
     Row({ space: 8 }) {
       Text(label)
-        .fontSize(15).fontColor(ThemeManager.textPrimary)
+        .fontSize(15).fontColor($r('app.color.text_primary'))
         .layoutWeight(1)
       Text(value)
-        .fontSize(13).fontColor(ThemeManager.primary)
+        .fontSize(13).fontColor(this.themeColor)
       SymbolGlyph($r('sys.symbol.chevron_right'))
         .fontSize(13)
-        .fontColor([ThemeManager.textTertiary])
+        .fontColor([$r('app.color.text_tertiary')])
     }
     .width('100%').height(50)
     .padding({ left: 16, right: 16 })
     .onClick(action)
-    .id('settingRow' + label + this.themeVersion)
+    .id('settingRow' + label)
   }
 
   @Builder
   settingToggle(label: string, isOn: boolean, onChange: (v: boolean) => void) {
     Row({ space: 8 }) {
       Text(label)
-        .fontSize(15).fontColor(ThemeManager.textPrimary)
+        .fontSize(15).fontColor($r('app.color.text_primary'))
         .layoutWeight(1)
       Toggle({ type: ToggleType.Switch, isOn: isOn })
-        .selectedColor(ThemeManager.primary)
+        .selectedColor(this.themeColor)
         .switchPointColor('#FFFFFF')
         .onChange((v: boolean) => {
           onChange(v);
@@ -731,12 +730,12 @@ export struct ReaderPage {
     }
     .width('100%').height(50)
     .padding({ left: 16, right: 16 })
-    .id('settingToggle' + label + this.themeVersion)
+    .id('settingToggle' + label)
   }
 
   @Builder
   settingsSheetContent() {
-    ForEach([this.themeVersion], (v: number) => {
+    
       Column({ space: 0 }) {
         this.sheetHeader(Translations.t('reading_settings'))
       Scroll() {
@@ -797,12 +796,12 @@ export struct ReaderPage {
     .width('100%')
     .height('100%')
     .id('settingsSheet')
-    }, (v: number) => `theme-${v}`)
+    
   }
 
   @Builder
   chaptersSheetContent() {
-    ForEach([this.themeVersion], (v: number) => {
+    
       Column({ space: 0 }) {
         this.sheetHeader(Translations.t('select_chapter'))
       if (this.loadingChapter) {
@@ -817,7 +816,7 @@ export struct ReaderPage {
             ListItem() {
               Text(chapter.title.length > 0 ? chapter.title : `${chapter.order}`)
                 .fontSize(14)
-                .fontColor(chapter.order === this.currentChapterOrder ? ThemeManager.primary : ThemeManager.textPrimary)
+                .fontColor(chapter.order === this.currentChapterOrder ? this.themeColor : $r('app.color.text_primary'))
                 .maxLines(1)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
                 .width('100%').height(48)
@@ -829,7 +828,7 @@ export struct ReaderPage {
                     this.showSheet = false;
                   }
                 })
-                .id('chapterItem' + chapter.id + this.themeVersion)
+                .id('chapterItem' + chapter.id)
             }
           }, (chapter: Chapter) => `${chapter.id}-${chapter.order}`)
         }
@@ -838,7 +837,7 @@ export struct ReaderPage {
         .scrollBar(BarState.Off)
         .divider({
           strokeWidth: 0.5,
-          color: ThemeManager.divider,
+          color: $r('app.color.divider'),
           startMargin: 16,
           endMargin: 16
         })
@@ -847,7 +846,7 @@ export struct ReaderPage {
     .width('100%')
     .height('100%')
     .id('chaptersSheet')
-    }, (v: number) => `theme-${v}`)
+    
   }
 
   @Builder

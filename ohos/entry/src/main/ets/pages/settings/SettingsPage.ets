@@ -14,13 +14,13 @@ export function SettingsPageBuilder(name: string, param: object) {
 
 @Component
 export struct SettingsPage {
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('darkModePolicy') darkModePolicy: string = 'system'
   @State showColorSheet: boolean = false
   @State title: string = '设置'
 
   private darkModeIndex(): number {
-    const mode = ThemeManager.darkMode;
+    const mode = this.darkModePolicy;
     if (mode === 'enabled') {
       return 1;
     }
@@ -43,22 +43,22 @@ export struct SettingsPage {
 
   @Builder
   colorSheetContent() {
-    ForEach([this.themeVersion], (v: number) => {
+    
       Column({ space: 16 }) {
         Text(Translations.t('select_theme_color'))
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
-          .fontColor(ThemeManager.textPrimary)
+          .fontColor($r('app.color.text_primary'))
           .width('100%')
           .padding({ left: 20, top: 8 })
         Grid() {
           ForEach(ThemeManager.themePresets, (color: string) => {
             GridItem() {
               Column() {
-                if (ThemeManager.themeColor === color) {
+                if (this.themeColor === color) {
                   SymbolGlyph($r('sys.symbol.checkmark'))
                     .fontSize(20)
-                    .fontColor(['#FFFFFF'])
+                    .fontColor([$r('app.color.text_on_brand')])
                 }
               }
               .width(44).height(44)
@@ -83,12 +83,12 @@ export struct SettingsPage {
       .width('100%')
       .padding({ bottom: 32 })
       .id('colorSheet')
-    }, (v: number) => `theme-${v}`)
+    
   }
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column() {
           Scroll() {
             Column({ space: 0 }) {
@@ -156,10 +156,10 @@ export struct SettingsPage {
           .edgeEffect(EdgeEffect.Spring)
         }
         .width('100%').height('100%')
-      }, (v: number) => `theme-${v}`)
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.pageBackground : '')
+    .backgroundColor($r('app.color.bg_page'))
     .bindSheet($$this.showColorSheet, this.colorSheetContent(), {
       detents: [SheetSize.MEDIUM],
       blurStyle: BlurStyle.COMPONENT_THICK,

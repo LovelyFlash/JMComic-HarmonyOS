@@ -1,5 +1,4 @@
 // pages/JmCategoryPage.ets - 禁漫分类漫画分页（/categories/filter + 排序）- NavDestination
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Comic } from '../data/model/Comic';
@@ -33,8 +32,8 @@ export struct JmCategoryPage {
   @State error: string = ''
   @State currentPage: number = 1
   @State maxPage: number = 1
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
     if (this.pageParam !== undefined && this.pageParam !== null) {
@@ -114,10 +113,10 @@ export struct JmCategoryPage {
             .fontSize(12)
             .padding({ left: 12, right: 12, top: 6, bottom: 6 })
             .borderRadius(14)
-            .fontColor(this.sort === opt.key ? '#FFFFFF' : ThemeManager.textSecondary)
-            .backgroundColor(this.sort === opt.key ? ThemeManager.primary : ThemeManager.surface)
+            .fontColor(this.sort === opt.key ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
+            .backgroundColor(this.sort === opt.key ? this.themeColor : $r('app.color.bg_fill'))
             .onClick(() => { this.changeSort(opt.key); })
-            .id('sort' + opt.key + this.themeVersion)
+            .id('jmCategorySort' + opt.key)
         }, (opt: SortOption) => opt.key)
       }
       .padding({ left: 16, right: 16, top: 10, bottom: 10 })
@@ -125,7 +124,7 @@ export struct JmCategoryPage {
     .scrollable(ScrollDirection.Horizontal)
     .scrollBar(BarState.Off)
     .width('100%')
-    .id('sortBar' + this.themeVersion)
+    .id('jmCategorySortBar')
   }
 
   @Builder
@@ -138,16 +137,16 @@ export struct JmCategoryPage {
               .width(80).height(110)
               .objectFit(ImageFit.Cover)
               .borderRadius(6)
-              .backgroundColor(ThemeManager.surface)
+              .backgroundColor($r('app.color.bg_fill'))
             Column({ space: 6 }) {
               Text(comic.title)
                 .fontSize(15).fontWeight(FontWeight.Medium)
-                .fontColor(ThemeManager.textPrimary)
+                .fontColor($r('app.color.text_primary'))
                 .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                 .width('100%')
               if (comic.author.length > 0) {
                 Text(comic.author)
-                  .fontSize(12).fontColor(ThemeManager.textSecondary)
+                  .fontSize(12).fontColor($r('app.color.text_secondary'))
                   .maxLines(1)
               }
             }
@@ -161,7 +160,7 @@ export struct JmCategoryPage {
             NavUtil.push('comicDetail', param);
           })
         }
-        .id('comic' + comic.id + this.themeVersion)
+        .id('jmCategoryComic' + comic.id)
       }, (comic: Comic) => comic.id)
 
       ListItem() {
@@ -173,7 +172,7 @@ export struct JmCategoryPage {
         } else if (this.currentPage < this.maxPage) {
           Text(Translations.t('load_more'))
             .fontSize(13)
-            .fontColor(ThemeManager.primary)
+            .fontColor(this.themeColor)
             .width('100%').height(48)
             .textAlign(TextAlign.Center)
             .onClick(() => { this.loadMore(); })
@@ -181,15 +180,15 @@ export struct JmCategoryPage {
       }
     }
     .layoutWeight(1)
-    .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+    .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
     .edgeEffect(EdgeEffect.Spring)
     .onReachEnd(() => { this.loadMore(); })
-    .id('comicRows' + this.themeVersion)
+    .id('jmCategoryComicRows')
   }
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column({ space: 0 }) {
           NavTitleBar({ title: this.categoryTitle })
           this.sortBar()
@@ -200,11 +199,11 @@ export struct JmCategoryPage {
             .layoutWeight(1).justifyContent(FlexAlign.Center)
           } else if (this.error.length > 0) {
             Column({ space: 12 }) {
-              Text(this.error).fontSize(14).fontColor(ThemeManager.danger)
+              Text(this.error).fontSize(14).fontColor($r('app.color.danger'))
               Button(Translations.t('retry'))
                 .fontSize(14)
-                .backgroundColor(ThemeManager.primary)
-                .fontColor('#FFFFFF')
+                .backgroundColor(this.themeColor)
+                .fontColor($r('app.color.text_on_brand'))
                 .onClick(() => { this.loadPage(1, true); })
             }
             .layoutWeight(1).justifyContent(FlexAlign.Center)
@@ -213,10 +212,10 @@ export struct JmCategoryPage {
           }
         }
         .width('100%').height('100%')
-        .backgroundColor(ThemeManager.background)
-      }, (v: number) => `theme-${v}`)
+        .backgroundColor($r('app.color.bg_page'))
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

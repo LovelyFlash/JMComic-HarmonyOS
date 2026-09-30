@@ -1,5 +1,4 @@
 // pages/SearchPage.ets - 搜索页（禁漫 JM-only + 7 种排序 + maxPage 分页）- NavDestination
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Comic } from '../data/model/Comic';
@@ -34,8 +33,8 @@ export struct SearchPage {
   @State maxPage: number = 1
   @State searched: boolean = false
   @State sort: string = 'mr'
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   private makeSorts(): SortOption[] {
     const list: SortOption[] = [];
@@ -119,21 +118,21 @@ export struct SearchPage {
     Row({ space: 8 }) {
       SymbolGlyph($r('sys.symbol.magnifyingglass'))
         .fontSize(20)
-        .fontColor([ThemeManager.textSecondary])
+        .fontColor([$r('app.color.text_secondary')])
       TextInput({ text: this.keyword, placeholder: Translations.t('search_hint') })
         .layoutWeight(1)
         .height(36)
         .fontSize(14)
         .backgroundColor(Color.Transparent)
-        .fontColor(ThemeManager.textPrimary)
-        .placeholderColor(ThemeManager.textSecondary)
-        .caretColor(ThemeManager.primary)
+        .fontColor($r('app.color.text_primary'))
+        .placeholderColor($r('app.color.text_secondary'))
+        .caretColor(this.themeColor)
         .onChange((value: string) => { this.keyword = value; })
         .onSubmit(() => { this.doSearch(); })
       if (this.keyword.length > 0) {
         SymbolGlyph($r('sys.symbol.xmark_circle_fill'))
           .fontSize(18)
-          .fontColor([ThemeManager.textTertiary])
+          .fontColor([$r('app.color.text_tertiary')])
           .onClick(() => {
             this.keyword = '';
             this.dataSource = new ArrayDataSource<Comic>();
@@ -145,9 +144,9 @@ export struct SearchPage {
     .height(44)
     .padding({ left: 12, right: 12 })
     .margin({ left: 16, right: 16, bottom: 8 })
-    .backgroundColor(ThemeManager.surface)
+    .backgroundColor($r('app.color.bg_fill'))
     .borderRadius(22)
-    .id('searchInput' + this.themeVersion)
+    .id('searchInput')
   }
 
   @Builder
@@ -159,8 +158,8 @@ export struct SearchPage {
             .fontSize(12)
             .padding({ left: 12, right: 12, top: 6, bottom: 6 })
             .borderRadius(14)
-            .fontColor(this.sort === opt.key ? '#FFFFFF' : ThemeManager.textSecondary)
-            .backgroundColor(this.sort === opt.key ? ThemeManager.primary : ThemeManager.surface)
+            .fontColor(this.sort === opt.key ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
+            .backgroundColor(this.sort === opt.key ? this.themeColor : $r('app.color.bg_fill'))
             .onClick(() => {
               if (this.sort !== opt.key) {
                 this.sort = opt.key;
@@ -169,7 +168,7 @@ export struct SearchPage {
                 }
               }
             })
-            .id('sort' + opt.key + this.themeVersion)
+            .id('searchSort' + opt.key)
         }, (opt: SortOption) => opt.key)
       }
       .padding({ left: 16, right: 16, bottom: 8 })
@@ -177,7 +176,7 @@ export struct SearchPage {
     .scrollable(ScrollDirection.Horizontal)
     .scrollBar(BarState.Off)
     .width('100%')
-    .id('sortBar' + this.themeVersion)
+    .id('searchSortBar')
   }
 
   @Builder
@@ -189,29 +188,29 @@ export struct SearchPage {
       .layoutWeight(1).justifyContent(FlexAlign.Center)
     } else if (this.error.length > 0) {
       Column({ space: 12 }) {
-        Text(this.error).fontSize(14).fontColor(ThemeManager.danger)
+        Text(this.error).fontSize(14).fontColor($r('app.color.danger'))
         Button(Translations.t('retry'))
           .fontSize(14)
-          .backgroundColor(ThemeManager.primary)
-          .fontColor('#FFFFFF')
+          .backgroundColor(this.themeColor)
+          .fontColor($r('app.color.text_on_brand'))
           .onClick(() => { this.doSearch(); })
       }
       .layoutWeight(1).justifyContent(FlexAlign.Center)
-      .id('results' + this.themeVersion)
+      .id('resultsError')
     } else if (!this.searched) {
       Column({ space: 8 }) {
         Text(Translations.t('search_hint'))
-          .fontSize(14).fontColor(ThemeManager.textSecondary)
+          .fontSize(14).fontColor($r('app.color.text_secondary'))
       }
       .layoutWeight(1).justifyContent(FlexAlign.Center)
-      .id('results' + this.themeVersion)
+      .id('resultsHint')
     } else if (this.dataSource.totalCount() === 0) {
       Column({ space: 8 }) {
         Text(Translations.t('no_data'))
-          .fontSize(14).fontColor(ThemeManager.textSecondary)
+          .fontSize(14).fontColor($r('app.color.text_secondary'))
       }
       .layoutWeight(1).justifyContent(FlexAlign.Center)
-      .id('results' + this.themeVersion)
+      .id('resultsEmpty')
     } else {
       List({ space: 1 }) {
         LazyForEach(this.dataSource, (comic: Comic) => {
@@ -221,16 +220,16 @@ export struct SearchPage {
                 .width(80).height(110)
                 .objectFit(ImageFit.Cover)
                 .borderRadius(6)
-                .backgroundColor(ThemeManager.surface)
+                .backgroundColor($r('app.color.bg_fill'))
               Column({ space: 6 }) {
                 Text(comic.title)
                   .fontSize(15).fontWeight(FontWeight.Medium)
-                  .fontColor(ThemeManager.textPrimary)
+                  .fontColor($r('app.color.text_primary'))
                   .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                   .width('100%')
                 if (comic.author.length > 0) {
                   Text(comic.author)
-                    .fontSize(12).fontColor(ThemeManager.textSecondary)
+                    .fontSize(12).fontColor($r('app.color.text_secondary'))
                     .maxLines(1)
                 }
               }
@@ -244,7 +243,7 @@ export struct SearchPage {
               NavUtil.push('comicDetail', param);
             })
           }
-          .id('comic' + comic.id + this.themeVersion)
+          .id('searchComic' + comic.id)
         }, (comic: Comic) => comic.id)
 
         ListItem() {
@@ -256,7 +255,7 @@ export struct SearchPage {
           } else if (this.currentPage < this.maxPage) {
             Text(Translations.t('load_more'))
               .fontSize(13)
-              .fontColor(ThemeManager.primary)
+              .fontColor(this.themeColor)
               .width('100%').height(48)
               .textAlign(TextAlign.Center)
               .onClick(() => { this.loadMore(); })
@@ -264,16 +263,16 @@ export struct SearchPage {
         }
       }
       .layoutWeight(1)
-      .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+      .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
       .edgeEffect(EdgeEffect.Spring)
       .onReachEnd(() => { this.loadMore(); })
-      .id('results' + this.themeVersion)
+      .id('resultsList')
     }
   }
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column({ space: 0 }) {
           NavTitleBar({ title: Translations.t('search') })
           this.searchInput()
@@ -281,10 +280,10 @@ export struct SearchPage {
           this.results()
         }
         .width('100%').height('100%')
-        .backgroundColor(ThemeManager.background)
-      }, (v: number) => `theme-${v}`)
+        .backgroundColor($r('app.color.bg_page'))
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

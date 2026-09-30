@@ -25,6 +25,9 @@ export default class EntryAbility extends UIAbility {
     await Settings.init(this.context);
     await Database.init(this.context);
     await ThemeManager.restore();
+    // loadContent 之前应用颜色模式，避免手动策略下首帧按系统色渲染闪烁
+    ThemeManager.attachApplicationContext(this.context.getApplicationContext());
+    ThemeManager.applyColorModeToSystem();
     await ReadingConfig.load();
     // 必须 await：登录态/用户名从持久化恢复完成后才能加载页面，
     // 否则 MePage 首帧读到未登录（网络重登仍在 init 内后台执行，不阻塞）
@@ -128,7 +131,7 @@ export default class EntryAbility extends UIAbility {
           statusBarContentColor: dark ? '#FFFFFF' : '#000000'
         });
         // 同步窗口底色，兜底所有未绘制区域（避让条/页面根部残留），随主题即时切换
-        EntryAbility.mainWindow.setWindowBackgroundColor(ThemeManager.background);
+        EntryAbility.mainWindow.setWindowBackgroundColor(ThemeManager.windowBackground);
       }
     } catch (e) {
       hilog.warn(DOMAIN, TAG, 'applySystemBarColor failed: %{public}s', String(e));

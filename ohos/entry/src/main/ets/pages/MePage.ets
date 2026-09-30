@@ -1,5 +1,4 @@
 // pages/MePage.ets - 我的页（资料卡 + 历史 + 功能入口）
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { JmApi } from '../data/api/JmApi';
@@ -26,8 +25,8 @@ export struct MePage {
   @State userName: string = ''
   @State accountName: string = ''
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   static tabnum():number {return tabnum}
 
@@ -80,14 +79,14 @@ export struct MePage {
   @Builder
   iconBuilder(key: string) {
     if (key === 'download') {
-      SymbolGlyph($r('sys.symbol.arrow_down_circle')).fontSize(28).fontColor([ThemeManager.primary])
-        .id('icon' + this.themeVersion)
+      SymbolGlyph($r('sys.symbol.arrow_down_circle')).fontSize(28).fontColor([this.themeColor])
+        .id('iconDownload')
     } else if (key === 'clock') {
-      SymbolGlyph($r('sys.symbol.clock')).fontSize(28).fontColor([ThemeManager.primary])
-        .id('icon' + this.themeVersion)
+      SymbolGlyph($r('sys.symbol.clock')).fontSize(28).fontColor([this.themeColor])
+        .id('iconClock')
     } else {
-      SymbolGlyph($r('sys.symbol.person')).fontSize(28).fontColor([ThemeManager.primary])
-        .id('icon' + this.themeVersion)
+      SymbolGlyph($r('sys.symbol.person')).fontSize(28).fontColor([this.themeColor])
+        .id('iconPerson')
     }
   }
 
@@ -97,26 +96,26 @@ export struct MePage {
       Stack() {
         SymbolGlyph($r('sys.symbol.person'))
           .fontSize(28)
-          .fontColor(['#FFFFFF'])
+          .fontColor([$r('app.color.text_on_brand')])
       }
       .width(56).height(56)
       .borderRadius(28)
-      .backgroundColor(this.loggedIn ? ThemeManager.primary : ThemeManager.textTertiary)
+      .backgroundColor(this.loggedIn ? this.themeColor : $r('app.color.text_tertiary'))
       Column({ space: 4 }) {
         Text(this.displayName())
           .fontSize(17).fontWeight(FontWeight.Bold)
-          .fontColor(ThemeManager.textPrimary)
+          .fontColor($r('app.color.text_primary'))
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
         Text(Translations.t('jm_name'))
-          .fontSize(12).fontColor(ThemeManager.textSecondary)
+          .fontSize(12).fontColor($r('app.color.text_secondary'))
           .maxLines(1)
       }
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
       SymbolGlyph($r('sys.symbol.chevron_right'))
         .fontSize(16)
-        .fontColor([ThemeManager.textTertiary])
+        .fontColor([$r('app.color.text_tertiary')])
     }
     .width('100%')
     .padding(16)
@@ -124,7 +123,7 @@ export struct MePage {
     .onClick(() => {
       NavUtil.push('accounts');
     })
-    .id('profile' + this.themeVersion)
+    .id('profile')
   }
 
   @Builder
@@ -133,15 +132,15 @@ export struct MePage {
       Row({ space: 8 }) {
         SymbolGlyph($r('sys.symbol.clock'))
           .fontSize(20)
-          .fontColor([ThemeManager.primary])
+          .fontColor([this.themeColor])
         Text(Translations.t('tab_history') + ' (' + this.historyCount + ')')
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
-          .fontColor(ThemeManager.textPrimary)
+          .fontColor($r('app.color.text_primary'))
           .layoutWeight(1)
         SymbolGlyph($r('sys.symbol.chevron_right'))
           .fontSize(16)
-          .fontColor([ThemeManager.textTertiary])
+          .fontColor([$r('app.color.text_tertiary')])
       }
       .width('100%')
       .onClick(() => { NavUtil.push('history'); })
@@ -149,7 +148,7 @@ export struct MePage {
       if (this.historyItems.length === 0) {
         Text(Translations.t('no_data'))
           .fontSize(13)
-          .fontColor(ThemeManager.textSecondary)
+          .fontColor($r('app.color.text_secondary'))
           .width('100%')
           .textAlign(TextAlign.Center)
           .padding(16)
@@ -162,10 +161,10 @@ export struct MePage {
                   .width(80).height(110)
                   .objectFit(ImageFit.Cover)
                   .borderRadius(6)
-                  .backgroundColor(ThemeManager.surface)
+                  .backgroundColor($r('app.color.bg_fill'))
                 Text(item.title)
                   .fontSize(11)
-                  .fontColor(ThemeManager.textPrimary)
+                  .fontColor($r('app.color.text_primary'))
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                   .width(80)
@@ -176,7 +175,7 @@ export struct MePage {
                 };
                 NavUtil.push('comicDetail', param);
               })
-              .id('historyItem' + item.id + this.themeVersion)
+              .id('historyItem' + item.id)
             }
           }, (item: HistoryItem) => item.id)
         }
@@ -187,13 +186,13 @@ export struct MePage {
     }
     .width('100%')
     .padding(14)
-    .backgroundColor(ThemeManager.surfaceSecondary)
+    .backgroundColor($r('app.color.bg_surface'))
     .borderRadius(16)
-    .id('historyCard' + this.themeVersion)
+    .id('historyCard')
   }
 
   build() {
-    ForEach([this.themeVersion], (v: number) => {
+    
       Scroll() {
         Column({ space: 12 }) {
           this.profileHeader()
@@ -206,19 +205,19 @@ export struct MePage {
                   this.iconBuilder(entry.iconKey)
                   Text(entry.label)
                     .fontSize(12)
-                    .fontColor(ThemeManager.textPrimary)
+                    .fontColor($r('app.color.text_primary'))
                     .maxLines(1)
                 }
                 .width('100%')
                 .height(88)
                 .justifyContent(FlexAlign.Center)
                 .alignItems(HorizontalAlign.Center)
-                .backgroundColor(ThemeManager.surfaceSecondary)
+                .backgroundColor($r('app.color.bg_surface'))
                 .borderRadius(12)
                 .onClick(() => {
                   this.openEntry(entry);
                 })
-                .id('entry' + entry.label + this.themeVersion)
+                .id('entry' + entry.label)
               }
             }, (entry: EntryItem) => entry.label)
           }
@@ -230,33 +229,33 @@ export struct MePage {
           Row({ space: 12 }) {
             SymbolGlyph($r('sys.symbol.gearshape'))
               .fontSize(22)
-              .fontColor([ThemeManager.textSecondary])
+              .fontColor([$r('app.color.text_secondary')])
             Text(Translations.t('tab_settings'))
               .fontSize(15)
-              .fontColor(ThemeManager.textPrimary)
+              .fontColor($r('app.color.text_primary'))
               .layoutWeight(1)
             SymbolGlyph($r('sys.symbol.chevron_right'))
               .fontSize(16)
-              .fontColor([ThemeManager.textTertiary])
+              .fontColor([$r('app.color.text_tertiary')])
           }
           .width('100%')
           .height(52)
           .padding({ left: 14, right: 14 })
           .borderRadius(12)
           .onClick(() => { NavUtil.push('settings'); })
-          .id('settingsEntry' + this.themeVersion)
+          .id('settingsEntry')
 
           Row({ space: 12 }) {
             SymbolGlyph($r('sys.symbol.questionmark_circle'))
               .fontSize(22)
-              .fontColor([ThemeManager.textSecondary])
+              .fontColor([$r('app.color.text_secondary')])
             Text(Translations.t('about'))
               .fontSize(15)
-              .fontColor(ThemeManager.textPrimary)
+              .fontColor($r('app.color.text_primary'))
               .layoutWeight(1)
             SymbolGlyph($r('sys.symbol.chevron_right'))
               .fontSize(16)
-              .fontColor([ThemeManager.textTertiary])
+              .fontColor([$r('app.color.text_tertiary')])
           }
           .width('100%')
           .height(52)
@@ -269,7 +268,7 @@ export struct MePage {
       }
       .width('100%')
       .height('100%')
-      .backgroundColor(ThemeManager.background)
-    }, (v: number) => `theme-${v}`)
+      .backgroundColor($r('app.color.bg_page'))
+    
   }
 }

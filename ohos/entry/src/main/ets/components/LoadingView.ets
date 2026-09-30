@@ -1,17 +1,16 @@
 // components/LoadingView.ets - 加载动画组件
-import { ThemeManager } from '../common/ThemeManager';
 
 @Component
 export struct LoadingView {
   @Prop message: string = ''
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   build() {
     Column({ space: 8 }) {
-      LoadingProgress().width(48).height(48).color(ThemeManager.primary)
+      LoadingProgress().width(48).height(48).color(this.themeColor)
       if (this.message.length > 0) {
-        Text(this.message).fontSize(14).fontColor(ThemeManager.textSecondary).margin({ top: 12 })
+        Text(this.message).fontSize(14).fontColor($r('app.color.text_secondary')).margin({ top: 12 })
       }
     }
     .width('100%').height('100%').justifyContent(FlexAlign.Center)

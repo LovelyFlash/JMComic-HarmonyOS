@@ -1,6 +1,5 @@
 // pages/settings/JmSettings.ets - JM 设置（域名/图片分流/版本号/签到/收藏排序）- NavDestination
 import { promptAction } from '@kit.ArkUI';
-import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
 import { ApiConstants, SettingsKeys } from '../../common/Constants';
 import { JmApi } from '../../data/api/JmApi';
@@ -31,8 +30,8 @@ export struct JmSettings {
   @State autoCheckin: boolean = false
   @State favoriteOrder: number = 0
   @State checkingIn: boolean = false
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
     this.refreshState();
@@ -91,7 +90,7 @@ export struct JmSettings {
       },
       secondaryButton: {
         value: Translations.t('confirm'),
-        fontColor: ThemeManager.primary,
+        fontColor: this.themeColor,
         action: () => {
           this.applyDomainUpdate(proposal);
         }
@@ -217,22 +216,22 @@ export struct JmSettings {
     Row({ space: 12 }) {
       Text(this.stripProtocol(domain))
         .fontSize(16)
-        .fontColor(this.currentDomain === domain ? ThemeManager.primary : ThemeManager.textPrimary)
+        .fontColor(this.currentDomain === domain ? this.themeColor : $r('app.color.text_primary'))
         .layoutWeight(1)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
       if (this.currentDomain === domain) {
         SymbolGlyph($r('sys.symbol.checkmark'))
           .fontSize(20)
-          .fontColor([ThemeManager.primary])
+          .fontColor([this.themeColor])
       }
     }
     .width('100%')
     .height(52)
     .padding({ left: 20, right: 20 })
-    .border({ width: { bottom: 0.5 }, color: ThemeManager.divider })
+    .border({ width: { bottom: 0.5 }, color: $r('app.color.divider') })
     .opacity(this.autoSelectDomain ? 0.4 : 1)
-    .id('domainRow' + index + this.themeVersion)
+    .id('domainRow' + index)
     .onClick(() => {
       if (!this.autoSelectDomain) {
         this.selectDomainAt(index);
@@ -246,11 +245,11 @@ export struct JmSettings {
       Text(label)
         .fontSize(17)
         .fontWeight(FontWeight.Medium)
-        .fontColor(ThemeManager.textPrimary)
+        .fontColor($r('app.color.text_primary'))
         .layoutWeight(1)
       Text(value)
         .fontSize(14)
-        .fontColor(isPrimary ? ThemeManager.primary : ThemeManager.textSecondary)
+        .fontColor(isPrimary ? this.themeColor : $r('app.color.text_secondary'))
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .constraintSize({ maxWidth: '60%' })
@@ -258,13 +257,13 @@ export struct JmSettings {
     .width('100%')
     .height(52)
     .padding({ left: 20, right: 20 })
-    .border({ width: { bottom: 0.5 }, color: ThemeManager.divider })
-    .id('infoRow' + label + this.themeVersion)
+    .border({ width: { bottom: 0.5 }, color: $r('app.color.divider') })
+    .id('infoRow' + label)
   }
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column() {
           NavTitleBar({ title: Translations.t('jm_name') })
           Scroll() {
@@ -354,9 +353,9 @@ export struct JmSettings {
           .edgeEffect(EdgeEffect.Spring)
         }
         .width('100%').height('100%')
-      }, (v: number) => `theme-${v}`)
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.pageBackground : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

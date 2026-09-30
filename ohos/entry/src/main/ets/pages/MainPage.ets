@@ -1,5 +1,4 @@
 // pages/MainPage.ets
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { MePage } from './MePage';
@@ -12,8 +11,8 @@ import { HdsTabs, HdsTabsController, hdsMaterial} from '@kit.UIDesignKit';
 @Component
 struct MainPage {
   @State currentTab: number=0
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
   @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @State shadowGlow: number = 0.25;
@@ -55,7 +54,6 @@ struct MainPage {
           }.tabBar(this.TabBarContent(3))
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
-        .height('105%')
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         .onAnimationStart((index :number) => {
           this.currentTab = index;})
@@ -65,11 +63,12 @@ struct MainPage {
         .vertical(false)
         .barPosition(BarPosition.End)
         .barFloatingStyle({
-          barBottomMargin: 36,
-          adaptToHandedness: true,
-          systemMaterialEffect: {
-            materialType: hdsMaterial.MaterialType.ADAPTIVE,
-            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          barBottomMargin: 16,
+          systemMaterialEffect:
+
+          {
+            materialType: hdsMaterial.MaterialType.IMMERSIVE,
+            materialLevel: hdsMaterial.MaterialLevel.EXQUISITE
           }
         })
         this.FabContent()
@@ -77,7 +76,7 @@ struct MainPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .mode(NavigationMode.Stack)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
     .padding({ top: this.topAvoid, bottom: this.bottomAvoid })
     .width('100%')
     .height('100%')
@@ -89,43 +88,43 @@ struct MainPage {
     Column({ space: 3 }) {
       SymbolGlyph(this.currentTab === 0 ? $r('sys.symbol.house_fill') : $r('sys.symbol.house'))
         .fontSize(22)
-        .fontColor([this.currentTab === 0 ? ThemeManager.primary : ThemeManager.textTertiary])
+        .fontColor([this.currentTab === 0 ? this.themeColor : $r('app.color.text_tertiary')])
       Text(Translations.t('tab_home'))
         .fontSize(10)
-        .fontColor(this.currentTab === 0 ? ThemeManager.primary : ThemeManager.textTertiary)
+        .fontColor(this.currentTab === 0 ? this.themeColor : $r('app.color.text_tertiary'))
     }
     else if(currentTab == 1)
     Column({ space: 3 }) {
       SymbolGlyph(this.currentTab === 1 ? $r('sys.symbol.heart_fill') : $r('sys.symbol.heart'))
         .fontSize(22)
-        .fontColor([this.currentTab === 1 ? ThemeManager.primary : ThemeManager.textTertiary])
+        .fontColor([this.currentTab === 1 ? this.themeColor : $r('app.color.text_tertiary')])
       Text(Translations.t('tab_favorites'))
         .fontSize(10)
-        .fontColor(this.currentTab === 1 ? ThemeManager.primary : ThemeManager.textTertiary)
+        .fontColor(this.currentTab === 1 ? this.themeColor : $r('app.color.text_tertiary'))
     }
     else if(currentTab == 2)
     Column({ space: 3 }) {
       SymbolGlyph($r('sys.symbol.square_grid_2x2'))
         .fontSize(22)
-        .fontColor([this.currentTab === 2 ? ThemeManager.primary : ThemeManager.textTertiary])
+        .fontColor([this.currentTab === 2 ? this.themeColor : $r('app.color.text_tertiary')])
       Text(Translations.t('tab_explore'))
-        .fontColor(this.currentTab === 2 ? ThemeManager.primary : ThemeManager.textTertiary)
+        .fontColor(this.currentTab === 2 ? this.themeColor : $r('app.color.text_tertiary'))
         .fontSize(10)
     }
     else if(currentTab == 3)
     Column({ space: 3 }) {
       SymbolGlyph(this.currentTab === 3 ? $r('sys.symbol.folder_fill') : $r('sys.symbol.folder'))
         .fontSize(22)
-        .fontColor([this.currentTab === 3 ? ThemeManager.primary : ThemeManager.textTertiary])
+        .fontColor([this.currentTab === 3 ? this.themeColor : $r('app.color.text_tertiary')])
       Text(Translations.t('tab_category'))
         .fontSize(10)
-        .fontColor(this.currentTab === 3 ? ThemeManager.primary : ThemeManager.textTertiary)
+        .fontColor(this.currentTab === 3 ? this.themeColor : $r('app.color.text_tertiary'))
     }
   }
 
   @Builder
   FabContent() {
-    ForEach([this.themeVersion], (v: number) => {
+    
       Button({ type: ButtonType.Circle, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.magnifyingglass'))
           .fontSize(22)
@@ -133,11 +132,11 @@ struct MainPage {
       }
       .width(48)
       .height(48)
-      .backgroundColor(ThemeManager.primary)
-      .shadow({ radius: 12, color: 'rgba(0,0,0,0.3)', offsetX: 0, offsetY: 4 })
+      .backgroundColor(this.themeColor)
+      .shadow({ radius: 12, color: $r('app.color.shadow'), offsetX: 0, offsetY: 4 })
       .position({ right: 16, top: 12 })
       .onClick(() => { NavUtil.push('preSearch'); })
       .id('fabSearch')
-    }, (v: number) => `theme-${v}`)
+    
   }
 }

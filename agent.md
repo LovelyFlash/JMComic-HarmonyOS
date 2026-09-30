@@ -20,7 +20,7 @@ ohos/entry/src/main/ets/
 │   ├── JmImage.ets        -- JM 图片管线：请求头、魔数嗅探、分段数、decode、recombine（反打乱）
 │   ├── Network.ets        -- HTTP 封装：get/getWithStatus/getBytes/getBytesViaDownload/post
 │   ├── Logger.ets         -- hilog 封装（TAG 过滤：JmApi/JmImage/ReaderImage/Network）
-│   ├── ThemeManager.ets   -- 亮/暗主题颜色
+│   ├── ThemeManager.ets   -- 深色策略 + 主题色（UI 颜色一律走 $r 资源令牌）
 │   ├── Translations.ets   -- 中英文案
 │   ├── ReadingConfig.ets  -- 阅读配置
 │   ├── NavUtil.ets        -- 导航工具
@@ -56,6 +56,13 @@ ohos/entry/src/main/ets/
 4. **Import 语句**: 必须在文件顶部
 5. **类型断言**: 使用 `as` 而非 `!`
 
+### 主题与颜色规范（深色模式）
+1. **UI 颜色一律 `$r('app.color.*')` 资源令牌**（base/dark 同名自动切换），禁止硬编码色值（阅读器黑底白字、图片遮罩等固定色除外）
+2. **品牌色用 `@StorageProp('themeColor') themeColor: string = '#2563EB'`**，绑定 `this.themeColor`；ThemeManager 的颜色 getter 已删除，勿恢复
+3. **禁止为颜色变化挂状态**：不要用 `@StorageLink('isDarkMode')`/`themeVersion` 触发重绘，资源切换无需任何逻辑
+4. 系统 API（`setWindowBackgroundColor` 等）需要具体色值 → `ThemeManager.windowBackground`（唯一合法取值口）
+5. 新增颜色必须在 `base/element/color.json` 与 `dark/element/color.json` 同时定义
+
 ### 组件规范
 1. **使用 `@Component` 装饰器**: V1 状态管理（@State/@Prop/@StorageLink 等），禁止与 V2 混用
 2. **图片加载**: 必须指定占位/错误态
@@ -67,6 +74,31 @@ ohos/entry/src/main/ets/
 3. **Preferences**: @ohos.data.preferences，见 `Settings.ets`
 4. **异步操作**: async/await + try-catch；Promise 结果必须 await 后再取属性
 5. **图片**: Image Kit（@kit.ImageKit），解码显式传 `desiredPixelFormat: RGBA_8888`
+
+## 主题与深色模式适配
+
+颜色令牌定义于 `resources/base/element/color.json`（浅色）与 `resources/dark/element/color.json`（深色），深浅切换由系统资源限定词目录自动完成，**组件内不做任何模式判断**。
+
+| 令牌 | Light | Dark | 用途 |
+|---|---|---|---|
+| `bg_page` | #F8F9FA | #111827 | 页面底层（Level 0） |
+| `bg_surface` | #FFFFFF | #1F2937 | 卡片/列表容器（Level 1） |
+| `bg_elevated` | #FFFFFF | #374151 | 浮层/更高层级（Level 2，自定义弹窗用；系统弹层自适配） |
+| `bg_fill` | #F3F4F6 | #374151 | chip/输入框/行填充 |
+| `text_primary` | #1A1A1A | #F3F4F6 | 正文 |
+| `text_secondary` | #666666 | #D1D5DB | 次要文字 |
+| `text_tertiary` | #999999 | #9CA3AF | 提示/禁用 |
+| `text_on_brand` | #FFFFFF | #FFFFFF | 彩色底（品牌色/危险色）上的前景白 |
+| `divider` | #E5E7EB | #374151 | 分割线/边框 |
+| `brand_primary` | #2563EB | #3B82F6 | 默认品牌色（仅种子值，运行时用 themeColor） |
+| `danger` | #FF3B30 | #FF453A | 错误态 |
+| `shadow` | #33000000 | 透明 | 投影（深色下按设计规范去除） |
+| `start_window_background` | #F8F9FA | #111827 | 启动页 |
+
+- **深色策略**：`ThemeManager.setDarkModePolicy('system'|'enabled'|'disabled')` → `setColorMode(NOT_SET|DARK|LIGHT)`；策略存 `AppStorage('darkModePolicy')` 供设置页刷新
+- **品牌色**：`ThemeManager.setThemeColor` 持久化 + `AppStorage('themeColor')`；组件用 `@StorageProp('themeColor')` 响应
+- **状态栏**：沉浸式下按有效深浅状态设 `statusBarContentColor`（EntryAbility.systemBarNotifier），窗口实例缓存
+- **遗漏清单**（改动颜色后走查）：分割线、图标 fontColor、投影、弹窗内容、Toast、TabBar、Loading
 
 ## 构建流程
 

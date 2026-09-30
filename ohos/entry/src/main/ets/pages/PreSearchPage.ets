@@ -1,5 +1,4 @@
 // pages/PreSearchPage.ets - 搜索入口（历史 + 热词）- NavDestination
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Settings } from '../data/preferences/Settings';
@@ -17,8 +16,8 @@ export struct PreSearchPage {
   @State hotTags: string[] = []
   @State hotLoading: boolean = false
   @State inputText: string = ''
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
     this.loadHistory();
@@ -52,21 +51,21 @@ export struct PreSearchPage {
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column({ space: 0 }) {
           NavTitleBar({ title: Translations.t('search') })
           Row({ space: 8 }) {
             SymbolGlyph($r('sys.symbol.magnifyingglass'))
               .fontSize(20)
-              .fontColor([ThemeManager.textSecondary])
+              .fontColor([$r('app.color.text_secondary')])
             TextInput({ placeholder: Translations.t('search_hint') })
               .layoutWeight(1)
               .height(36)
               .fontSize(14)
               .backgroundColor(Color.Transparent)
-              .fontColor(ThemeManager.textPrimary)
-              .placeholderColor(ThemeManager.textSecondary)
-              .caretColor(ThemeManager.primary)
+              .fontColor($r('app.color.text_primary'))
+              .placeholderColor($r('app.color.text_secondary'))
+              .caretColor(this.themeColor)
               .onChange((value: string) => { this.inputText = value; })
               .onSubmit(() => {
                 if (this.inputText.length > 0) { this.gotoSearch(this.inputText); }
@@ -75,7 +74,7 @@ export struct PreSearchPage {
           .width('100%').height(44)
           .padding({ left: 12, right: 12 })
           .margin({ left: 16, right: 16, top: 4, bottom: 16 })
-          .backgroundColor(ThemeManager.surface)
+          .backgroundColor($r('app.color.bg_fill'))
           .borderRadius(22)
 
           Scroll() {
@@ -86,11 +85,11 @@ export struct PreSearchPage {
                   Row() {
                     Text(Translations.t('search_history'))
                       .fontSize(15).fontWeight(FontWeight.Medium)
-                      .fontColor(ThemeManager.textPrimary)
+                      .fontColor($r('app.color.text_primary'))
                       .layoutWeight(1)
                     SymbolGlyph($r('sys.symbol.trash'))
                       .fontSize(18)
-                      .fontColor([ThemeManager.textTertiary])
+                      .fontColor([$r('app.color.text_tertiary')])
                       .onClick(() => { this.clearHistory(); })
                   }
                   .width('100%')
@@ -99,13 +98,13 @@ export struct PreSearchPage {
                     ForEach(this.historyItems, (kw: string) => {
                       Text(kw)
                         .fontSize(13)
-                        .fontColor(ThemeManager.textPrimary)
+                        .fontColor($r('app.color.text_primary'))
                         .padding({ left: 14, right: 14, top: 8, bottom: 8 })
-                        .backgroundColor(ThemeManager.surfaceSecondary)
+                        .backgroundColor($r('app.color.bg_surface'))
                         .borderRadius(16)
                         .margin({ right: 8, bottom: 8 })
                         .onClick(() => { this.gotoSearch(kw); })
-                        .id('history' + kw + this.themeVersion)
+                        .id('searchHistory' + kw)
                     }, (kw: string) => kw)
                   }
                   .width('100%')
@@ -117,7 +116,7 @@ export struct PreSearchPage {
                 Row() {
                   Text(Translations.t('hot_search'))
                     .fontSize(15).fontWeight(FontWeight.Medium)
-                    .fontColor(ThemeManager.textPrimary)
+                    .fontColor($r('app.color.text_primary'))
                     .layoutWeight(1)
                   if (this.hotLoading) {
                     LoadingProgress().width(20).height(20)
@@ -130,20 +129,20 @@ export struct PreSearchPage {
                     ForEach(this.hotTags.slice(0, 20), (tag: string) => {
                       Text(tag)
                         .fontSize(13)
-                        .fontColor(ThemeManager.primary)
+                        .fontColor(this.themeColor)
                         .padding({ left: 14, right: 14, top: 8, bottom: 8 })
-                        .backgroundColor(ThemeManager.surfaceSecondary)
+                        .backgroundColor($r('app.color.bg_surface'))
                         .borderRadius(16)
                         .margin({ right: 8, bottom: 8 })
                         .onClick(() => { this.gotoSearch(tag); })
-                        .id('tag' + tag + this.themeVersion)
+                        .id('preSearchTag' + tag)
                     }, (tag: string) => tag)
                   }
                   .width('100%')
                 } else if (!this.hotLoading) {
                   Text(Translations.t('no_hot_tags'))
                     .fontSize(13)
-                    .fontColor(ThemeManager.textSecondary)
+                    .fontColor($r('app.color.text_secondary'))
                 }
               }
             }
@@ -154,10 +153,10 @@ export struct PreSearchPage {
           .align(Alignment.Top)
         }
         .width('100%').height('100%')
-        .backgroundColor(ThemeManager.background)
-      }, (v: number) => `theme-${v}`)
+        .backgroundColor($r('app.color.bg_page'))
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

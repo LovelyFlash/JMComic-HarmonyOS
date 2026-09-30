@@ -1,5 +1,4 @@
 // pages/settings/ReadingSettings.ets - 阅读设置 - NavDestination
-import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
 import { ReadingConfig } from '../../common/ReadingConfig';
 import { SettingSwitch } from '../../components/SettingSwitch';
@@ -14,8 +13,8 @@ export function ReadingSettingsBuilder(name: string, param: object) {
 
 @Component
 export struct ReadingSettings {
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  
   @State readMode: number = 2
   @State tapTurnPage: boolean = true
   @State volumeKeyTurnPage: boolean = true
@@ -96,7 +95,7 @@ export struct ReadingSettings {
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column() {
           NavTitleBar({ title: Translations.t('reading_settings') })
           Scroll() {
@@ -179,10 +178,10 @@ export struct ReadingSettings {
           .edgeEffect(EdgeEffect.Spring)
         }
         .width('100%').height('100%')
-      }, (v: number) => `theme-${v}`)
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.pageBackground : '')
+    .backgroundColor($r('app.color.bg_page'))
     .onBackPressed(() => {
       this.save();
       return false;

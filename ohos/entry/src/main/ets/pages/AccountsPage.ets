@@ -1,6 +1,5 @@
 // pages/AccountsPage.ets - 禁漫账号页（登录/签到/登出）- NavDestination
 import { promptAction } from '@kit.ArkUI';
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { JmApi } from '../data/api/JmApi';
 import { NavTitleBar } from '../components/NavTitleBar';
@@ -19,8 +18,8 @@ export struct AccountsPage {
   @State userName: string = ''
   @State userId: string = ''
   @State checkingIn: boolean = false
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
 
   aboutToAppear(): void {
@@ -101,27 +100,27 @@ export struct AccountsPage {
         Stack() {
           SymbolGlyph($r('sys.symbol.person'))
             .fontSize(36)
-            .fontColor(['#FFFFFF'])
+            .fontColor([$r('app.color.text_on_brand')])
         }
         .width(64).height(64)
         .borderRadius(32)
-        .backgroundColor(ThemeManager.primary)
+        .backgroundColor(this.themeColor)
 
         Column({ space: 6 }) {
           Text(this.userName.length > 0 ? this.userName : Translations.t('jm_name'))
             .fontSize(19).fontWeight(FontWeight.Bold)
-            .fontColor(ThemeManager.textPrimary)
+            .fontColor($r('app.color.text_primary'))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .constraintSize({ maxWidth: '80%' })
           if (this.userId.length > 0) {
             Text(`UID: ${this.userId}`)
-              .fontSize(13).fontColor(ThemeManager.textSecondary)
+              .fontSize(13).fontColor($r('app.color.text_secondary'))
           }
           Text(Translations.t('jm_name'))
-            .fontSize(11).fontColor(ThemeManager.primary)
+            .fontSize(11).fontColor(this.themeColor)
             .padding({ left: 8, right: 8, top: 2, bottom: 2 })
-            .backgroundColor(ThemeManager.surface)
+            .backgroundColor($r('app.color.bg_fill'))
             .borderRadius(8)
         }
         .layoutWeight(1)
@@ -133,14 +132,14 @@ export struct AccountsPage {
         Row({ space: 8 }) {
           LoadingProgress().width(20).height(20)
           Text(Translations.t('check_in'))
-            .fontSize(14).fontColor(ThemeManager.textSecondary)
+            .fontSize(14).fontColor($r('app.color.text_secondary'))
         }
       } else {
         Button(Translations.t('check_in'))
           .width('100%').height(44)
           .fontSize(15)
-          .backgroundColor(ThemeManager.primary)
-          .fontColor('#FFFFFF')
+          .backgroundColor(this.themeColor)
+          .fontColor($r('app.color.text_on_brand'))
           .onClick(() => {
             this.doCheckIn();
           })
@@ -149,17 +148,17 @@ export struct AccountsPage {
       Button(Translations.t('logout'))
         .width('100%').height(44)
         .fontSize(15)
-        .backgroundColor(ThemeManager.danger)
-        .fontColor('#FFFFFF')
+        .backgroundColor($r('app.color.danger'))
+        .fontColor($r('app.color.text_on_brand'))
         .onClick(() => {
           this.doLogout();
         })
     }
     .width('100%')
     .padding(20)
-    .backgroundColor(ThemeManager.surface)
+    .backgroundColor($r('app.color.bg_fill'))
     .borderRadius(16)
-    .id('profileCard' + this.themeVersion)
+    .id('profileCard')
   }
 
   @Builder
@@ -167,16 +166,16 @@ export struct AccountsPage {
     Column({ space: 16 }) {
       Text(Translations.t('jm_name'))
         .fontSize(19).fontWeight(FontWeight.Bold)
-        .fontColor(ThemeManager.textPrimary)
+        .fontColor($r('app.color.text_primary'))
         .width('100%')
 
       TextInput({ placeholder: Translations.t('username') })
         .width('100%').height(46)
         .fontSize(15)
-        .fontColor(ThemeManager.textPrimary)
-        .placeholderColor(ThemeManager.textSecondary)
-        .caretColor(ThemeManager.primary)
-        .backgroundColor(ThemeManager.surface)
+        .fontColor($r('app.color.text_primary'))
+        .placeholderColor($r('app.color.text_secondary'))
+        .caretColor(this.themeColor)
+        .backgroundColor($r('app.color.bg_fill'))
         .borderRadius(12)
         .onChange((v: string) => {
           this.account = v;
@@ -185,11 +184,11 @@ export struct AccountsPage {
       TextInput({ placeholder: Translations.t('password') })
         .width('100%').height(46)
         .fontSize(15)
-        .fontColor(ThemeManager.textPrimary)
-        .placeholderColor(ThemeManager.textSecondary)
-        .caretColor(ThemeManager.primary)
+        .fontColor($r('app.color.text_primary'))
+        .placeholderColor($r('app.color.text_secondary'))
+        .caretColor(this.themeColor)
         .type(InputType.Password)
-        .backgroundColor(ThemeManager.surface)
+        .backgroundColor($r('app.color.bg_fill'))
         .borderRadius(12)
         .onChange((v: string) => {
           this.password = v;
@@ -201,8 +200,8 @@ export struct AccountsPage {
         Button(Translations.t('login'))
           .width('100%').height(46)
           .fontSize(16)
-          .backgroundColor(ThemeManager.primary)
-          .fontColor('#FFFFFF')
+          .backgroundColor(this.themeColor)
+          .fontColor($r('app.color.text_on_brand'))
           .borderRadius(23)
           .onClick(() => {
             this.doLogin();
@@ -211,14 +210,14 @@ export struct AccountsPage {
     }
     .width('100%')
     .padding(20)
-    .backgroundColor(ThemeManager.surface)
+    .backgroundColor($r('app.color.bg_fill'))
     .borderRadius(16)
-    .id('loginForm' + this.themeVersion)
+    .id('loginForm')
   }
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column() {
           NavTitleBar({ title: Translations.t('account') })
           Scroll() {
@@ -237,9 +236,9 @@ export struct AccountsPage {
           .edgeEffect(EdgeEffect.Spring)
         }
         .width('100%').height('100%')
-      }, (v: number) => `theme-${v}`)
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

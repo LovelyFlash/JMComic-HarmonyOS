@@ -1,6 +1,5 @@
 // pages/FavoritesContent.ets - 收藏内容组件（本地收藏 | 禁漫云收藏）
 import { promptAction } from '@kit.ArkUI';
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Database, FavoriteItem } from '../data/database/Database';
@@ -27,8 +26,8 @@ export struct FavoritesContent {
   @State showNewFolderSheet: boolean = false
   @State newFolderName: string = ''
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
     this.loadData();
@@ -142,7 +141,7 @@ export struct FavoritesContent {
       },
       secondaryButton: {
         value: Translations.t('confirm'),
-        fontColor: ThemeManager.danger,
+        fontColor: $r('app.color.danger'),
         action: () => {
           this.deleteFolder(folder);
         }
@@ -187,7 +186,7 @@ export struct FavoritesContent {
       },
       secondaryButton: {
         value: Translations.t('confirm'),
-        fontColor: ThemeManager.danger,
+        fontColor: $r('app.color.danger'),
         action: () => {
           this.confirmDelete(item);
         }
@@ -207,16 +206,16 @@ export struct FavoritesContent {
       Text(Translations.t('favorites_local'))
         .fontSize(14)
         .fontWeight(this.mode === 0 ? FontWeight.Bold : FontWeight.Normal)
-        .fontColor(this.mode === 0 ? '#FFFFFF' : ThemeManager.textSecondary)
-        .backgroundColor(this.mode === 0 ? ThemeManager.primary : Color.Transparent)
+        .fontColor(this.mode === 0 ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
+        .backgroundColor(this.mode === 0 ? this.themeColor : Color.Transparent)
         .padding({ left: 16, right: 16, top: 8, bottom: 8 })
         .borderRadius({ topLeft: 16, bottomLeft: 16 })
         .onClick(() => { this.switchMode(0); })
       Text(Translations.t('favorites_cloud'))
         .fontSize(14)
         .fontWeight(this.mode === 1 ? FontWeight.Bold : FontWeight.Normal)
-        .fontColor(this.mode === 1 ? '#FFFFFF' : ThemeManager.textSecondary)
-        .backgroundColor(this.mode === 1 ? ThemeManager.primary : Color.Transparent)
+        .fontColor(this.mode === 1 ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
+        .backgroundColor(this.mode === 1 ? this.themeColor : Color.Transparent)
         .padding({ left: 16, right: 16, top: 8, bottom: 8 })
         .borderRadius({ topRight: 16, bottomRight: 16 })
         .onClick(() => { this.switchMode(1); })
@@ -224,7 +223,7 @@ export struct FavoritesContent {
     .width('100%')
     .padding({ left: 16, right: 16, top: 16 })
     .justifyContent(FlexAlign.Start)
-    .id('modeTabs' + this.themeVersion)
+    .id('modeTabs')
   }
 
   @Builder
@@ -239,15 +238,15 @@ export struct FavoritesContent {
       Column({ space: 12 }) {
         SymbolGlyph($r('sys.symbol.heart'))
           .fontSize(56)
-          .fontColor([ThemeManager.textTertiary])
+          .fontColor([$r('app.color.text_tertiary')])
         Text(Translations.t('no_data'))
           .fontSize(14)
-          .fontColor(ThemeManager.textSecondary)
+          .fontColor($r('app.color.text_secondary'))
       }
       .layoutWeight(1)
       .justifyContent(FlexAlign.Center)
       .alignItems(HorizontalAlign.Center)
-      .id('localBody' + this.themeVersion)
+      .id('localBodyEmpty')
     } else {
       List({ space: 1 }) {
         ForEach(this.items, (item: FavoriteItem) => {
@@ -257,25 +256,25 @@ export struct FavoritesContent {
                 .width(72).height(100)
                 .objectFit(ImageFit.Cover)
                 .borderRadius(8)
-                .backgroundColor(ThemeManager.surface)
+                .backgroundColor($r('app.color.bg_fill'))
               Column({ space: 6 }) {
                 Text(item.title)
                   .fontSize(15)
                   .fontWeight(FontWeight.Medium)
-                  .fontColor(ThemeManager.textPrimary)
+                  .fontColor($r('app.color.text_primary'))
                   .maxLines(2)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                   .width('100%')
                 Text(item.source)
                   .fontSize(12)
-                  .fontColor(ThemeManager.primary)
+                  .fontColor(this.themeColor)
               }
               .layoutWeight(1)
               .alignItems(HorizontalAlign.Start)
 
               SymbolGlyph($r('sys.symbol.xmark'))
                 .fontSize(20)
-                .fontColor([ThemeManager.textTertiary])
+                .fontColor([$r('app.color.text_tertiary')])
                 .onClick(() => { this.showDeleteConfirm(item); })
             }
             .width('100%')
@@ -287,12 +286,12 @@ export struct FavoritesContent {
               NavUtil.push('comicDetail', param);
             })
           }
-          .id('fav' + item.id + this.themeVersion)
+          .id('fav' + item.id)
         }, (item: FavoriteItem) => item.id)
       }
       .layoutWeight(1)
-      .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
-      .id('localBody' + this.themeVersion)
+      .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
+      .id('localBodyList')
     }
   }
 
@@ -304,31 +303,31 @@ export struct FavoritesContent {
           .fontSize(13)
           .padding({ left: 14, right: 14, top: 7, bottom: 7 })
           .borderRadius(16)
-          .fontColor(this.currentFolder === '0' ? '#FFFFFF' : ThemeManager.textSecondary)
-          .backgroundColor(this.currentFolder === '0' ? ThemeManager.primary : ThemeManager.surface)
+          .fontColor(this.currentFolder === '0' ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
+          .backgroundColor(this.currentFolder === '0' ? this.themeColor : $r('app.color.bg_fill'))
           .onClick(() => { this.selectFolder('0'); })
         ForEach(this.folders, (folder: JmFolder) => {
           Text(folder.name)
             .fontSize(13)
             .padding({ left: 14, right: 14, top: 7, bottom: 7 })
             .borderRadius(16)
-            .fontColor(this.currentFolder === folder.id ? '#FFFFFF' : ThemeManager.textSecondary)
-            .backgroundColor(this.currentFolder === folder.id ? ThemeManager.primary : ThemeManager.surface)
+            .fontColor(this.currentFolder === folder.id ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
+            .backgroundColor(this.currentFolder === folder.id ? this.themeColor : $r('app.color.bg_fill'))
             .onClick(() => { this.selectFolder(folder.id); })
             .gesture(LongPressGesture().onAction(() => { this.confirmDeleteFolder(folder); }))
-            .id('folder' + folder.id + this.themeVersion)
+            .id('folder' + folder.id)
         }, (folder: JmFolder) => folder.id)
         Row({ space: 4 }) {
           SymbolGlyph($r('sys.symbol.folder'))
             .fontSize(14)
-            .fontColor([ThemeManager.primary])
+            .fontColor([this.themeColor])
           Text(Translations.t('new_folder'))
             .fontSize(13)
-            .fontColor(ThemeManager.primary)
+            .fontColor(this.themeColor)
         }
         .padding({ left: 14, right: 14, top: 7, bottom: 7 })
         .borderRadius(16)
-        .backgroundColor(ThemeManager.surface)
+        .backgroundColor($r('app.color.bg_fill'))
         .onClick(() => {
           this.newFolderName = '';
           this.showNewFolderSheet = true;
@@ -339,7 +338,7 @@ export struct FavoritesContent {
     .scrollable(ScrollDirection.Horizontal)
     .scrollBar(BarState.Off)
     .width('100%')
-    .id('folderChips' + this.themeVersion)
+    .id('folderChips')
   }
 
   @Builder
@@ -352,16 +351,16 @@ export struct FavoritesContent {
               .width(80).height(110)
               .objectFit(ImageFit.Cover)
               .borderRadius(6)
-              .backgroundColor(ThemeManager.surface)
+              .backgroundColor($r('app.color.bg_fill'))
             Column({ space: 6 }) {
               Text(comic.title)
                 .fontSize(15).fontWeight(FontWeight.Medium)
-                .fontColor(ThemeManager.textPrimary)
+                .fontColor($r('app.color.text_primary'))
                 .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                 .width('100%')
               if (comic.author.length > 0) {
                 Text(comic.author)
-                  .fontSize(12).fontColor(ThemeManager.textSecondary)
+                  .fontSize(12).fontColor($r('app.color.text_secondary'))
                   .maxLines(1)
               }
             }
@@ -375,7 +374,7 @@ export struct FavoritesContent {
             NavUtil.push('comicDetail', param);
           })
         }
-        .id('comic' + comic.id + this.themeVersion)
+        .id('favComic' + comic.id)
       }, (comic: Comic) => comic.id)
 
       ListItem() {
@@ -387,7 +386,7 @@ export struct FavoritesContent {
         } else if (this.currentPage < this.maxPage) {
           Text(Translations.t('load_more'))
             .fontSize(13)
-            .fontColor(ThemeManager.primary)
+            .fontColor(this.themeColor)
             .width('100%').height(48)
             .textAlign(TextAlign.Center)
             .onClick(() => { this.loadCloudMore(); })
@@ -395,10 +394,10 @@ export struct FavoritesContent {
       }
     }
     .layoutWeight(1)
-    .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+    .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
     .edgeEffect(EdgeEffect.Spring)
     .onReachEnd(() => { this.loadCloudMore(); })
-    .id('cloudComicRows' + this.themeVersion)
+    .id('cloudComicRows')
   }
 
   @Builder
@@ -407,20 +406,20 @@ export struct FavoritesContent {
       Column({ space: 16 }) {
         SymbolGlyph($r('sys.symbol.person'))
           .fontSize(56)
-          .fontColor([ThemeManager.textTertiary])
+          .fontColor([$r('app.color.text_tertiary')])
         Text(Translations.t('please_login'))
           .fontSize(14)
-          .fontColor(ThemeManager.textSecondary)
+          .fontColor($r('app.color.text_secondary'))
         Button(Translations.t('login'))
           .fontSize(14)
-          .backgroundColor(ThemeManager.primary)
-          .fontColor('#FFFFFF')
+          .backgroundColor(this.themeColor)
+          .fontColor($r('app.color.text_on_brand'))
           .onClick(() => { NavUtil.push('accounts'); })
       }
       .layoutWeight(1)
       .justifyContent(FlexAlign.Center)
       .alignItems(HorizontalAlign.Center)
-      .id('cloudBody' + this.themeVersion)
+      .id('cloudBodyLogin')
     } else {
       this.folderChips()
       if (this.cloudLoading) {
@@ -430,22 +429,22 @@ export struct FavoritesContent {
         .layoutWeight(1).justifyContent(FlexAlign.Center)
       } else if (this.cloudError.length > 0) {
         Column({ space: 12 }) {
-          Text(this.cloudError).fontSize(14).fontColor(ThemeManager.danger)
+          Text(this.cloudError).fontSize(14).fontColor($r('app.color.danger'))
           Button(Translations.t('retry'))
             .fontSize(14)
-            .backgroundColor(ThemeManager.primary)
-            .fontColor('#FFFFFF')
+            .backgroundColor(this.themeColor)
+            .fontColor($r('app.color.text_on_brand'))
             .onClick(() => { this.loadCloudPage(1, true); })
         }
         .layoutWeight(1).justifyContent(FlexAlign.Center)
-        .id('cloudBody' + this.themeVersion)
+        .id('cloudBodyError')
       } else if (this.cloudDataSource.totalCount() === 0) {
         Column({ space: 8 }) {
           Text(Translations.t('no_data'))
-            .fontSize(14).fontColor(ThemeManager.textSecondary)
+            .fontSize(14).fontColor($r('app.color.text_secondary'))
         }
         .layoutWeight(1).justifyContent(FlexAlign.Center)
-        .id('cloudBody' + this.themeVersion)
+        .id('cloudBodyEmpty')
       } else {
         this.cloudComicRows()
       }
@@ -454,21 +453,21 @@ export struct FavoritesContent {
 
   @Builder
   newFolderSheetContent() {
-    ForEach([this.themeVersion], (v: number) => {
+    
       Column({ space: 16 }) {
         Text(Translations.t('new_folder'))
           .fontSize(17)
           .fontWeight(FontWeight.Bold)
-          .fontColor(ThemeManager.textPrimary)
+          .fontColor($r('app.color.text_primary'))
           .width('100%')
         TextInput({ placeholder: Translations.t('folder_name_hint'), text: this.newFolderName })
           .width('100%')
           .height(44)
           .fontSize(14)
-          .fontColor(ThemeManager.textPrimary)
-          .placeholderColor(ThemeManager.textSecondary)
-          .caretColor(ThemeManager.primary)
-          .backgroundColor(ThemeManager.surface)
+          .fontColor($r('app.color.text_primary'))
+          .placeholderColor($r('app.color.text_secondary'))
+          .caretColor(this.themeColor)
+          .backgroundColor($r('app.color.bg_fill'))
           .borderRadius(12)
           .onChange((v: string) => { this.newFolderName = v; })
         Row({ space: 12 }) {
@@ -476,27 +475,27 @@ export struct FavoritesContent {
             .layoutWeight(1)
             .height(42)
             .fontSize(14)
-            .backgroundColor(ThemeManager.surface)
-            .fontColor(ThemeManager.textPrimary)
+            .backgroundColor($r('app.color.bg_fill'))
+            .fontColor($r('app.color.text_primary'))
             .onClick(() => { this.showNewFolderSheet = false; })
           Button(Translations.t('confirm'))
             .layoutWeight(1)
             .height(42)
             .fontSize(14)
-            .backgroundColor(ThemeManager.primary)
-            .fontColor('#FFFFFF')
+            .backgroundColor(this.themeColor)
+            .fontColor($r('app.color.text_on_brand'))
             .onClick(() => { this.createFolder(); })
         }
         .width('100%')
       }
       .width('100%')
       .padding(20)
-      .id('newFolderSheetContent' + this.themeVersion)
-    }, (v: number) => `theme-${v}`)
+      .id('newFolderSheetContent')
+    
   }
 
   build() {
-    ForEach([this.themeVersion], (v: number) => {
+    
       Column({ space: 0 }) {
         this.modeTabs()
 
@@ -509,13 +508,13 @@ export struct FavoritesContent {
       .width('100%')
       .height('100%')
       .padding({ bottom: 76 })
-      .backgroundColor(ThemeManager.background)
+      .backgroundColor($r('app.color.bg_page'))
       .bindSheet($$this.showNewFolderSheet, this.newFolderSheetContent(), {
         height: SheetSize.MEDIUM,
         dragBar: true,
         onDisappear: () => {
         }
       })
-    }, (v: number) => `theme-${v}`)
+    
   }
 }

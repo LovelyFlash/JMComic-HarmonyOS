@@ -1,6 +1,5 @@
 // pages/FollowPage.ets - 追更页面 - NavDestination
 import { promptAction } from '@kit.ArkUI';
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Database, FollowItem } from '../data/database/Database';
@@ -15,8 +14,8 @@ export function FollowPageBuilder(name: string, param: object) {
 export struct FollowPage {
   @State follows: FollowItem[] = []
   @State loading: boolean = true
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
     this.loadData();
@@ -39,7 +38,7 @@ export struct FollowPage {
       },
       secondaryButton: {
         value: Translations.t('confirm'),
-        fontColor: ThemeManager.danger,
+        fontColor: $r('app.color.danger'),
         action: () => {
           Database.removeFollow(item.id, item.source).then(() => {
             promptAction.showToast({ message: Translations.t('follow_removed'), duration: 1500 });
@@ -52,7 +51,7 @@ export struct FollowPage {
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column({ space: 0 }) {
           NavTitleBar({ title: Translations.t('follow') })
           if (this.loading) {
@@ -65,11 +64,11 @@ export struct FollowPage {
             Column({ space: 12 }) {
               SymbolGlyph($r('sys.symbol.clock'))
                 .fontSize(44)
-                .fontColor([ThemeManager.textTertiary])
+                .fontColor([$r('app.color.text_tertiary')])
               Text(Translations.t('no_follows'))
-                .fontSize(14).fontColor(ThemeManager.textSecondary)
+                .fontSize(14).fontColor($r('app.color.text_secondary'))
               Text(Translations.t('follow_hint'))
-                .fontSize(12).fontColor(ThemeManager.textTertiary)
+                .fontSize(12).fontColor($r('app.color.text_tertiary'))
             }
             .width('100%').layoutWeight(1)
             .justifyContent(FlexAlign.Center)
@@ -82,30 +81,30 @@ export struct FollowPage {
                     Image(item.coverUrl)
                       .width(64).height(88).objectFit(ImageFit.Cover)
                       .borderRadius(6)
-                      .backgroundColor(ThemeManager.surface)
+                      .backgroundColor($r('app.color.bg_fill'))
                     Column({ space: 6 }) {
                       Row({ space: 6 }) {
                         Text(item.title)
                           .fontSize(15).fontWeight(FontWeight.Medium)
-                          .fontColor(ThemeManager.textPrimary)
+                          .fontColor($r('app.color.text_primary'))
                           .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                           .layoutWeight(1)
                         if (item.hasUpdate) {
                           Text(Translations.t('has_update'))
                             .fontSize(11)
-                            .fontColor('#FFFFFF')
-                            .backgroundColor(ThemeManager.danger)
+                            .fontColor($r('app.color.text_on_brand'))
+                            .backgroundColor($r('app.color.danger'))
                             .borderRadius(8)
                             .padding({ left: 6, right: 6, top: 2, bottom: 2 })
                         }
                       }
                       Text(item.source)
-                        .fontSize(12).fontColor(ThemeManager.primary)
+                        .fontSize(12).fontColor(this.themeColor)
                     }
                     .layoutWeight(1).alignItems(HorizontalAlign.Start)
                     SymbolGlyph($r('sys.symbol.xmark'))
                       .fontSize(18)
-                      .fontColor([ThemeManager.textTertiary])
+                      .fontColor([$r('app.color.text_tertiary')])
                       .onClick(() => {
                         this.removeFollow(item);
                       })
@@ -118,17 +117,17 @@ export struct FollowPage {
                     NavUtil.push('comicDetail', param);
                   })
                 }
-                .id('follow' + item.id + item.source + this.themeVersion)
+                .id('follow' + item.id + item.source)
               }, (item: FollowItem) => item.id + item.source)
             }
             .width('100%').layoutWeight(1)
-            .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+            .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
           }
         }
         .width('100%').height('100%')
-      }, (v: number) => `theme-${v}`)
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

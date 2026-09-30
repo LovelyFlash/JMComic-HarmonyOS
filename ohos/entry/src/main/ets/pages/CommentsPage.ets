@@ -1,6 +1,5 @@
 // pages/CommentsPage.ets - 评论页（禁漫网络评论）- NavDestination
 import { promptAction } from '@kit.ArkUI';
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { JmApi, JmComment } from '../data/api/JmApi';
 import { NavTitleBar } from '../components/NavTitleBar';
@@ -23,8 +22,8 @@ export struct CommentsPage {
   @State currentPage: number = 1
   @State maxPage: number = 1
   @State sending: boolean = false
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
     if (this.pageParam !== undefined && this.pageParam !== null) {
@@ -108,20 +107,20 @@ export struct CommentsPage {
         .width(size).height(size)
         .objectFit(ImageFit.Cover)
         .borderRadius(size / 2)
-        .backgroundColor(ThemeManager.surface)
-        .id('avatarOrFallback' + this.themeVersion)
+        .backgroundColor($r('app.color.bg_fill'))
+        .id('avatarImage')
     } else {
       Column() {
         SymbolGlyph($r('sys.symbol.person'))
           .fontSize(size * 0.6)
-          .fontColor([ThemeManager.primary])
+          .fontColor([this.themeColor])
       }
       .width(size).height(size)
       .justifyContent(FlexAlign.Center)
       .alignItems(HorizontalAlign.Center)
-      .backgroundColor(ThemeManager.surface)
+      .backgroundColor($r('app.color.bg_fill'))
       .borderRadius(size / 2)
-      .id('avatarOrFallback' + this.themeVersion)
+      .id('avatarFallback')
     }
   }
 
@@ -133,22 +132,22 @@ export struct CommentsPage {
         Row({ space: 8 }) {
           Text(reply.username)
             .fontSize(12).fontWeight(FontWeight.Medium)
-            .fontColor(ThemeManager.textPrimary)
+            .fontColor($r('app.color.text_primary'))
           Text(reply.time)
-            .fontSize(10).fontColor(ThemeManager.textTertiary)
+            .fontSize(10).fontColor($r('app.color.text_tertiary'))
         }
         .width('100%')
         Text(reply.content)
-          .fontSize(13).fontColor(ThemeManager.textPrimary)
+          .fontSize(13).fontColor($r('app.color.text_primary'))
           .width('100%')
       }
       .layoutWeight(1).alignItems(HorizontalAlign.Start)
     }
     .width('100%')
     .padding({ top: 8, bottom: 8, left: 8 })
-    .backgroundColor(ThemeManager.surfaceSecondary)
+    .backgroundColor($r('app.color.bg_surface'))
     .borderRadius(8)
-    .id('replyItem' + reply.id + this.themeVersion)
+    .id('replyItem' + reply.id)
   }
 
   @Builder
@@ -160,14 +159,14 @@ export struct CommentsPage {
           Row({ space: 8 }) {
             Text(comment.username)
               .fontSize(14).fontWeight(FontWeight.Medium)
-              .fontColor(ThemeManager.textPrimary)
+              .fontColor($r('app.color.text_primary'))
               .layoutWeight(1)
             Text(comment.time)
-              .fontSize(11).fontColor(ThemeManager.textTertiary)
+              .fontSize(11).fontColor($r('app.color.text_tertiary'))
           }
           .width('100%')
           Text(comment.content)
-            .fontSize(14).fontColor(ThemeManager.textPrimary)
+            .fontSize(14).fontColor($r('app.color.text_primary'))
             .width('100%')
           if (comment.replies.length > 0) {
             Column({ space: 6 }) {
@@ -185,12 +184,12 @@ export struct CommentsPage {
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-    .id('commentItem' + comment.id + this.themeVersion)
+    .id('commentItem' + comment.id)
   }
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column({ space: 0 }) {
           NavTitleBar({ title: this.title.length > 0 ? this.title : Translations.t('comments') })
           if (this.loading) {
@@ -200,11 +199,11 @@ export struct CommentsPage {
             .layoutWeight(1).justifyContent(FlexAlign.Center)
           } else if (this.error.length > 0) {
             Column({ space: 12 }) {
-              Text(this.error).fontSize(14).fontColor(ThemeManager.danger)
+              Text(this.error).fontSize(14).fontColor($r('app.color.danger'))
               Button(Translations.t('retry'))
                 .fontSize(14)
-                .backgroundColor(ThemeManager.primary)
-                .fontColor('#FFFFFF')
+                .backgroundColor(this.themeColor)
+                .fontColor($r('app.color.text_on_brand'))
                 .onClick(() => { this.loadPage(1, true); })
             }
             .layoutWeight(1).justifyContent(FlexAlign.Center)
@@ -212,9 +211,9 @@ export struct CommentsPage {
             Column({ space: 12 }) {
               SymbolGlyph($r('sys.symbol.message'))
                 .fontSize(44)
-                .fontColor([ThemeManager.textTertiary])
+                .fontColor([$r('app.color.text_tertiary')])
               Text(Translations.t('comment_empty'))
-                .fontSize(14).fontColor(ThemeManager.textSecondary)
+                .fontSize(14).fontColor($r('app.color.text_secondary'))
             }
             .layoutWeight(1).justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
           } else {
@@ -234,7 +233,7 @@ export struct CommentsPage {
                 } else if (this.currentPage < this.maxPage) {
                   Text(Translations.t('load_more'))
                     .fontSize(13)
-                    .fontColor(ThemeManager.primary)
+                    .fontColor(this.themeColor)
                     .width('100%').height(48)
                     .textAlign(TextAlign.Center)
                     .onClick(() => { this.loadMore(); })
@@ -242,7 +241,7 @@ export struct CommentsPage {
               }
             }
             .layoutWeight(1)
-            .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+            .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
             .edgeEffect(EdgeEffect.Spring)
             .onReachEnd(() => { this.loadMore(); })
           }
@@ -251,30 +250,30 @@ export struct CommentsPage {
             TextInput({ placeholder: Translations.t('comment_placeholder'), text: this.inputText })
               .layoutWeight(1).height(40)
               .fontSize(14)
-              .fontColor(ThemeManager.textPrimary)
-              .placeholderColor(ThemeManager.textSecondary)
-              .caretColor(ThemeManager.primary)
-              .backgroundColor(ThemeManager.surface)
+              .fontColor($r('app.color.text_primary'))
+              .placeholderColor($r('app.color.text_secondary'))
+              .caretColor(this.themeColor)
+              .backgroundColor($r('app.color.bg_fill'))
               .borderRadius(20)
               .onChange((v: string) => {
                 this.inputText = v;
               })
             Button(this.sending ? '...' : Translations.t('send'))
               .height(40).fontSize(14)
-              .backgroundColor(ThemeManager.primary)
-              .fontColor('#FFFFFF')
+              .backgroundColor(this.themeColor)
+              .fontColor($r('app.color.text_on_brand'))
               .onClick(() => {
                 this.sendComment();
               })
           }
           .width('100%').padding(12)
-          .backgroundColor(ThemeManager.background)
+          .backgroundColor($r('app.color.bg_page'))
         }
         .width('100%').height('100%')
-        .backgroundColor(ThemeManager.background)
-      }, (v: number) => `theme-${v}`)
+        .backgroundColor($r('app.color.bg_page'))
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

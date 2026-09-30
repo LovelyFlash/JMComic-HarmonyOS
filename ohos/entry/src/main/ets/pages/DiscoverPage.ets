@@ -1,5 +1,4 @@
 // pages/DiscoverPage.ets - 发现页（禁漫主页分区 + 最新 双模式）
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Comic } from '../data/model/Comic';
@@ -23,8 +22,8 @@ export struct DiscoverPage {
   @State error: string = ''
   @State page: number = 1
   @State hasMore: boolean = true
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
   private controller: HdsTabsController = new HdsTabsController();
 
   aboutToAppear(): void {
@@ -127,11 +126,11 @@ export struct DiscoverPage {
         Text(section.title)
           .fontSize(16)
           .fontWeight(FontWeight.Bold)
-          .fontColor(ThemeManager.textPrimary)
+          .fontColor($r('app.color.text_primary'))
           .layoutWeight(1)
         Text(Translations.t('view_more'))
           .fontSize(13)
-          .fontColor(ThemeManager.primary)
+          .fontColor(this.themeColor)
           .onClick(() => {
             const param: Record<string, Object> = { 'id': section.id, 'title': section.title };
             NavUtil.push('jmPromote', param);
@@ -148,14 +147,14 @@ export struct DiscoverPage {
                 .onClick(() => { this.gotoDetail(comic); })
               Text(comic.title)
                 .fontSize(12)
-                .fontColor(ThemeManager.textPrimary)
+                .fontColor($r('app.color.text_primary'))
                 .maxLines(2)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
                 .width(96)
                 .textAlign(TextAlign.Start)
             }
             .alignItems(HorizontalAlign.Start)
-            .id('sectionItem' + comic.id + this.themeVersion)
+            .id('sectionItem' + comic.id)
           }, (comic: Comic) => comic.id)
         }
       }
@@ -167,7 +166,7 @@ export struct DiscoverPage {
     .width('100%')
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .padding({ left: 16, right: 16, top: 6, bottom: 6 })
-    .id('section' + section.id + this.themeVersion)
+    .id('discoverSection' + section.id)
   }
 
   @Builder
@@ -203,12 +202,12 @@ export struct DiscoverPage {
       .layoutWeight(1).justifyContent(FlexAlign.Center)
     } else if (this.homeError.length > 0) {
       Column({ space: 12 }) {
-        Text(this.homeError).fontSize(14).fontColor(ThemeManager.danger)
-        Button(Translations.t('retry')).fontSize(14).backgroundColor(ThemeManager.primary).fontColor('#FFFFFF')
+        Text(this.homeError).fontSize(14).fontColor($r('app.color.danger'))
+        Button(Translations.t('retry')).fontSize(14).backgroundColor(this.themeColor).fontColor($r('app.color.text_on_brand'))
           .onClick(() => { this.loadHome(); })
       }
       .layoutWeight(1).justifyContent(FlexAlign.Center)
-      .id('homeError' + this.themeVersion)
+      .id('homeError')
     } else {
       this.homeBody()
     }
@@ -225,13 +224,13 @@ export struct DiscoverPage {
               Column({ space: 6 }) {
                 Text(comic.title)
                   .fontSize(15).fontWeight(FontWeight.Medium)
-                  .fontColor(ThemeManager.textPrimary)
+                  .fontColor($r('app.color.text_primary'))
                   .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                   .width('100%')
                 if (comic.author.length > 0) {
                   Text(comic.author)
                     .fontSize(12)
-                    .fontColor(ThemeManager.textSecondary)
+                    .fontColor($r('app.color.text_secondary'))
                     .maxLines(1)
                 }
               }
@@ -240,10 +239,10 @@ export struct DiscoverPage {
             }
             .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
             .width('100%').padding(12)
-            .backgroundColor(ThemeManager.surfaceSecondary)
+            .backgroundColor($r('app.color.bg_surface'))
             .borderRadius(10)
             .onClick(() => { this.gotoDetail(comic); })
-            .id('latestCard' + comic.id + this.themeVersion)
+            .id('latestCard' + comic.id)
           }
         }, (comic: Comic) => comic.id)
 
@@ -258,13 +257,13 @@ export struct DiscoverPage {
       }
       .layoutWeight(1)
       .padding({ left: 16, right: 16, bottom: 88 })
-      .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+      .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
       .edgeEffect(EdgeEffect.Spring)
       .onReachEnd(() => { this.loadMore(); })
     }
     .layoutWeight(1)
     .onRefreshing(() => { this.loadLatest(true); })
-    .id('latestList' + this.themeVersion)
+    .id('latestList')
   }
 
   @Builder
@@ -276,12 +275,12 @@ export struct DiscoverPage {
       .layoutWeight(1).justifyContent(FlexAlign.Center)
     } else if (this.error.length > 0) {
       Column({ space: 12 }) {
-        Text(this.error).fontSize(14).fontColor(ThemeManager.danger)
-        Button(Translations.t('retry')).fontSize(14).backgroundColor(ThemeManager.primary).fontColor('#FFFFFF')
+        Text(this.error).fontSize(14).fontColor($r('app.color.danger'))
+        Button(Translations.t('retry')).fontSize(14).backgroundColor(this.themeColor).fontColor($r('app.color.text_on_brand'))
           .onClick(() => { this.loadLatest(true); })
       }
       .layoutWeight(1).justifyContent(FlexAlign.Center)
-      .id('latestError' + this.themeVersion)
+      .id('latestError')
     } else {
       this.latestList()
     }

@@ -1,5 +1,4 @@
 // pages/JmPromotePage.ets - 禁漫主页分区漫画分页（/promote_list）- NavDestination
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Comic } from '../data/model/Comic';
@@ -23,8 +22,8 @@ export struct JmPromotePage {
   @State error: string = ''
   @State currentPage: number = 1
   @State maxPage: number = 1
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
 
   aboutToAppear(): void {
     if (this.pageParam !== undefined && this.pageParam !== null) {
@@ -81,16 +80,16 @@ export struct JmPromotePage {
               .width(80).height(110)
               .objectFit(ImageFit.Cover)
               .borderRadius(6)
-              .backgroundColor(ThemeManager.surface)
+              .backgroundColor($r('app.color.bg_fill'))
             Column({ space: 6 }) {
               Text(comic.title)
                 .fontSize(15).fontWeight(FontWeight.Medium)
-                .fontColor(ThemeManager.textPrimary)
+                .fontColor($r('app.color.text_primary'))
                 .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                 .width('100%')
               if (comic.author.length > 0) {
                 Text(comic.author)
-                  .fontSize(12).fontColor(ThemeManager.textSecondary)
+                  .fontSize(12).fontColor($r('app.color.text_secondary'))
                   .maxLines(1)
               }
             }
@@ -104,7 +103,7 @@ export struct JmPromotePage {
             NavUtil.push('comicDetail', param);
           })
         }
-        .id('comic' + comic.id + this.themeVersion)
+        .id('jmPromoteComic' + comic.id)
       }, (comic: Comic) => comic.id)
 
       ListItem() {
@@ -116,7 +115,7 @@ export struct JmPromotePage {
         } else if (this.currentPage < this.maxPage) {
           Text(Translations.t('load_more'))
             .fontSize(13)
-            .fontColor(ThemeManager.primary)
+            .fontColor(this.themeColor)
             .width('100%').height(48)
             .textAlign(TextAlign.Center)
             .onClick(() => { this.loadMore(); })
@@ -124,15 +123,15 @@ export struct JmPromotePage {
       }
     }
     .layoutWeight(1)
-    .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+    .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
     .edgeEffect(EdgeEffect.Spring)
     .onReachEnd(() => { this.loadMore(); })
-    .id('comicRows' + this.themeVersion)
+    .id('jmPromoteComicRows')
   }
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column({ space: 0 }) {
           NavTitleBar({ title: this.promoteTitle })
           if (this.loading) {
@@ -142,11 +141,11 @@ export struct JmPromotePage {
             .layoutWeight(1).justifyContent(FlexAlign.Center)
           } else if (this.error.length > 0) {
             Column({ space: 12 }) {
-              Text(this.error).fontSize(14).fontColor(ThemeManager.danger)
+              Text(this.error).fontSize(14).fontColor($r('app.color.danger'))
               Button(Translations.t('retry'))
                 .fontSize(14)
-                .backgroundColor(ThemeManager.primary)
-                .fontColor('#FFFFFF')
+                .backgroundColor(this.themeColor)
+                .fontColor($r('app.color.text_on_brand'))
                 .onClick(() => { this.loadPage(1, true); })
             }
             .layoutWeight(1).justifyContent(FlexAlign.Center)
@@ -155,10 +154,10 @@ export struct JmPromotePage {
           }
         }
         .width('100%').height('100%')
-        .backgroundColor(ThemeManager.background)
-      }, (v: number) => `theme-${v}`)
+        .backgroundColor($r('app.color.bg_page'))
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

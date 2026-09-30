@@ -1,5 +1,4 @@
 // pages/HistoryPage.ets - 阅读历史（可点击进入详情）- NavDestination
-import { ThemeManager } from '../common/ThemeManager';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Database, HistoryItem } from '../data/database/Database';
@@ -12,8 +11,8 @@ export function HistoryPageBuilder(name: string, param: object) {
 
 @Component
 export struct HistoryPage {
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
   @State items: HistoryItem[] = []
   @State loading: boolean = true
 
@@ -29,7 +28,7 @@ export struct HistoryPage {
 
   build() {
     NavDestination() {
-      ForEach([this.themeVersion], (v: number) => {
+      
         Column({ space: 0 }) {
           NavTitleBar({ title: Translations.t('tab_history') })
           if (this.loading) {
@@ -41,7 +40,7 @@ export struct HistoryPage {
           } else if (this.items.length === 0) {
             Column({ space: 8 }) {
               Text(Translations.t('no_data'))
-                .fontSize(14).fontColor(ThemeManager.textSecondary)
+                .fontSize(14).fontColor($r('app.color.text_secondary'))
             }
             .width('100%').layoutWeight(1)
             .justifyContent(FlexAlign.Center)
@@ -54,20 +53,20 @@ export struct HistoryPage {
                       .width(70).height(100)
                       .objectFit(ImageFit.Cover)
                       .borderRadius(6)
-                      .backgroundColor(ThemeManager.surface)
+                      .backgroundColor($r('app.color.bg_fill'))
                     Column({ space: 8 }) {
                       Text(item.title)
                         .fontSize(15).fontWeight(FontWeight.Medium)
-                        .fontColor(ThemeManager.textPrimary)
+                        .fontColor($r('app.color.text_primary'))
                         .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                         .width('100%')
                       if (item.lastChapter.length > 0) {
                         Text(item.lastChapter)
-                          .fontSize(12).fontColor(ThemeManager.textSecondary)
+                          .fontSize(12).fontColor($r('app.color.text_secondary'))
                           .margin({ top: 4 })
                       }
                       Text(item.source)
-                        .fontSize(11).fontColor(ThemeManager.primary)
+                        .fontSize(11).fontColor(this.themeColor)
                         .margin({ top: 2 })
                     }
                     .layoutWeight(1).alignItems(HorizontalAlign.Start).margin({ left: 12 })
@@ -80,17 +79,17 @@ export struct HistoryPage {
                     NavUtil.push('comicDetail', param);
                   })
                 }
-                .id('history' + item.id + item.source + this.themeVersion)
+                .id('historyRow' + item.id + item.source)
               }, (item: HistoryItem) => item.id + item.source)
             }
             .width('100%').layoutWeight(1)
-            .divider({ strokeWidth: 0.5, color: ThemeManager.divider })
+            .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
           }
         }
         .width('100%').height('100%')
-      }, (v: number) => `theme-${v}`)
+      
     }
     .hideTitleBar(true)
-    .backgroundColor(this.themeVersion >= 0 ? ThemeManager.background : '')
+    .backgroundColor($r('app.color.bg_page'))
   }
 }

@@ -1,5 +1,4 @@
 // components/SettingItem.ets - 设置项（分组卡片内透明行 + 可选分隔线）
-import { ThemeManager } from '../common/ThemeManager';
 
 @Component
 export struct SettingItem {
@@ -8,30 +7,30 @@ export struct SettingItem {
   @Prop value: string = ''
   @Prop showArrow: boolean = true
   @Prop showDivider: boolean = true
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  @StorageProp('themeColor') themeColor: string = '#2563EB'
   onTap: () => void = () => {}
 
   build() {
     Row({ space: 8 }) {
       SymbolGlyph(this.icon)
         .fontSize(24)
-        .fontColor([ThemeManager.primary])
+        .fontColor([this.themeColor])
       Text(this.title)
         .fontSize(17)
         .fontWeight(FontWeight.Medium)
-        .fontColor(ThemeManager.textPrimary)
+        .fontColor($r('app.color.text_primary'))
         .layoutWeight(1)
       if (this.value.length > 0) {
         Text(this.value)
           .fontSize(14)
-          .fontColor(ThemeManager.textSecondary)
+          .fontColor($r('app.color.text_secondary'))
           .margin({ right: 4 })
       }
       if (this.showArrow) {
         SymbolGlyph($r('sys.symbol.chevron_right'))
           .fontSize(20)
-          .fontColor([ThemeManager.textTertiary])
+          .fontColor([$r('app.color.text_tertiary')])
       }
     }
     .width('100%')

@@ -3,7 +3,7 @@
 export struct AppIcon {
   @Prop symbol: Resource = $r('sys.symbol.questionmark_circle')
   @Prop size: number = 24
-  @Prop color: ResourceColor = '#DE000000'
+  @Prop color: ResourceColor = $r('app.color.text_primary')
 
   build() {
     SymbolGlyph(this.symbol)

@@ -1,13 +1,12 @@
 // components/ComicTile.ets - 漫画卡片（横向列表项）
 import { Comic } from '../data/model/Comic';
 import { NetworkImage } from './NetworkImage';
-import { ThemeManager } from '../common/ThemeManager';
 
 @Component
 export struct ComicTile {
   @Prop comic: Comic = new Comic()
-  @StorageLink('isDarkMode') isDarkMode: boolean = false
-  @StorageLink('themeVersion') themeVersion: number = 0
+  
+  
   onTap: (id: string, source: string) => void = () => {}
 
   build() {
@@ -18,7 +17,7 @@ export struct ComicTile {
           .fontSize(15).fontWeight(FontWeight.Medium).maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis }).width('100%')
         if (this.comic.author.length > 0) {
-          Text(this.comic.author).fontSize(12).fontColor(ThemeManager.textSecondary)
+          Text(this.comic.author).fontSize(12).fontColor($r('app.color.text_secondary'))
             .margin({ top: 4 }).maxLines(1)
         }
       }

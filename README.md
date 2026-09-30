@@ -82,6 +82,7 @@ ohos/
 | 图片反打乱 | `get_num`（md5 末字符取 ord）算分段数 → 段序反转、底段含余数行置顶、段内不旋转（`JmImage.recombine`） |
 | scramble_id | 从 chapter_view_template 页面抓取 `var scramble_id = (\d+);`，失败回退 220980 |
 | APP 版本 | 默认 2.1.7（jm_config.py），运行时可被 version.json 动态覆盖 |
+| 深色模式 | base/dark 语义颜色令牌（`$r('app.color.*')` 自动切换）+ `setColorMode` 策略（跟随系统/强制深浅），Surface 分层设计 |
 | 图片缓存 | 阅读器 PixelMap LRU 缓存（12 张） |
 | 第三方依赖 | 无（oh-package.json5 dependencies 为空） |
 
