@@ -5,6 +5,8 @@ import { Comic } from '../data/model/Comic';
 import { JmApi } from '../data/api/JmApi';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { NavTitleBar } from '../components/NavTitleBar';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { uiMaterial } from '@kit.ArkUI';
 
 class SortOption {
   key: string = '';
@@ -34,7 +36,7 @@ export struct JmCategoryPage {
   @State maxPage: number = 1
   
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   aboutToAppear(): void {
     if (this.pageParam !== undefined && this.pageParam !== null) {
@@ -215,12 +217,14 @@ export struct JmCategoryPage {
           }
         }
         .width('100%').height('100%')
-        .backgroundColor($r('app.color.bg_page'))
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
   }
 }

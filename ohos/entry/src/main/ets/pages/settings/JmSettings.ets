@@ -2,13 +2,17 @@
 // 主干为 List + ListItemGroup（分组 + 粘性标题 + 组内分割线）
 import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../../common/Translations';
-import { ApiConstants, SettingsKeys } from '../../common/Constants';
+import { ApiConstants, DEFAULT_THEME_COLOR, SettingsKeys } from '../../common/Constants';
 import { JmApi } from '../../data/api/JmApi';
 import { Settings } from '../../data/preferences/Settings';
 import { Logger } from '../../common/Logger';
 import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingItem } from '../../components/SettingItem';
 import { SettingSelect } from '../../components/SettingSelect';
+import { SettingCheckItem } from '../../components/SettingCheckItem';
+import { SettingInfoItem } from '../../components/SettingInfoItem';
+import { SettingCorner } from '../../components/SettingCommon';
+import { uiMaterial } from '@kit.ArkUI';
 
 const TAG = 'JmSettings';
 
@@ -30,7 +34,7 @@ export struct JmSettings {
   @State favoriteOrder: number = 0
   @State checkingIn: boolean = false
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   aboutToAppear(): void {
     this.refreshState();
@@ -216,178 +220,112 @@ export struct JmSettings {
     ];
   }
 
-  /** 域名行（组内中间项，无圆角；行内分隔线由 ListItemGroup.divider 提供） */
-  @Builder
-  domainRow(domain: string, index: number) {
-    ListItem() {
-      Row({ space: 12 }) {
-        Text(this.stripProtocol(domain))
-          .fontSize(16)
-          .fontColor(this.currentDomain === domain ? this.themeColor : $r('app.color.text_primary'))
-          .layoutWeight(1)
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-        if (this.currentDomain === domain) {
-          SymbolGlyph($r('sys.symbol.checkmark'))
-            .fontSize(20)
-            .fontColor([this.themeColor])
-        }
-      }
-      .width('100%')
-      .height(52)
-      .padding({ left: 20, right: 20 })
-      .opacity(this.autoSelectDomain ? 0.4 : 1)
-      .onClick(() => {
-        if (!this.autoSelectDomain) {
-          this.selectDomainAt(index);
-        }
-      })
-    }
-    .backgroundColor($r('app.color.bg_surface'))
-    .id('domainRow' + index)
-  }
-
-  /** 信息行（radius 按组内首/末位置传入） */
-  @Builder
-  infoRow(label: string, value: string, isPrimary: boolean, radius: BorderRadiuses) {
-    ListItem() {
-      Row({ space: 12 }) {
-        Text(label)
-          .fontSize(17)
-          .fontWeight(FontWeight.Medium)
-          .fontColor($r('app.color.text_primary'))
-          .layoutWeight(1)
-        Text(value)
-          .fontSize(14)
-          .fontColor(isPrimary ? this.themeColor : $r('app.color.text_secondary'))
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .constraintSize({ maxWidth: '60%' })
-      }
-      .width('100%')
-      .height(52)
-      .padding({ left: 20, right: 20 })
-    }
-    .backgroundColor($r('app.color.bg_surface'))
-    .borderRadius(radius)
-    .clip(true)
-    .id('infoRow' + label)
-  }
-
   build() {
     NavDestination() {
       List({ space: 24 }) {
         ListItemGroup({ header: this.groupHeader(Translations.t('api_line')) }) {
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.arrow_clockwise'),
-              title: Translations.t('auto_select_domain'),
-              isOn: this.autoSelectDomain,
-              onToggle: (value: boolean) => {
-                this.setAutoSelectDomain(value);
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
+          SettingSwitch({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.arrow_clockwise'),
+            title: Translations.t('auto_select_domain'),
+            isOn: this.autoSelectDomain,
+            onToggle: (value: boolean) => {
+              this.setAutoSelectDomain(value);
+            }
+          })
           ForEach(this.domains, (domain: string, index: number) => {
-            this.domainRow(domain, index)
-          }, (domain: string) => domain)
-          this.infoRow(Translations.t('current_domain'), this.stripProtocol(this.currentDomain), true, {})
-          ListItem() {
-            SettingItem({
-              icon: $r('sys.symbol.gearshape'),
-              title: Translations.t('update_domains_remote'),
+            SettingCheckItem({
+              title: this.stripProtocol(domain),
+              selected: this.currentDomain === domain,
+              interactive: !this.autoSelectDomain,
+              itemId: 'domainRow' + index,
               onTap: () => {
-                this.updateDomains();
+                if (!this.autoSelectDomain) {
+                  this.selectDomainAt(index);
+                }
               }
             })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          }, (domain: string) => domain)
+          SettingInfoItem({
+            label: Translations.t('current_domain'),
+            value: this.stripProtocol(this.currentDomain),
+            primary: true,
+            itemId: 'infoRow' + Translations.t('current_domain')
+          })
+          SettingItem({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.gearshape'),
+            title: Translations.t('update_domains_remote'),
+            onTap: () => {
+              this.updateDomains();
+            }
+          })
         }
-        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('image_line')) }) {
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.camera'),
-              title: Translations.t('image_line'),
-              options: this.imgLineLabels(),
-              selectedIndex: this.imgLineIndex,
-              onSelect: (index: number) => {
-                this.selectImgLine(index);
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius(16)
-          .clip(true)
+          SettingSelect({
+            corner: SettingCorner.ALL,
+            icon: $r('sys.symbol.camera'),
+            title: Translations.t('image_line'),
+            options: this.imgLineLabels(),
+            selectedIndex: this.imgLineIndex,
+            onSelect: (index: number) => {
+              this.selectImgLine(index);
+            }
+          })
         }
 
         ListItemGroup({ header: this.groupHeader(Translations.t('app_version')) }) {
-          this.infoRow(Translations.t('app_version'), this.appVersion, false, { topLeft: 16, topRight: 16 })
-          ListItem() {
-            SettingItem({
-              icon: $r('sys.symbol.timer'),
-              title: Translations.t('update_version'),
-              onTap: () => {
-                this.updateVersion();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingInfoItem({
+            label: Translations.t('app_version'),
+            value: this.appVersion,
+            corner: SettingCorner.FIRST,
+            itemId: 'infoRow' + Translations.t('app_version')
+          })
+          SettingItem({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.timer'),
+            title: Translations.t('update_version'),
+            onTap: () => {
+              this.updateVersion();
+            }
+          })
         }
-        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('check_in')) }) {
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.checkmark_circle'),
-              title: Translations.t('auto_checkin'),
-              isOn: this.autoCheckin,
-              onToggle: (value: boolean) => {
-                this.setAutoCheckin(value);
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
-          ListItem() {
-            SettingItem({
-              icon: $r('sys.symbol.checkmark'),
-              title: Translations.t('check_in_now'),
-              onTap: () => {
-                this.doCheckIn();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingSwitch({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.checkmark_circle'),
+            title: Translations.t('auto_checkin'),
+            isOn: this.autoCheckin,
+            onToggle: (value: boolean) => {
+              this.setAutoCheckin(value);
+            }
+          })
+          SettingItem({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.checkmark'),
+            title: Translations.t('check_in_now'),
+            onTap: () => {
+              this.doCheckIn();
+            }
+          })
         }
-        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('favorite_order')) }) {
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.star'),
-              title: Translations.t('favorite_order'),
-              options: [Translations.t('favorite_order_latest'), Translations.t('favorite_order_update')],
-              selectedIndex: this.favoriteOrder,
-              onSelect: (index: number) => {
-                this.setFavoriteOrder(index);
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius(16)
-          .clip(true)
+          SettingSelect({
+            corner: SettingCorner.ALL,
+            icon: $r('sys.symbol.star'),
+            title: Translations.t('favorite_order'),
+            options: [Translations.t('favorite_order_latest'), Translations.t('favorite_order_update')],
+            selectedIndex: this.favoriteOrder,
+            onSelect: (index: number) => {
+              this.setFavoriteOrder(index);
+            }
+          })
         }
       }
       .scrollBar(BarState.Off)
@@ -401,6 +339,9 @@ export struct JmSettings {
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
     .id('jmSettingsPage')
   }
 }

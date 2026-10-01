@@ -1,6 +1,7 @@
 // pages/CategoryPage.ets - 分类页（禁漫固定分类 + 排行榜 + 每周推荐入口）
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
 
 class CategoryEntry {
   label: string = '';
@@ -25,7 +26,7 @@ class CategorySection {
 @Component
 export struct CategoryPage {
   
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageLink('bottomRectHeight') bottomRectHeight: number = 0;
 
   private makeSections(): CategorySection[] {

@@ -1,7 +1,7 @@
 // pages/MePage.ets - 我的页（资料卡 + 历史 + 功能入口）
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
-import { SettingsKeys } from '../common/Constants';
+import { DEFAULT_THEME_COLOR, SettingsKeys } from '../common/Constants';
 import { Settings } from '../data/preferences/Settings';
 import { JmApi } from '../data/api/JmApi';
 import { Database, HistoryItem } from '../data/database/Database';
@@ -28,7 +28,7 @@ export struct MePage {
   @State accountName: string = ''
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
   @StorageProp('showHistoryImages') showHistoryImages: boolean = true
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   static tabnum():number {return tabnum}
 
@@ -94,6 +94,27 @@ export struct MePage {
       SymbolGlyph($r('sys.symbol.person')).fontSize(28).fontColor([this.themeColor])
         .id('iconPerson')
     }
+  }
+
+  @Builder
+  searchEntry() {
+    Row({ space: 8 }) {
+      SymbolGlyph($r('sys.symbol.magnifyingglass'))
+        .fontSize(20)
+        .fontColor([$r('app.color.text_secondary')])
+      Text(Translations.t('search_hint'))
+        .fontSize(14)
+        .fontColor($r('app.color.text_secondary'))
+        .layoutWeight(1)
+        .maxLines(1)
+    }
+    .width('100%')
+    .height(44)
+    .padding({ left: 12, right: 12 })
+    .backgroundColor($r('app.color.bg_fill'))
+    .borderRadius(22)
+    .onClick(() => { NavUtil.push('preSearch'); })
+    .id('searchEntry')
   }
 
   @Builder
@@ -227,6 +248,7 @@ export struct MePage {
     
       Scroll() {
         Column({ space: 12 }) {
+          this.searchEntry()
           this.profileHeader()
           this.historyCard()
 

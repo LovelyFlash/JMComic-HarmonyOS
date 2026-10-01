@@ -4,6 +4,8 @@ import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Database, DownloadItem } from '../data/database/Database';
 import { NavTitleBar } from '../components/NavTitleBar';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function DownloadPageBuilder(name: string, param: object) {
@@ -15,7 +17,7 @@ export struct DownloadPage {
   @State items: DownloadItem[] = []
   @State loading: boolean = true
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   aboutToAppear(): void {
     this.loadData();
@@ -141,5 +143,8 @@ export struct DownloadPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
   }
 }

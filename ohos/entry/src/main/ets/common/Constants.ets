@@ -1,4 +1,6 @@
 // common/Constants.ets - API 地址、常量定义
+/** 默认主题色（@StorageProp/Preferences 的 string 默认值无法使用 $r 资源，集中于此） */
+export const DEFAULT_THEME_COLOR: string = '#2563EB';
 export class ApiConstants {
   // JM (禁漫)
   /** 对齐 jm_config.py JmMagicConstants.APP_VERSION（tokenparam 版本号，运行时可被 version.json 覆盖） */

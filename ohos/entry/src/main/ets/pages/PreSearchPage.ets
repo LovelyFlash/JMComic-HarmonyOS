@@ -3,7 +3,8 @@ import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Settings } from '../data/preferences/Settings';
 import { JmApi } from '../data/api/JmApi';
-import { NavTitleBar } from '../components/NavTitleBar';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function PreSearchPageBuilder(name: string, param: object) {
@@ -12,13 +13,14 @@ export function PreSearchPageBuilder(name: string, param: object) {
 
 @Component
 export struct PreSearchPage {
+  @State title: string = Translations.t('search')
   @State historyItems: string[] = []
   @State hotTags: string[] = []
   @State hotLoading: boolean = false
   @State inputText: string = ''
   
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   aboutToAppear(): void {
     this.loadHistory();
@@ -54,29 +56,31 @@ export struct PreSearchPage {
     NavDestination() {
       
         Column({ space: 0 }) {
-          NavTitleBar({ title: Translations.t('search') })
-          Row({ space: 8 }) {
-            SymbolGlyph($r('sys.symbol.magnifyingglass'))
-              .fontSize(20)
-              .fontColor([$r('app.color.text_secondary')])
-            TextInput({ placeholder: Translations.t('search_hint') })
-              .layoutWeight(1)
-              .height(36)
-              .fontSize(14)
-              .backgroundColor(Color.Transparent)
-              .fontColor($r('app.color.text_primary'))
-              .placeholderColor($r('app.color.text_secondary'))
-              .caretColor(this.themeColor)
-              .onChange((value: string) => { this.inputText = value; })
-              .onSubmit(() => {
-                if (this.inputText.length > 0) { this.gotoSearch(this.inputText); }
-              })
+          Column() {
+            Row({ space: 8 }) {
+              SymbolGlyph($r('sys.symbol.magnifyingglass'))
+                .fontSize(20)
+                .fontColor([$r('app.color.text_secondary')])
+              TextInput({ placeholder: Translations.t('search_hint') })
+                .layoutWeight(1)
+                .height(36)
+                .fontSize(14)
+                .backgroundColor(Color.Transparent)
+                .fontColor($r('app.color.text_primary'))
+                .placeholderColor($r('app.color.text_secondary'))
+                .caretColor(this.themeColor)
+                .onChange((value: string) => { this.inputText = value; })
+                .onSubmit(() => {
+                  if (this.inputText.length > 0) { this.gotoSearch(this.inputText); }
+                })
+            }
+            .width('100%').height(44)
+            .padding({ left: 12, right: 12 })
+            .backgroundColor($r('app.color.bg_fill'))
+            .borderRadius(22)
           }
-          .width('100%').height(44)
-          .padding({ left: 12, right: 12 })
-          .margin({ left: 16, right: 16, top: 4, bottom: 16 })
-          .backgroundColor($r('app.color.bg_fill'))
-          .borderRadius(22)
+          .width('100%')
+          .padding({ left: 16, right: 16, top: 4, bottom: 16 })
 
           Scroll() {
             Column({ space: 20 }) {
@@ -155,12 +159,15 @@ export struct PreSearchPage {
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
         }
         .width('100%').height('100%')
-        .backgroundColor($r('app.color.bg_page'))
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .hideTitleBar(true)
+    .title(this.title, { backgroundColor: $r('app.color.bg_page') })
+    .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
   }
 }

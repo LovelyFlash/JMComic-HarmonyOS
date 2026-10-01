@@ -4,6 +4,8 @@ import { NavUtil } from '../common/NavUtil';
 import { Comic } from '../data/model/Comic';
 import { JmApi, JmWeekCategory } from '../data/api/JmApi';
 import { NavTitleBar } from '../components/NavTitleBar';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { uiMaterial } from '@kit.ArkUI';
 
 class WeekType {
   key: string = '';
@@ -31,7 +33,7 @@ export struct JmWeekPage {
   @State error: string = ''
   
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   aboutToAppear(): void {
     this.loadCategories();
@@ -226,12 +228,14 @@ export struct JmWeekPage {
           }
         }
         .width('100%').height('100%')
-        .backgroundColor($r('app.color.bg_page'))
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
   }
 }

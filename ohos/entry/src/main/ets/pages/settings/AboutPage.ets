@@ -1,6 +1,7 @@
 // pages/settings/AboutPage.ets - 关于页 - NavDestination
 import { Translations } from '../../common/Translations';
-import { ApiConstants } from '../../common/Constants';
+import { ApiConstants, DEFAULT_THEME_COLOR } from '../../common/Constants';
+import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function AboutPageBuilder(name: string, param: object) {
@@ -10,7 +11,7 @@ export function AboutPageBuilder(name: string, param: object) {
 @Component
 export struct AboutPage {
   @State title: string = Translations.t('about')
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   build() {
     NavDestination() {
@@ -54,6 +55,9 @@ export struct AboutPage {
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
     .id('aboutPage')
   }
 }

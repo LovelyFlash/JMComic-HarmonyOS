@@ -9,6 +9,8 @@ import { ReaderParam } from '../data/model/ReaderParam';
 import { Database, ReadingProgress } from '../data/database/Database';
 import { JmApi, JmFolder } from '../data/api/JmApi';
 import { NetworkImage } from '../components/NetworkImage';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { uiMaterial } from '@kit.ArkUI';
 
 const CHAPTER_COLLAPSE_THRESHOLD = 20;
 
@@ -41,7 +43,7 @@ export struct ComicDetailPage {
   @State newFolderName: string = ''
   @State favOperating: boolean = false
   
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
 
@@ -342,20 +344,20 @@ export struct ComicDetailPage {
       Button({ type: ButtonType.Circle, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.chevron_left'))
           .fontSize(24)
-          .fontColor([Color.White])
+          .fontColor([$r('app.color.content_on_media')])
       }
       .width(40).height(40)
-      .backgroundColor('rgba(0,0,0,0.25)')
+      .backgroundColor($r('app.color.media_scrim'))
       .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
       .onClick(() => { NavUtil.back(); })
       Blank().layoutWeight(1)
       Button({ type: ButtonType.Circle, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.star'))
           .fontSize(20)
-          .fontColor([this.isFavorite ? this.themeColor : Color.White])
+          .fontColor([this.isFavorite ? this.themeColor : $r('app.color.content_on_media')])
       }
       .width(40).height(40)
-      .backgroundColor('rgba(0,0,0,0.25)')
+      .backgroundColor($r('app.color.media_scrim'))
       .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
       .onClick(() => { this.toggleFavorite(); })
     }
@@ -705,7 +707,6 @@ export struct ComicDetailPage {
           }
         }
         .width('100%').height('100%')
-        .backgroundColor($r('app.color.bg_page'))
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         .bindSheet($$this.showFavSheet, this.favSheetContent(), {
           detents: [SheetSize.MEDIUM, SheetSize.LARGE],
@@ -721,5 +722,8 @@ export struct ComicDetailPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
   }
 }

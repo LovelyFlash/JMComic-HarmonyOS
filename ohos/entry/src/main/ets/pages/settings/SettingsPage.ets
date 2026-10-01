@@ -3,11 +3,13 @@
 import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
 import { NavUtil } from '../../common/NavUtil';
-import { SettingsKeys } from '../../common/Constants';
+import { DEFAULT_THEME_COLOR, SettingsKeys } from '../../common/Constants';
 import { Settings } from '../../data/preferences/Settings';
 import { SettingItem } from '../../components/SettingItem';
 import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingSelect } from '../../components/SettingSelect';
+import { SettingCorner } from '../../components/SettingCommon';
+import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function SettingsPageBuilder(name: string, param: object) {
@@ -17,7 +19,7 @@ export function SettingsPageBuilder(name: string, param: object) {
 @Component
 export struct SettingsPage {
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageProp('darkModePolicy') darkModePolicy: string = 'system'
   @State showColorSheet: boolean = false
   @State showHistoryImages: boolean = true
@@ -124,90 +126,68 @@ export struct SettingsPage {
     NavDestination() {
       List({ space: 24 }) {
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_appearance')) }) {
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.moon'),
-              title: Translations.t('dark_mode'),
-              options: this.darkModeLabels(),
-              selectedIndex: this.darkModeIndex(),
-              onSelect: (index: number) => {
-                this.setDarkModeByIndex(index);
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
-          ListItem() {
-            SettingItem({
-              icon: $r('sys.symbol.brightness'),
-              title: Translations.t('theme_color'),
-              onTap: () => {
-                this.showColorSheet = true;
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.square_grid_2x2'),
-              title: Translations.t('show_history_images'),
-              isOn: this.showHistoryImages,
-              onToggle: (value: boolean) => {
-                this.setShowHistoryImages(value);
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingSelect({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.moon'),
+            title: Translations.t('dark_mode'),
+            options: this.darkModeLabels(),
+            selectedIndex: this.darkModeIndex(),
+            onSelect: (index: number) => {
+              this.setDarkModeByIndex(index);
+            }
+          })
+          SettingItem({
+            corner: SettingCorner.MIDDLE,
+            icon: $r('sys.symbol.brightness'),
+            title: Translations.t('theme_color'),
+            onTap: () => {
+              this.showColorSheet = true;
+            }
+          })
+          SettingSwitch({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.square_grid_2x2'),
+            title: Translations.t('show_history_images'),
+            isOn: this.showHistoryImages,
+            onToggle: (value: boolean) => {
+              this.setShowHistoryImages(value);
+            }
+          })
         }
-        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_reading')) }) {
-          ListItem() {
-            SettingItem({
-              icon: $r('sys.symbol.list_bullet'),
-              title: Translations.t('reading_settings'),
-              onTap: () => {
-                NavUtil.push('readingSettings');
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius(16)
-          .clip(true)
+          SettingItem({
+            corner: SettingCorner.ALL,
+            icon: $r('sys.symbol.list_bullet'),
+            title: Translations.t('reading_settings'),
+            onTap: () => {
+              NavUtil.push('readingSettings');
+            }
+          })
         }
 
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_comic_source')) }) {
-          ListItem() {
-            SettingItem({
-              icon: $r('sys.symbol.arrow_clockwise'),
-              title: Translations.t('jm_name'),
-              onTap: () => {
-                NavUtil.push('jmSettings');
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius(16)
-          .clip(true)
+          SettingItem({
+            corner: SettingCorner.ALL,
+            icon: $r('sys.symbol.arrow_clockwise'),
+            title: Translations.t('jm_name'),
+            onTap: () => {
+              NavUtil.push('jmSettings');
+            }
+          })
         }
 
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_system')) }) {
-          ListItem() {
-            SettingItem({
-              icon: $r('sys.symbol.questionmark_circle'),
-              title: Translations.t('about'),
-              value: 'v1.0.0',
-              onTap: () => {
-                NavUtil.push('about');
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius(16)
-          .clip(true)
+          SettingItem({
+            corner: SettingCorner.ALL,
+            icon: $r('sys.symbol.questionmark_circle'),
+            title: Translations.t('about'),
+            value: 'v1.0.0',
+            onTap: () => {
+              NavUtil.push('about');
+            }
+          })
         }
       }
       .scrollBar(BarState.Off)
@@ -227,6 +207,9 @@ export struct SettingsPage {
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 设置标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
     .id('settingsPage')
   }
 }

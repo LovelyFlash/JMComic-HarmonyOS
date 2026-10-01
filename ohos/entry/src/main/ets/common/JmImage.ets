@@ -212,13 +212,8 @@ export class JmImage {
       } else {
         dstRow += over;
       }
-      for (let r: number = 0; r < blockH; r++) {
-        const srcOff: number = (srcRow + r) * w;
-        const dstOff: number = (dstRow + r) * w;
-        for (let c: number = 0; c < w; c++) {
-          dst[dstOff + c] = src[srcOff + c];
-        }
-      }
+      // 段内行连续 → 整段一次原生拷贝（Uint32Array.set），避免逐像素 JS 循环阻塞主线程
+      dst.set(src.subarray(srcRow * w, (srcRow + blockH) * w), dstRow * w);
     }
     pixelMap.release();
     const initOpts: image.InitializationOptions = {

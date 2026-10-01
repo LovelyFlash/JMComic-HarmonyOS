@@ -5,6 +5,7 @@ import { Comic } from '../data/model/Comic';
 import { JmApi, JmHomeSection } from '../data/api/JmApi';
 import { NetworkImage } from '../components/NetworkImage';
 import { HdsTabsController} from '@kit.UIDesignKit';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
 
 @Component
 export struct DiscoverPage {
@@ -23,7 +24,7 @@ export struct DiscoverPage {
   @State page: number = 1
   @State hasMore: boolean = true
   
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   private controller: HdsTabsController = new HdsTabsController();
 
   aboutToAppear(): void {

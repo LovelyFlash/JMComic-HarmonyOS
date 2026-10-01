@@ -3,14 +3,14 @@
 // 本类只管理：深色策略（跟随系统/强制深色/强制浅色）、用户主题色、系统表面（状态栏/窗口底色）。
 import { common, ConfigurationConstant } from '@kit.AbilityKit';
 import { Settings } from '../data/preferences/Settings';
-import { SettingsKeys } from './Constants';
+import { SettingsKeys, DEFAULT_THEME_COLOR } from './Constants';
 import { Logger } from './Logger';
 
 const TAG = 'ThemeManager';
 
 export class ThemeManager {
   private static _isDark: boolean = false;
-  private static _themeColor: string = '#2563EB';
+  private static _themeColor: string = DEFAULT_THEME_COLOR;
   private static _darkMode: string = 'system'; // 'system' | 'enabled' | 'disabled'
   private static appContext: common.ApplicationContext | null = null;
 
@@ -72,7 +72,7 @@ export class ThemeManager {
   static async restore(): Promise<void> {
     try {
       const darkMode = await Settings.getString(SettingsKeys.DARK_MODE, 'system');
-      const themeColor = await Settings.getString(SettingsKeys.THEME_COLOR, '#2563EB');
+      const themeColor = await Settings.getString(SettingsKeys.THEME_COLOR, DEFAULT_THEME_COLOR);
       ThemeManager._darkMode = darkMode;
       ThemeManager._themeColor = themeColor;
       if (darkMode === 'enabled') {

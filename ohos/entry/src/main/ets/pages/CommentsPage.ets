@@ -3,6 +3,8 @@ import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../common/Translations';
 import { JmApi, JmComment } from '../data/api/JmApi';
 import { NavTitleBar } from '../components/NavTitleBar';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function CommentsPageBuilder(name: string, param: object) {
@@ -24,7 +26,7 @@ export struct CommentsPage {
   @State sending: boolean = false
   
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   aboutToAppear(): void {
     if (this.pageParam !== undefined && this.pageParam !== null) {
@@ -274,12 +276,14 @@ export struct CommentsPage {
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
         }
         .width('100%').height('100%')
-        .backgroundColor($r('app.color.bg_page'))
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
   }
 }

@@ -3,6 +3,8 @@ import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../common/Translations';
 import { JmApi } from '../data/api/JmApi';
 import { NavTitleBar } from '../components/NavTitleBar';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function AccountsPageBuilder(name: string, param: object) {
@@ -20,7 +22,7 @@ export struct AccountsPage {
   @State checkingIn: boolean = false
   
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
 
   aboutToAppear(): void {
@@ -244,5 +246,8 @@ export struct AccountsPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
   }
 }

@@ -1,10 +1,11 @@
 // components/LoadingView.ets - 加载动画组件
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
 
 @Component
 export struct LoadingView {
   @Prop message: string = ''
   
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   build() {
     Column({ space: 8 }) {

@@ -3,6 +3,8 @@ import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Database, HistoryItem } from '../data/database/Database';
 import { NavTitleBar } from '../components/NavTitleBar';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function HistoryPageBuilder(name: string, param: object) {
@@ -13,7 +15,7 @@ export function HistoryPageBuilder(name: string, param: object) {
 export struct HistoryPage {
   
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @State items: HistoryItem[] = []
   @State loading: boolean = true
 
@@ -96,5 +98,8 @@ export struct HistoryPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
   }
 }

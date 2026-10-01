@@ -6,13 +6,14 @@ import { FavoritesContent } from './FavoritesContent';
 import { DiscoverPage } from './DiscoverPage';
 import { CategoryPage } from './CategoryPage';
 import { HdsTabs, HdsTabsController, hdsMaterial} from '@kit.UIDesignKit';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
 
 @Entry
 @Component
 struct MainPage {
   @State currentTab: number=0
   
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @State shadowGlow: number = 0.25;
@@ -71,7 +72,6 @@ struct MainPage {
             materialLevel: hdsMaterial.MaterialLevel.EXQUISITE
           }
         })
-        this.FabContent()
       }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
@@ -122,21 +122,4 @@ struct MainPage {
     }
   }
 
-  @Builder
-  FabContent() {
-    
-      Button({ type: ButtonType.Circle, stateEffect: true }) {
-        SymbolGlyph($r('sys.symbol.magnifyingglass'))
-          .fontSize(22)
-          .fontColor([Color.White])
-      }
-      .width(48)
-      .height(48)
-      .backgroundColor(this.themeColor)
-      .shadow({ radius: 12, color: $r('app.color.shadow'), offsetX: 0, offsetY: 4 })
-      .position({ right: 16, top: 12 })
-      .onClick(() => { NavUtil.push('preSearch'); })
-      .id('fabSearch')
-    
-  }
 }

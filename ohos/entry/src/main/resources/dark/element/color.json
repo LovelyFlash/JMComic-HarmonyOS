@@ -12,6 +12,15 @@
     { "name": "divider", "value": "#374151" },
     { "name": "brand_primary", "value": "#3B82F6" },
     { "name": "danger", "value": "#FF453A" },
-    { "name": "shadow", "value": "#00000000" }
+    { "name": "shadow", "value": "#00000000" },
+    { "name": "reader_bg", "value": "#000000" },
+    { "name": "text_on_reader", "value": "#FFFFFF" },
+    { "name": "reader_text_secondary", "value": "#B3FFFFFF" },
+    { "name": "reader_overlay", "value": "#8C000000" },
+    { "name": "reader_overlay_button", "value": "#26FFFFFF" },
+    { "name": "reader_sidebar_track", "value": "#40FFFFFF" },
+    { "name": "reader_slider_track", "value": "#4DFFFFFF" },
+    { "name": "media_scrim", "value": "#40000000" },
+    { "name": "content_on_media", "value": "#FFFFFF" }
   ]
 }

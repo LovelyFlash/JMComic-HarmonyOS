@@ -19,7 +19,7 @@ ohos/entry/src/main/ets/
 │   ├── Constants.ets      -- ApiConstants（JM 密钥/域名/UA）、SettingsKeys、DatabaseConstants
 │   ├── JmImage.ets        -- JM 图片管线：请求头、魔数嗅探、分段数、decode、recombine（反打乱）
 │   ├── Network.ets        -- HTTP 封装：get/getWithStatus/getBytes/getBytesViaDownload/post
-│   ├── Logger.ets         -- hilog 封装（TAG 过滤：JmApi/JmImage/ReaderImage/Network）
+│   ├── Logger.ets         -- hilog 封装（TAG 过滤：JmApi/JmImage/ReaderImage/ReaderPage/Network）
 │   ├── ThemeManager.ets   -- 深色策略 + 主题色（UI 颜色一律走 $r 资源令牌）
 │   ├── Translations.ets   -- 中英文案
 │   ├── ReadingConfig.ets  -- 阅读配置
@@ -35,14 +35,15 @@ ohos/entry/src/main/ets/
 │   ├── ReaderImage.ets    -- 阅读器图片（下载→解码→反打乱→LRU 缓存，失败可重试）
 │   ├── NetworkImage.ets   -- 普通网络图片（封面等，无需反打乱）
 │   ├── ComicTile/ComicGrid/LoadingView/NavTitleBar/AppTopBar/AppIcon
-│   └── SettingItem/SettingSection/SettingSwitch/SettingSelect
+│   └── SettingItem/SettingSection/SettingSwitch/SettingSelect/SettingCommon/SettingCheckItem/SettingInfoItem
 ├── pages/
 │   ├── MainPage.ets       -- 底部 Tab 主页
+│   ├── LaunchPage.ets     -- 启动页（首帧 + 历史数据预热 + 600ms 最短展示，main_pages 首位）
 │   ├── DiscoverPage / SearchPage / PreSearchPage / CategoryPage / JmCategoryPage
 │   ├── JmWeekPage / JmPromotePage / ComicDetailPage / CommentsPage
 │   ├── HistoryPage / FollowPage / FavoritesContent / DownloadPage
 │   ├── MePage / AccountsPage
-│   ├── reader/ReaderPage.ets  -- 阅读器（单页 Swiper / 条漫 List 双模式）
+│   ├── reader/ReaderPage.ets  -- 阅读器（6 阅读模式：LTR/RTL/TTB/连续滚动/双页/双页反向；手势缩放；状态栏自动隐藏；连续滚动锚点稳定）
 │   └── settings/          -- SettingsPage(List+Select), ReadingSettings, JmSettings, AboutPage（均为内置标题栏 .title().hideTitleBar(false)）
 └── entryability/EntryAbility.ets
 ```
@@ -62,6 +63,8 @@ ohos/entry/src/main/ets/
 3. **禁止为颜色变化挂状态**：不要用 `@StorageLink('isDarkMode')`/`themeVersion` 触发重绘，资源切换无需任何逻辑
 4. 系统 API（`setWindowBackgroundColor` 等）需要具体色值 → `ThemeManager.windowBackground`（唯一合法取值口）
 5. 新增颜色必须在 `base/element/color.json` 与 `dark/element/color.json` 同时定义
+6. **默认主题色集中于 `Constants.DEFAULT_THEME_COLOR`**：`@StorageProp('themeColor')` 等 string 默认值无法用 `$r`，各页禁止硬编码 `'#2563EB'`
+7. **阅读器固定色**（黑白不随主题，独立令牌）：`reader_bg` / `text_on_reader` / `reader_text_secondary` / `reader_overlay` / `reader_overlay_button` / `reader_sidebar_track` / `reader_slider_track` / `media_scrim` / `content_on_media`
 
 ### 组件规范
 1. **使用 `@Component` 装饰器**: V1 状态管理（@State/@Prop/@StorageLink 等），禁止与 V2 混用
@@ -113,11 +116,22 @@ devecocli device list              # 查看设备
 devecocli build clean              # 清理构建产物
 ```
 
+### 快速编译验证（不安装，仅查编译错误；在 ohos/ 目录下）
+
+```powershell
+$env:PATH = "D:\DevEco Studio\tools\node;" + $env:PATH
+$env:DEVECO_SDK_HOME = "D:\DevEco Studio\sdk"
+& "D:\DevEco Studio\tools\hvigor\bin\hvigorw.bat" assembleHap --mode module -p product=default --no-daemon
+```
+
+仅既有 deprecated/showToast/2in1 警告可忽略；`ArkTS:ERROR` 为真实错误。增量编译约 15s。
+
 ### 调试工具
 
 ```powershell
 devecocli log --keyword JmImage --from 5m       # 图片管线日志（recombine ok/skip、non-image bytes）
 devecocli log --keyword ReaderImage --from 5m   # 阅读器图片加载日志（load failed 等）
+devecocli log --keyword ReaderPage --from 5m    # 阅读器滚动/状态栏诊断日志（strip area change / flush pending / status bar）
 devecocli log --crash --bundle-name com.jmcomic.harmony  # 崩溃日志
 devecocli log clear                # 清空 hilog（复现问题前先清）
 devecocli ui screenshot --path ./shot.png       # 截图
@@ -160,6 +174,22 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 - **缓存**: ReaderImage 内置 LRU（12 张 PixelMap，按 URL）
 - **GIF**: 跳过反打乱直接 `Image(url)` 显示
 
+## 阅读器工程要点（ReaderPage.ets + ReaderImage.ets）
+
+### 状态栏自动隐藏
+- 进入阅读 2.5s 后 `win.setSpecificSystemBarEnabled('status', false, true)`（前置条件：`setWindowLayoutFullScreen(true)` 已开；`SpecificSystemBar = 'status' | 'navigation' | 'navigationIndicator'`）
+- `showToolbar` / `showSheet` 挂 `@Watch('onOverlayChanged')`：打开临时恢复状态栏，关闭且阅读已开始（定时器已触发）则重新隐藏
+- `aboutToDisappear` 清定时器并恢复显示；EntryAbility `setupWindow` 启动时显式恢复，防上次会话隐藏状态残留
+- 隐藏/显示后手动 `EntryAbility.updateAvoidAreas(win)` 兜底刷新 `topAvoidHeight`（不依赖 avoidAreaChange 是否触发），工具栏 padding 自动联动
+- 仅隐藏状态栏，底部导航条（手势条）保持显示
+
+### 连续滚动（strip 模式）锚点稳定
+- **锚点补偿**：ListItem `onAreaChange` 对 `idx < currentIndex` 且 `|delta| >= 0.5` 的高度变化 `stripScroller.scrollBy(0, delta)`
+- **手势护栏**：`stripScrolling`（onScrollStart/Stop）+ `stripTouching`（onTouch Down/Up/Cancel）期间不补偿，delta 记入 `stripPendingDelta`，停稳且抬手后 `flushStripPending()` 一次性补齐（消除滚动中图片加载导致的永久漂移）
+- **预热窗口**：strip 前向 10/后向 3，其他模式前向 6/后向 2（保证图片进场前比例已缓存，避免占位 `PLACEHOLDER_RATIO=0.7` → 真实比率的高度突变）
+- **active 门控**：`|idx - currentIndex| > ACTIVE_WINDOW_STRIP(3)` 的条目丢像素、保留比例占位，回窗复用缓存
+- **列表实现**：strip 用 ForEach（划出屏节点不下树销毁），LazyForEach 在阅读器中已废弃；诊断日志 TAG=`ReaderPage`
+
 ## 常见问题
 
 ### Q: 如何添加/修改设置项？
@@ -178,6 +208,14 @@ devecocli log --keyword JmImage --from 2m
 devecocli log --keyword ReaderImage --from 2m
 ```
 关注：`recombine ok/skip: num=...`（分段数）、`non-image bytes`（反爬页）、`load failed`（解码异常）。
+
+### Q: 连续滚动模式滑动跳动/停住后位置漂移？
+```powershell
+devecocli log clear
+# 复现问题后：
+devecocli log --keyword ReaderPage --from 2m
+```
+关注：`strip area change`（idx/高度变化/scroll/touch 标志/currentIndex）、`strip flush pending`（欠账补偿是否触发）、`anchor compensate failed`。若高度突变集中在视口底部图片，说明预热（preloadAround）未追上滑动速度；若 scroll/touch 期间出现补偿，检查护栏条件。
 
 ### Q: API 请求全部失败怎么办？
 检查域名切换（JM 设置页换线路）、查看 `devecocli log --keyword JmApi`，确认 token/时间戳生成与 AES 解密是否正常。

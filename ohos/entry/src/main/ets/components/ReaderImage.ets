@@ -18,6 +18,10 @@ export class ReaderImageCache {
   private static readonly RATIO_CAP: number = 1200;
   /** 进行中的加载（同一 URL 同一质量只下载解码一次） */
   private static inflight: Map<string, Promise<image.PixelMap | null>> = new Map();
+  /** 并发限流：全章同时加载会拖垮主线程与带宽，队列 FIFO 最多同时跑 MAX_CONCURRENT 个 */
+  private static readonly MAX_CONCURRENT: number = 3;
+  private static running: number = 0;
+  private static pending: Array<() => void> = [];
   /** 像素缓存对应的质量档位，切换质量后整体失效 */
   private static pixelQuality: number = -1;
 
@@ -88,28 +92,61 @@ export class ReaderImageCache {
     return ReaderImageCache.get(url);
   }
 
-  /** 共享加载：下载 + 按质量降采样解码 + 反打乱重组 + 写缓存；失败返回 null（永不 reject） */
-  static loadPixelMap(url: string, quality: number, ui: UIContext): Promise<image.PixelMap | null> {
+  /**
+   * 共享加载：下载 + 按质量降采样解码 + 反打乱重组 + 写缓存；失败返回 null（永不 reject）。
+   * 队列限流 MAX_CONCURRENT 个并发；priority=true 插到队首（可见页），预取入队尾顺序消化。
+   */
+  static loadPixelMap(url: string, quality: number, ui: UIContext, priority: boolean = false):
+    Promise<image.PixelMap | null> {
     const key: string = `${quality}_${url}`;
     const exist: Promise<image.PixelMap | null> | undefined = ReaderImageCache.inflight.get(key);
     if (exist !== undefined) {
       return exist;
     }
-    const task: Promise<image.PixelMap | null> = ReaderImageCache.doLoad(url, quality, ui)
-      .then((pm: image.PixelMap | null) => {
-        ReaderImageCache.inflight.delete(key);
-        return pm;
-      })
-      .catch((e: Error) => {
-        ReaderImageCache.inflight.delete(key);
-        Logger.warn(TAG, `load failed: ${url} ${String(e)}`);
-        return null;
-      });
+    let settle: (pm: image.PixelMap | null) => void = (_pm: image.PixelMap | null) => {
+    };
+    const task: Promise<image.PixelMap | null> = new Promise<image.PixelMap | null>((resolve) => {
+      settle = resolve;
+    });
     ReaderImageCache.inflight.set(key, task);
+    const start = (): void => {
+      ReaderImageCache.running++;
+      const done = (pm: image.PixelMap | null): void => {
+        ReaderImageCache.running--;
+        ReaderImageCache.inflight.delete(key);
+        ReaderImageCache.runNext();
+        settle(pm);
+      };
+      ReaderImageCache.doLoad(url, quality, ui).then(
+        (pm: image.PixelMap | null) => {
+          done(pm);
+        },
+        (e: Object) => {
+          Logger.warn(TAG, `load failed: ${url} ${String(e)}`);
+          done(null);
+        }
+      );
+    };
+    if (priority) {
+      ReaderImageCache.pending.unshift(start);
+    } else {
+      ReaderImageCache.pending.push(start);
+    }
+    ReaderImageCache.runNext();
     return task;
   }
 
-  /** 预取相邻页（去重由 inflight/像素缓存保证） */
+  /** 队列调度：并发未满时按 FIFO 启动下一个任务 */
+  private static runNext(): void {
+    while (ReaderImageCache.running < ReaderImageCache.MAX_CONCURRENT && ReaderImageCache.pending.length > 0) {
+      const next: (() => void) | undefined = ReaderImageCache.pending.shift();
+      if (next !== undefined) {
+        next();
+      }
+    }
+  }
+
+  /** 预取相邻页（去重由 inflight/像素缓存保证，入队尾被可见页插队） */
   static preload(urls: string[], quality: number, ui: UIContext): void {
     ReaderImageCache.ensureQuality(quality);
     for (let i = 0; i < urls.length; i++) {
@@ -180,6 +217,8 @@ export struct ReaderImage {
   @Prop fill: boolean = true;
   /** 双页模式：布局贴中线（布局0/1 按宽度适配铺满半屏，布局2 按高度适配靠内边对齐） */
   @Prop dual: boolean = false;
+  /** 视口窗口门控：仅在窗口内加载；离开窗口丢弃像素（比例缓存保留 → 占位高度不变） */
+  @Prop @Watch('onActiveChange') active: boolean = true;
   @StorageProp('imageQuality') @Watch('onQualityChange') imgQuality: number = 0;
   @State pixelMap: image.PixelMap | undefined = undefined;
   @State useRaw: boolean = false;
@@ -188,7 +227,22 @@ export struct ReaderImage {
 
   aboutToAppear(): void {
     this.loadedQuality = this.imgQuality;
-    this.load();
+    if (this.active) {
+      this.load();
+    }
+  }
+
+  private onActiveChange(): void {
+    if (this.active) {
+      if (this.pixelMap === undefined && !this.useRaw && !this.loadFailed) {
+        this.load();
+      }
+      return;
+    }
+    // 离开视口窗口：仅丢弃像素引用（本组件与缓存可能共持同一像素，比例已缓存不受影响）
+    if (!JmImage.isGif(this.url) && this.pixelMap !== undefined) {
+      this.pixelMap = undefined;
+    }
   }
 
   private onQualityChange(): void {
@@ -202,7 +256,9 @@ export struct ReaderImage {
     this.useRaw = false;
     this.loadFailed = false;
     this.pixelMap = undefined;
-    this.load();
+    if (this.active) {
+      this.load();
+    }
   }
 
   private placeRatio(): number {
@@ -225,8 +281,12 @@ export struct ReaderImage {
       return;
     }
     const quality: number = this.imgQuality;
-    const pm: image.PixelMap | null = await ReaderImageCache.loadPixelMap(url, quality, this.getUIContext());
+    const pm: image.PixelMap | null = await ReaderImageCache.loadPixelMap(url, quality, this.getUIContext(), true);
     if (this.url !== url || this.loadedQuality !== quality) {
+      return;
+    }
+    if (!this.active) {
+      // 加载完成前已离开窗口：不写组件状态（像素已入缓存，回窗时命中缓存再加载）
       return;
     }
     if (pm === null) {
@@ -251,7 +311,7 @@ export struct ReaderImage {
         .height('100%')
         .objectFit(ImageFit.Contain)
         .draggable(false)
-        .backgroundColor('#000000')
+        .backgroundColor($r('app.color.reader_bg'))
         .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
     } else if (this.fill && this.imageLayout === 2) {
       Image(source)
@@ -259,7 +319,7 @@ export struct ReaderImage {
         .width('auto')
         .objectFit(ImageFit.Contain)
         .draggable(false)
-        .backgroundColor('#000000')
+        .backgroundColor($r('app.color.reader_bg'))
         .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
     } else {
       Image(source)
@@ -267,7 +327,7 @@ export struct ReaderImage {
         .height('auto')
         .objectFit(ImageFit.Contain)
         .draggable(false)
-        .backgroundColor('#000000')
+        .backgroundColor($r('app.color.reader_bg'))
         .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
     }
   }
@@ -282,17 +342,17 @@ export struct ReaderImage {
         Column({ space: 12 }) {
           Text('图片加载失败')
             .fontSize(14)
-            .fontColor('#B3FFFFFF')
+            .fontColor($r('app.color.reader_text_secondary'))
             .maxLines(1)
           Text('点击重试')
             .fontSize(12)
-            .fontColor('#FFFFFF')
+            .fontColor($r('app.color.text_on_reader'))
             .maxLines(1)
         }
         .width('100%')
         .height('100%')
         .justifyContent(FlexAlign.Center)
-        .backgroundColor('#000000')
+        .backgroundColor($r('app.color.reader_bg'))
         .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
         .onClick(() => {
           this.retry();
@@ -301,17 +361,17 @@ export struct ReaderImage {
         Column({ space: 12 }) {
           Text('图片加载失败')
             .fontSize(14)
-            .fontColor('#B3FFFFFF')
+            .fontColor($r('app.color.reader_text_secondary'))
             .maxLines(1)
           Text('点击重试')
             .fontSize(12)
-            .fontColor('#FFFFFF')
+            .fontColor($r('app.color.text_on_reader'))
             .maxLines(1)
         }
         .width('100%')
         .aspectRatio(this.placeRatio())
         .justifyContent(FlexAlign.Center)
-        .backgroundColor('#000000')
+        .backgroundColor($r('app.color.reader_bg'))
         .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
         .onClick(() => {
           this.retry();
@@ -319,21 +379,21 @@ export struct ReaderImage {
       }
     } else if (this.fill) {
       Column({ space: 8 }) {
-        LoadingProgress().width(40).height(40).color('#FFFFFF')
+        LoadingProgress().width(40).height(40).color($r('app.color.text_on_reader'))
       }
       .width('100%')
       .height('100%')
       .justifyContent(FlexAlign.Center)
-      .backgroundColor('#000000')
+      .backgroundColor($r('app.color.reader_bg'))
       .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
     } else {
       Column({ space: 8 }) {
-        LoadingProgress().width(40).height(40).color('#FFFFFF')
+        LoadingProgress().width(40).height(40).color($r('app.color.text_on_reader'))
       }
       .width('100%')
       .aspectRatio(this.placeRatio())
       .justifyContent(FlexAlign.Center)
-      .backgroundColor('#000000')
+      .backgroundColor($r('app.color.reader_bg'))
       .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
     }
   }

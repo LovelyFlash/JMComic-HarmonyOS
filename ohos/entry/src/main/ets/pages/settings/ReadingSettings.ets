@@ -4,6 +4,8 @@ import { Translations } from '../../common/Translations';
 import { ReadingConfig } from '../../common/ReadingConfig';
 import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingSelect } from '../../components/SettingSelect';
+import { SettingCorner } from '../../components/SettingCommon';
+import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function ReadingSettingsBuilder(name: string, param: object) {
@@ -107,151 +109,96 @@ export struct ReadingSettings {
     NavDestination() {
       List({ space: 24 }) {
         ListItemGroup({ header: this.groupHeader(Translations.t('section_turn_method')) }) {
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.arrowshape_turn_up_left'),
-              title: Translations.t('section_turn_method'),
-              options: this.readModeLabels(),
-              selectedIndex: this.readMode,
-              onSelect: (index: number) => {
-                this.readMode = index;
-                this.save();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius(16)
-          .clip(true)
+          SettingSelect({
+            corner: SettingCorner.ALL,
+            icon: $r('sys.symbol.arrowshape_turn_up_left'),
+            title: Translations.t('section_turn_method'),
+            options: this.readModeLabels(),
+            selectedIndex: this.readMode,
+            onSelect: (index: number) => {
+              this.readMode = index;
+              this.save();
+            }
+          })
         }
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_turn_control')) }) {
-          ListItem() {
-            SettingSwitch({ icon: $r('sys.symbol.hand_tap'), title: Translations.t('tap_turn_page'), isOn: this.tapTurnPage, onToggle: (v: boolean) => {
-              this.tapTurnPage = v; this.save();
-            }})
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
-          ListItem() {
-            SettingSwitch({ icon: $r('sys.symbol.arrowshape_turn_up_left'), title: Translations.t('invert_tap'), isOn: this.invertTap, onToggle: (v: boolean) => {
-              this.invertTap = v; this.save();
-            }})
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          ListItem() {
-            SettingSwitch({ icon: $r('sys.symbol.speaker_wave_2'), title: Translations.t('volume_key'), isOn: this.volumeKeyTurnPage, onToggle: (v: boolean) => {
-              this.volumeKeyTurnPage = v; this.save();
-            }})
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          ListItem() {
-            SettingSwitch({ icon: $r('sys.symbol.rectangle_3_group'), title: Translations.t('side_page_turn'), isOn: this.sidePageTurn, onToggle: (v: boolean) => {
-              this.sidePageTurn = v; this.save();
-            }})
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingSwitch({ corner: SettingCorner.FIRST, icon: $r('sys.symbol.hand_tap'), title: Translations.t('tap_turn_page'), isOn: this.tapTurnPage, onToggle: (v: boolean) => {
+            this.tapTurnPage = v; this.save();
+          }})
+          SettingSwitch({ corner: SettingCorner.MIDDLE, icon: $r('sys.symbol.arrowshape_turn_up_left'), title: Translations.t('invert_tap'), isOn: this.invertTap, onToggle: (v: boolean) => {
+            this.invertTap = v; this.save();
+          }})
+          SettingSwitch({ corner: SettingCorner.MIDDLE, icon: $r('sys.symbol.speaker_wave_2'), title: Translations.t('volume_key'), isOn: this.volumeKeyTurnPage, onToggle: (v: boolean) => {
+            this.volumeKeyTurnPage = v; this.save();
+          }})
+          SettingSwitch({ corner: SettingCorner.LAST, icon: $r('sys.symbol.rectangle_3_group'), title: Translations.t('side_page_turn'), isOn: this.sidePageTurn, onToggle: (v: boolean) => {
+            this.sidePageTurn = v; this.save();
+          }})
         }
-        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_display')) }) {
-          ListItem() {
-            SettingSwitch({ icon: $r('sys.symbol.brightness'), title: Translations.t('keep_screen_on'), isOn: this.keepScreenOn, onToggle: (v: boolean) => {
-              this.keepScreenOn = v; this.save();
-            }})
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
-          ListItem() {
-            SettingSwitch({ icon: $r('sys.symbol.play'), title: Translations.t('page_animation'), isOn: this.pageAnimation, onToggle: (v: boolean) => {
-              this.pageAnimation = v; this.save();
-            }})
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          ListItem() {
-            SettingSwitch({ icon: $r('sys.symbol.info_circle'), title: Translations.t('show_page_info'), isOn: this.showPageInfo, onToggle: (v: boolean) => {
-              this.showPageInfo = v; this.save();
-            }})
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingSwitch({ corner: SettingCorner.FIRST, icon: $r('sys.symbol.brightness'), title: Translations.t('keep_screen_on'), isOn: this.keepScreenOn, onToggle: (v: boolean) => {
+            this.keepScreenOn = v; this.save();
+          }})
+          SettingSwitch({ corner: SettingCorner.MIDDLE, icon: $r('sys.symbol.play'), title: Translations.t('page_animation'), isOn: this.pageAnimation, onToggle: (v: boolean) => {
+            this.pageAnimation = v; this.save();
+          }})
+          SettingSwitch({ corner: SettingCorner.LAST, icon: $r('sys.symbol.info_circle'), title: Translations.t('show_page_info'), isOn: this.showPageInfo, onToggle: (v: boolean) => {
+            this.showPageInfo = v; this.save();
+          }})
         }
-        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_zoom')) }) {
-          ListItem() {
-            SettingSwitch({ icon: $r('sys.symbol.magnifyingglass'), title: Translations.t('double_tap_zoom'), isOn: this.doubleTapZoom, onToggle: (v: boolean) => {
-              this.doubleTapZoom = v; this.save();
-            }})
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
-          ListItem() {
-            SettingSwitch({ icon: $r('sys.symbol.hand_tap'), title: Translations.t('long_press_zoom'), isOn: this.longPressZoom, onToggle: (v: boolean) => {
-              this.longPressZoom = v; this.save();
-            }})
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingSwitch({ corner: SettingCorner.FIRST, icon: $r('sys.symbol.magnifyingglass'), title: Translations.t('double_tap_zoom'), isOn: this.doubleTapZoom, onToggle: (v: boolean) => {
+            this.doubleTapZoom = v; this.save();
+          }})
+          SettingSwitch({ corner: SettingCorner.LAST, icon: $r('sys.symbol.hand_tap'), title: Translations.t('long_press_zoom'), isOn: this.longPressZoom, onToggle: (v: boolean) => {
+            this.longPressZoom = v; this.save();
+          }})
         }
-        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_image')) }) {
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.camera'),
-              title: Translations.t('image_quality'),
-              options: this.imageQualities,
-              selectedIndex: this.imageQuality,
-              onSelect: (index: number) => {
-                this.imageQuality = index;
-                this.save();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.square_grid_2x2'),
-              title: Translations.t('image_layout'),
-              options: this.imageLayoutLabels(),
-              selectedIndex: this.imageLayout,
-              onSelect: (index: number) => {
-                this.imageLayout = index;
-                this.save();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingSelect({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.camera'),
+            title: Translations.t('image_quality'),
+            options: this.imageQualities,
+            selectedIndex: this.imageQuality,
+            onSelect: (index: number) => {
+              this.imageQuality = index;
+              this.save();
+            }
+          })
+          SettingSelect({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.square_grid_2x2'),
+            title: Translations.t('image_layout'),
+            options: this.imageLayoutLabels(),
+            selectedIndex: this.imageLayout,
+            onSelect: (index: number) => {
+              this.imageLayout = index;
+              this.save();
+            }
+          })
         }
-        .divider({ strokeWidth: 0.5, color: $r('app.color.divider'), startMargin: 14, endMargin: 14 })
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_auto')) }) {
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.timer'),
-              title: Translations.t('auto_page_interval'),
-              options: this.autoPageTimeLabels(),
-              selectedIndex: this.autoPageTimes.indexOf(this.autoPageTime),
-              onSelect: (index: number) => {
-                this.autoPageTime = this.autoPageTimes[index];
-                this.save();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius(16)
-          .clip(true)
+          SettingSelect({
+            corner: SettingCorner.ALL,
+            icon: $r('sys.symbol.timer'),
+            title: Translations.t('auto_page_interval'),
+            options: this.autoPageTimeLabels(),
+            selectedIndex: this.autoPageTimes.indexOf(this.autoPageTime),
+            onSelect: (index: number) => {
+              this.autoPageTime = this.autoPageTimes[index];
+              this.save();
+            }
+          })
         }
       }
       .scrollBar(BarState.Off)
@@ -265,6 +212,9 @@ export struct ReadingSettings {
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
     .onBackPressed(() => {
       this.save();
       return false;

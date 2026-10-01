@@ -6,6 +6,7 @@ import { Database, FavoriteItem } from '../data/database/Database';
 import { JmApi, JmFolder } from '../data/api/JmApi';
 import { Comic } from '../data/model/Comic';
 import { ArrayDataSource } from '../common/ArrayDataSource';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
 
 @Component
 export struct FavoritesContent {
@@ -27,7 +28,7 @@ export struct FavoritesContent {
   @State newFolderName: string = ''
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
   
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   aboutToAppear(): void {
     this.loadData();

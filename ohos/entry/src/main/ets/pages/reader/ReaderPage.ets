@@ -12,9 +12,11 @@ import { Chapter } from '../../data/model/Chapter';
 import { JmApi } from '../../data/api/JmApi';
 import { Logger } from '../../common/Logger';
 import { ReaderImage, ReaderImageCache } from '../../components/ReaderImage';
-import { ArrayDataSource } from '../../common/ArrayDataSource';
 import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingSelect } from '../../components/SettingSelect';
+import { SettingCorner } from '../../components/SettingCommon';
+import { DEFAULT_THEME_COLOR } from '../../common/Constants';
+import EntryAbility from '../../entryability/EntryAbility';
 
 const MAX_ZOOM = 4.0;
 const DOUBLE_TAP_ZOOM = 2.5;
@@ -24,6 +26,10 @@ const SIDE_TRACK: number = 280;
 const SIDE_THUMB: number = 36;
 /** 自动翻页可选间隔（秒） */
 const AUTO_TIMES: number[] = [3, 5, 8, 10, 15];
+/** 视口懒加载窗口：仅加载距当前页 N 页内的图片（离窗丢像素、保留比例占位） */
+const ACTIVE_WINDOW_SINGLE: number = 2;
+const ACTIVE_WINDOW_DUAL: number = 2;
+const ACTIVE_WINDOW_STRIP: number = 3;
 
 @Builder
 export function ReaderPageBuilder(name: string, param: object) {
@@ -40,9 +46,9 @@ export struct ReaderPage {
   @State chapters: Chapter[] = [];
   @State currentChapterOrder: number = 0;
   @State currentIndex: number = 0;
-  @State showToolbar: boolean = false;
-  @State showSheet: boolean = false;
-  sheetMode: string = 'settings';
+  @State @Watch('onOverlayChanged') showToolbar: boolean = false;
+  @State @Watch('onOverlayChanged') showSheet: boolean = false;
+  @State sheetMode: string = 'settings';
   @State loadingChapter: boolean = false;
   // 阅读配置
   @State readMode: number = 2;
@@ -62,11 +68,21 @@ export struct ReaderPage {
   // 缩放
   @State zoomScale: number = 1.0;
   private pinchBaseScale: number = 1.0;
-  // LazyForEach 数据源（构建一次，章节/模式切换时 replaceAll）
-  private singleDS: ArrayDataSource<string> = new ArrayDataSource<string>();
-  private dualDS: ArrayDataSource<number> = new ArrayDataSource<number>();
-  private stripDS: ArrayDataSource<string> = new ArrayDataSource<string>();
+  // 三模式页数据（章节/模式切换时重建；@State 赋值保证内容区确定性刷新）
+  @State singlePages: string[] = [];
+  @State dualPairs: number[] = [];
+  @State stripPages: string[] = [];
   private stripScroller: Scroller = new Scroller();
+  /** 连续模式滚动中（滚动期间不做锚点补偿，避免与手势冲突） */
+  private stripScrolling: boolean = false;
+  /** 连续模式触摸中（按下到 scrollStart 之间/惯性尾巴期间抑制锚点补偿） */
+  private stripTouching: boolean = false;
+  /** 手势期间跳过的锚点补偿欠账（停稳且抬手后一次性补齐，消除漂移） */
+  private stripPendingDelta: number = 0;
+  // 状态栏显隐（阅读开始 2.5s 后隐藏，工具栏/面板打开时临时恢复）
+  private statusBarTimer: number = -1;
+  private readingStarted: boolean = false;
+  private statusBarVisible: boolean = true;
   // 音量键翻页订阅
   private volumeUpOptions: inputConsumer.KeyPressedConfig = {
     key: KeyCode.KEYCODE_VOLUME_UP,
@@ -89,7 +105,7 @@ export struct ReaderPage {
   private sideBarDragBase: number = 0;
   private sideBarDragOffset: number = 0;
   
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
 
@@ -109,6 +125,12 @@ export struct ReaderPage {
       this.preloadAround(this.currentIndex);
       this.restoreProgress();
     });
+    // 阅读开始 2.5s 后隐藏状态栏（工具栏/设置面板打开时临时恢复）
+    this.statusBarTimer = setTimeout(() => {
+      this.statusBarTimer = -1;
+      this.readingStarted = true;
+      this.syncStatusBar();
+    }, 2500);
   }
 
   aboutToDisappear(): void {
@@ -116,6 +138,12 @@ export struct ReaderPage {
     this.setKeepScreenOn(false);
     this.stopAutoPlay();
     this.unregisterVolumeKey();
+    if (this.statusBarTimer >= 0) {
+      clearTimeout(this.statusBarTimer);
+      this.statusBarTimer = -1;
+    }
+    this.readingStarted = false;
+    this.syncStatusBar();
   }
 
   private async loadConfig(): Promise<void> {
@@ -224,6 +252,32 @@ export struct ReaderPage {
     }
   }
 
+  // ---------- 状态栏显隐（阅读开始 2.5s 后隐藏；工具栏/设置面板打开时恢复，关闭后再隐藏） ----------
+  /** 工具栏/设置面板显隐联动（@Watch 回调） */
+  private onOverlayChanged(): void {
+    this.syncStatusBar();
+  }
+
+  private syncStatusBar(): void {
+    this.setStatusBarVisible(!this.readingStarted || this.showToolbar || this.showSheet);
+  }
+
+  private async setStatusBarVisible(visible: boolean): Promise<void> {
+    if (this.statusBarVisible === visible) {
+      return;
+    }
+    this.statusBarVisible = visible;
+    try {
+      const win = await window.getLastWindow(getContext(this));
+      await win.setSpecificSystemBarEnabled('status', visible, true);
+      // 兜底刷新避让区（避免依赖 avoidAreaChange 是否触发），联动工具栏 topAvoid
+      EntryAbility.updateAvoidAreas(win);
+      Logger.info('ReaderPage', `status bar visible=${visible}`);
+    } catch (e) {
+      Logger.warn('ReaderPage', `setStatusBarVisible(${visible}) failed: ${String(e)}`);
+    }
+  }
+
   private async restoreProgress(): Promise<void> {
     if (this.comicId.length === 0 || this.source.length === 0) {
       return;
@@ -294,7 +348,7 @@ export struct ReaderPage {
     return this.isRtl() ? this.images.length - 1 - display : display;
   }
 
-  /** 章节/模式切换后重建 LazyForEach 数据源（RTL 反转仅作用于单页数据源） */
+  /** 章节/模式切换后重建三模式页数据（RTL 反转仅作用于单页数据源） */
   private refreshDataSources(): void {
     const singleArr: string[] = [];
     if (this.isRtl()) {
@@ -306,31 +360,35 @@ export struct ReaderPage {
         singleArr.push(this.images[i]);
       }
     }
-    this.singleDS.replaceAll(singleArr);
+    this.singlePages = singleArr;
     const dualArr: number[] = [];
     for (let i = 0; i < this.images.length; i += 2) {
       dualArr.push(i);
     }
-    this.dualDS.replaceAll(dualArr);
+    this.dualPairs = dualArr;
     const stripArr: string[] = [];
     for (let i = 0; i < this.images.length; i++) {
       stripArr.push(this.images[i]);
     }
-    this.stripDS.replaceAll(stripArr);
+    this.stripPages = stripArr;
   }
 
-  /** 预取当前页前后各 2 页（像素缓存命中时零开销） */
+  /** 预取当前页：普通前向 6 页/后向 2 页；连续模式前向 10 页/后向 3 页（保证视口底部图片进场前比例已缓存，避免占位高度突变）。入队尾顺序消化、可见页优先插队，队列限流防加载风暴 */
   private preloadAround(idx: number): void {
     if (this.images.length === 0) {
       return;
     }
+    const forward: number = this.isStrip() ? 10 : 6;
+    const backward: number = this.isStrip() ? 3 : 2;
     const targets: string[] = [];
-    for (let d = 1; d <= 2; d++) {
+    for (let d = 1; d <= forward; d++) {
       const after: number = idx + d;
-      const before: number = idx - d;
       if (after < this.images.length) {
         targets.push(this.images[after]);
       }
+    }
+    for (let d = 1; d <= backward; d++) {
+      const before: number = idx - d;
       if (before >= 0) {
         targets.push(this.images[before]);
       }
@@ -466,6 +524,10 @@ export struct ReaderPage {
       const ch: Chapter = await JmApi.getChapter(chapterId);
       const imgs: string[] = ch.imageUrls;
       if (imgs.length > 0) {
+        // 诊断日志：切章后内容未变时用于确认接口是否返回了相同图片
+        Logger.info('ReaderPage', `chapter switch: order=${this.currentChapterOrder}` +
+          ` first=${this.images.length > 0 ? this.images[0] : ''} -> order=${order}` +
+          ` chapterId=${chapterId} count=${imgs.length} first=${imgs[0]}`);
         this.images = imgs;
         this.currentChapterOrder = order;
         this.currentIndex = startAtEnd ? imgs.length - 1 : 0;
@@ -473,7 +535,10 @@ export struct ReaderPage {
         this.showSheet = false;
         this.refreshDataSources();
         if (this.isStrip()) {
-          this.stripScrollTo(this.currentIndex);
+          // 数据重建后再定位（同步 scrollToIndex 命中的是旧条目集合）
+          setTimeout(() => {
+            this.stripScrollTo(this.currentIndex);
+          }, 50);
         }
         this.preloadAround(this.currentIndex);
         this.saveProgress();
@@ -514,18 +579,26 @@ export struct ReaderPage {
     }
   }
 
+  private singleActive(idx: number): boolean {
+    return Math.abs(idx - this.toDisplay(this.currentIndex)) <= ACTIVE_WINDOW_SINGLE;
+  }
+
+  private dualActive(p: number): boolean {
+    return Math.abs(p - Math.floor(this.currentIndex / 2)) <= ACTIVE_WINDOW_DUAL;
+  }
+
   // ---------- 内容区 ----------
   @Builder
-  pageImage(url: string, dual: boolean) {
+  pageImage(url: string, dual: boolean, active: boolean) {
     if (url.length > 0) {
-      ReaderImage({ url: url, imageLayout: this.imageLayout, fill: true, dual: dual })
+      ReaderImage({ url: url, imageLayout: this.imageLayout, fill: true, dual: dual, active: active })
     } else {
       Column({ space: 8 }) {
-        LoadingProgress().width(40).height(40).color('#FFFFFF')
+        LoadingProgress().width(40).height(40).color($r('app.color.text_on_reader'))
       }
       .width('100%').height('100%')
       .justifyContent(FlexAlign.Center)
-      .backgroundColor('#000000')
+      .backgroundColor($r('app.color.reader_bg'))
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
   }
@@ -533,9 +606,9 @@ export struct ReaderPage {
   @Builder
   buildSingleSwiper() {
     Swiper() {
-      LazyForEach(this.singleDS, (url: string, idx: number) => {
+      ForEach(this.singlePages, (url: string, idx: number) => {
         Stack() {
-          this.pageImage(url, false)
+          this.pageImage(url, false, this.singleActive(idx))
         }
         .width('100%').height('100%')
         .clip(true)
@@ -598,38 +671,40 @@ export struct ReaderPage {
     })
     .width('100%').height('100%')
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-  }
+  };
 
   @Builder
   buildDualSwiper() {
     Swiper() {
-      LazyForEach(this.dualDS, (p: number) => {
+      ForEach(this.dualPairs, (p: number) => {
         Row({ space: 0 }) {
           if (this.readMode === 5) {
             // 双页反向：右页在前；两半贴中线对齐（消除中部间隔）
             if (p + 1 < this.images.length) {
               Stack({ alignContent: Alignment.End }) {
-                this.pageImage(this.images[p + 1], true)
+                this.pageImage(this.images[p + 1], true, this.dualActive(p))
               }
               .width('50%').height('100%').clip(true)
               Stack({ alignContent: Alignment.Start }) {
-                this.pageImage(this.images[p], true)
+                this.pageImage(this.images[p], true, this.dualActive(p))
               }
               .width('50%').height('100%').clip(true)
-            } else {
+            }
+          else {
               Stack() {
-                this.pageImage(this.images[p], true)
+                this.pageImage(this.images[p], true, this.dualActive(p))
               }
               .width('100%').height('100%').clip(true)
             }
-          } else {
+          }
+          else {
             Stack({ alignContent: Alignment.End }) {
-              this.pageImage(this.images[p], true)
+              this.pageImage(this.images[p], true, this.dualActive(p))
             }
             .width('50%').height('100%').clip(true)
             if (p + 1 < this.images.length) {
               Stack({ alignContent: Alignment.Start }) {
-                this.pageImage(this.images[p + 1], true)
+                this.pageImage(this.images[p + 1], true, this.dualActive(p))
               }
               .width('50%').height('100%').clip(true)
             }
@@ -679,7 +754,7 @@ export struct ReaderPage {
               })
           )
         )
-      }, (p: number) => `${p}-${this.readMode}`)
+      }, (p: number) => `${p}-${this.readMode}-${this.images[p]}-${p + 1 < this.images.length ? this.images[p + 1] : ''}`)
     }
     .index(Math.floor(this.currentIndex / 2))
     .cachedCount(2)
@@ -694,34 +769,101 @@ export struct ReaderPage {
     })
     .width('100%').height('100%')
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-  }
+  };
 
   @Builder
   buildStripList() {
     List({ scroller: this.stripScroller, initialIndex: this.currentIndex }) {
-      ForEach(this.stripDS.getAllData(), (url: string, idx?: number) => {
+      ForEach(this.stripPages, (url: string, idx: number) => {
         ListItem() {
           if (url.length > 0) {
-            ReaderImage({ url: url, imageLayout: this.imageLayout, fill: false })
+            ReaderImage({
+              url: url,
+              imageLayout: this.imageLayout,
+              fill: false,
+              active: Math.abs(idx - this.currentIndex) <= ACTIVE_WINDOW_STRIP
+            })
           } else {
             Column({ space: 8 }) {
-              LoadingProgress().width(40).height(40).color('#FFFFFF')
+              LoadingProgress().width(40).height(40).color($r('app.color.text_on_reader'))
             }
             .width('100%').height(400)
             .justifyContent(FlexAlign.Center)
-            .backgroundColor('#000000')
+            .backgroundColor($r('app.color.reader_bg'))
           }
         }
+        .onAreaChange((oldValue: Area, newValue: Area) => {
+          this.onStripItemAreaChange(idx, Number(oldValue.height), Number(newValue.height));
+        })
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-      }, (url: string, idx?: number) => `${idx}-${url}`)
+      }, (url: string, idx: number) => `${idx}-${url}`)
     }
     .width('100%').height('100%')
     .scrollBar(BarState.Off)
     .edgeEffect(EdgeEffect.Spring)
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .onScrollIndex((first: number) => {
-      this.currentIndex = first;
+    .onScrollStart(() => {
+      this.stripScrolling = true;
+      Logger.info('ReaderPage', `strip scroll start, cur=${this.currentIndex}`);
     })
+    .onScrollStop(() => {
+      this.stripScrolling = false;
+      Logger.info('ReaderPage', `strip scroll stop, cur=${this.currentIndex}, pending=${this.stripPendingDelta}`);
+      this.flushStripPending();
+    })
+    .onScrollIndex((first: number) => {
+      Logger.debug('ReaderPage', `strip first index -> ${first}`);
+      this.currentIndex = first;
+      this.preloadAround(first);
+    })
+    .onTouch((event: TouchEvent) => {
+      if (event.type === TouchType.Down) {
+        this.stripTouching = true;
+      } else if (event.type === TouchType.Up || event.type === TouchType.Cancel) {
+        this.stripTouching = false;
+        this.flushStripPending();
+      }
+    })
+  }
+
+  /** 上方条目高度变化引起的阅读位置漂移补偿（仅视口上方生效；手势期间记欠账，停稳后补齐） */
+  private onStripItemAreaChange(idx: number, oldHeight: number, newHeight: number): void {
+    if (!(oldHeight > 0) || !(newHeight > 0)) {
+      return;
+    }
+    const delta: number = newHeight - oldHeight;
+    Logger.info('ReaderPage',
+      `strip area change idx=${idx} h=${oldHeight}->${newHeight} scroll=${this.stripScrolling} touch=${this.stripTouching} cur=${this.currentIndex}`);
+    if (Math.abs(delta) < 0.5 || idx >= this.currentIndex) {
+      return;
+    }
+    if (this.stripScrolling || this.stripTouching) {
+      this.stripPendingDelta += delta;
+      return;
+    }
+    try {
+      this.stripScroller.scrollBy(0, delta);
+    } catch (e) {
+      Logger.warn('ReaderPage', `anchor compensate failed: ${String(e)}`);
+    }
+  }
+
+  /** 手势期间累积的补偿欠账在停稳且抬手后一次性补齐（消除滚动中图片加载导致的永久漂移） */
+  private flushStripPending(): void {
+    if (this.stripScrolling || this.stripTouching) {
+      return;
+    }
+    const delta: number = this.stripPendingDelta;
+    this.stripPendingDelta = 0;
+    if (Math.abs(delta) < 0.5) {
+      return;
+    }
+    try {
+      Logger.info('ReaderPage', `strip flush pending delta=${delta}, cur=${this.currentIndex}`);
+      this.stripScroller.scrollBy(0, delta);
+    } catch (e) {
+      Logger.warn('ReaderPage', `flush strip pending failed: ${String(e)}`);
+    }
   }
 
   @Builder
@@ -799,9 +941,9 @@ export struct ReaderPage {
       if (this.showPageInfo) {
         Text(this.pageLabel())
           .fontSize(10)
-          .fontColor('#FFFFFF')
+          .fontColor($r('app.color.text_on_reader'))
           .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-          .backgroundColor('rgba(0,0,0,0.55)')
+          .backgroundColor($r('app.color.reader_overlay'))
           .borderRadius(8)
       }
       Stack({ alignContent: Alignment.Top }) {
@@ -809,7 +951,7 @@ export struct ReaderPage {
           .width(4)
           .height(SIDE_TRACK)
           .borderRadius(2)
-          .backgroundColor('rgba(255,255,255,0.25)')
+          .backgroundColor($r('app.color.reader_sidebar_track'))
           .position({ x: 10 })
         Column()
           .width(4)
@@ -862,7 +1004,7 @@ export struct ReaderPage {
         Button({ type: ButtonType.Circle, stateEffect: true }) {
           SymbolGlyph($r('sys.symbol.chevron_left'))
             .fontSize(22)
-            .fontColor(['#FFFFFF'])
+            .fontColor([$r('app.color.text_on_reader')])
         }
         .width(36).height(36)
         .backgroundColor(Color.Transparent)
@@ -872,12 +1014,12 @@ export struct ReaderPage {
         })
         Column({ space: 2 }) {
           Text(this.title)
-            .fontSize(14).fontColor('#FFFFFF')
+            .fontSize(14).fontColor($r('app.color.text_on_reader'))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
           if (this.chapters.length > 0 && this.currentChapterTitle().length > 0) {
             Text(this.currentChapterTitle())
-              .fontSize(11).fontColor('rgba(255,255,255,0.7)')
+              .fontSize(11).fontColor($r('app.color.reader_text_secondary'))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
           }
@@ -887,7 +1029,7 @@ export struct ReaderPage {
         Button({ type: ButtonType.Circle, stateEffect: true }) {
           SymbolGlyph(this.autoPlay ? $r('sys.symbol.pause') : $r('sys.symbol.play_fill'))
             .fontSize(20)
-            .fontColor(['#FFFFFF'])
+            .fontColor([$r('app.color.text_on_reader')])
         }
         .width(36).height(36)
         .backgroundColor(Color.Transparent)
@@ -898,7 +1040,7 @@ export struct ReaderPage {
           Button({ type: ButtonType.Circle, stateEffect: true }) {
             SymbolGlyph($r('sys.symbol.list_bullet'))
               .fontSize(20)
-              .fontColor(['#FFFFFF'])
+              .fontColor([$r('app.color.text_on_reader')])
           }
           .width(36).height(36)
           .backgroundColor(Color.Transparent)
@@ -911,7 +1053,7 @@ export struct ReaderPage {
         Button({ type: ButtonType.Circle, stateEffect: true }) {
           SymbolGlyph($r('sys.symbol.gearshape'))
             .fontSize(20)
-            .fontColor(['#FFFFFF'])
+            .fontColor([$r('app.color.text_on_reader')])
         }
         .width(36).height(36)
         .backgroundColor(Color.Transparent)
@@ -923,7 +1065,7 @@ export struct ReaderPage {
       }
       .width('100%')
       .padding({ left: 12, right: 12, top: this.topAvoid + 6, bottom: 6 })
-      .backgroundColor('rgba(0,0,0,0.55)')
+      .backgroundColor($r('app.color.reader_overlay'))
       .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
       .alignItems(VerticalAlign.Center)
 
@@ -932,7 +1074,7 @@ export struct ReaderPage {
       Column({ space: 6 }) {
         if (this.showPageInfo) {
           Text(this.pageLabel())
-            .fontSize(13).fontColor('#FFFFFF')
+            .fontSize(13).fontColor($r('app.color.text_on_reader'))
             .width('100%').textAlign(TextAlign.Center)
         }
         Slider({
@@ -943,7 +1085,7 @@ export struct ReaderPage {
           style: SliderStyle.OutSet
         })
         .selectedColor(this.themeColor)
-        .trackColor('rgba(255,255,255,0.3)')
+        .trackColor($r('app.color.reader_slider_track'))
         .width('92%')
         .onChange((value: number) => {
           this.navigateToIndex(Math.floor(value));
@@ -951,9 +1093,9 @@ export struct ReaderPage {
         if (this.chapters.length > 0) {
           Row({ space: 12 }) {
             Text(Translations.t('prev_chapter'))
-              .fontSize(13).fontColor('#FFFFFF')
+              .fontSize(13).fontColor($r('app.color.text_on_reader'))
               .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-              .backgroundColor('rgba(255,255,255,0.15)')
+              .backgroundColor($r('app.color.reader_overlay_button'))
               .borderRadius(14)
               .onClick(() => {
                 const prev: number = this.prevChapterOrder();
@@ -964,9 +1106,9 @@ export struct ReaderPage {
                 }
               })
             Text(Translations.t('next_chapter'))
-              .fontSize(13).fontColor('#FFFFFF')
+              .fontSize(13).fontColor($r('app.color.text_on_reader'))
               .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-              .backgroundColor('rgba(255,255,255,0.15)')
+              .backgroundColor($r('app.color.reader_overlay_button'))
               .borderRadius(14)
               .onClick(() => {
                 const next: number = this.nextChapterOrder();
@@ -981,7 +1123,7 @@ export struct ReaderPage {
       }
       .width('100%')
       .padding({ top: 8, bottom: this.bottomAvoid + 10 })
-      .backgroundColor('rgba(0,0,0,0.55)')
+      .backgroundColor($r('app.color.reader_overlay'))
       .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
     }
     .width('100%').height('100%')
@@ -1037,242 +1179,204 @@ export struct ReaderPage {
     Column({ space: 0 }) {
       List({ space: 24 }) {
         ListItemGroup({ header: this.groupHeader(Translations.t('section_turn_method')) }) {
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.arrowshape_turn_up_left'),
-              title: Translations.t('reading_mode'),
-              options: this.readModeLabels(),
-              selectedIndex: this.readMode,
-              onSelect: (index: number) => {
-                this.readMode = index;
-                this.zoomScale = 1.0;
-                this.refreshDataSources();
-                if (this.isStrip()) {
-                  this.stripScrollTo(this.currentIndex);
-                }
-                ReadingConfig.readMode = index;
-                ReadingConfig.saveAll();
+          SettingSelect({
+            corner: SettingCorner.ALL,
+            icon: $r('sys.symbol.arrowshape_turn_up_left'),
+            title: Translations.t('reading_mode'),
+            options: this.readModeLabels(),
+            selectedIndex: this.readMode,
+            onSelect: (index: number) => {
+              this.readMode = index;
+              this.zoomScale = 1.0;
+              this.refreshDataSources();
+              if (this.isStrip()) {
+                this.stripScrollTo(this.currentIndex);
               }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius(16)
-          .clip(true)
+              ReadingConfig.readMode = index;
+              ReadingConfig.saveAll();
+            }
+          })
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_turn_control')) }) {
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.hand_tap'),
-              title: Translations.t('tap_turn_page'),
-              isOn: this.tapTurnPage,
-              onToggle: (v: boolean) => {
-                this.tapTurnPage = v;
-                ReadingConfig.tapTurnPage = v;
-                ReadingConfig.saveAll();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.arrowshape_turn_up_left'),
-              title: Translations.t('invert_tap'),
-              isOn: this.invertTap,
-              onToggle: (v: boolean) => {
-                this.invertTap = v;
-                ReadingConfig.invertTap = v;
-                ReadingConfig.saveAll();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.speaker_wave_2'),
-              title: Translations.t('volume_key'),
-              isOn: this.volumeKeyTurnPage,
-              onToggle: (v: boolean) => {
-                this.volumeKeyTurnPage = v;
-                ReadingConfig.volumeKeyTurnPage = v;
-                ReadingConfig.saveAll();
-                this.updateVolumeKeySubscription();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.rectangle_3_group'),
-              title: Translations.t('side_page_turn'),
-              isOn: this.sidePageTurn,
-              onToggle: (v: boolean) => {
-                this.sidePageTurn = v;
-                ReadingConfig.sidePageTurn = v;
-                ReadingConfig.saveAll();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingSwitch({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.hand_tap'),
+            title: Translations.t('tap_turn_page'),
+            isOn: this.tapTurnPage,
+            onToggle: (v: boolean) => {
+              this.tapTurnPage = v;
+              ReadingConfig.tapTurnPage = v;
+              ReadingConfig.saveAll();
+            }
+          })
+          SettingSwitch({
+            corner: SettingCorner.MIDDLE,
+            icon: $r('sys.symbol.arrowshape_turn_up_left'),
+            title: Translations.t('invert_tap'),
+            isOn: this.invertTap,
+            onToggle: (v: boolean) => {
+              this.invertTap = v;
+              ReadingConfig.invertTap = v;
+              ReadingConfig.saveAll();
+            }
+          })
+          SettingSwitch({
+            corner: SettingCorner.MIDDLE,
+            icon: $r('sys.symbol.speaker_wave_2'),
+            title: Translations.t('volume_key'),
+            isOn: this.volumeKeyTurnPage,
+            onToggle: (v: boolean) => {
+              this.volumeKeyTurnPage = v;
+              ReadingConfig.volumeKeyTurnPage = v;
+              ReadingConfig.saveAll();
+              this.updateVolumeKeySubscription();
+            }
+          })
+          SettingSwitch({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.rectangle_3_group'),
+            title: Translations.t('side_page_turn'),
+            isOn: this.sidePageTurn,
+            onToggle: (v: boolean) => {
+              this.sidePageTurn = v;
+              ReadingConfig.sidePageTurn = v;
+              ReadingConfig.saveAll();
+            }
+          })
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_display')) }) {
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.brightness'),
-              title: Translations.t('keep_screen_on'),
-              isOn: this.keepScreenOn,
-              onToggle: (v: boolean) => {
-                this.keepScreenOn = v;
-                ReadingConfig.keepScreenOn = v;
-                ReadingConfig.saveAll();
-                this.setKeepScreenOn(v);
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.play'),
-              title: Translations.t('page_animation'),
-              isOn: this.pageAnimation,
-              onToggle: (v: boolean) => {
-                this.pageAnimation = v;
-                ReadingConfig.pageAnimation = v;
-                ReadingConfig.saveAll();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.info_circle'),
-              title: Translations.t('show_page_info'),
-              isOn: this.showPageInfo,
-              onToggle: (v: boolean) => {
-                this.showPageInfo = v;
-                ReadingConfig.showPageInfo = v;
-                ReadingConfig.saveAll();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingSwitch({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.brightness'),
+            title: Translations.t('keep_screen_on'),
+            isOn: this.keepScreenOn,
+            onToggle: (v: boolean) => {
+              this.keepScreenOn = v;
+              ReadingConfig.keepScreenOn = v;
+              ReadingConfig.saveAll();
+              this.setKeepScreenOn(v);
+            }
+          })
+          SettingSwitch({
+            corner: SettingCorner.MIDDLE,
+            icon: $r('sys.symbol.play'),
+            title: Translations.t('page_animation'),
+            isOn: this.pageAnimation,
+            onToggle: (v: boolean) => {
+              this.pageAnimation = v;
+              ReadingConfig.pageAnimation = v;
+              ReadingConfig.saveAll();
+            }
+          })
+          SettingSwitch({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.info_circle'),
+            title: Translations.t('show_page_info'),
+            isOn: this.showPageInfo,
+            onToggle: (v: boolean) => {
+              this.showPageInfo = v;
+              ReadingConfig.showPageInfo = v;
+              ReadingConfig.saveAll();
+            }
+          })
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_zoom')) }) {
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.magnifyingglass'),
-              title: Translations.t('double_tap_zoom'),
-              isOn: this.doubleTapZoom,
-              onToggle: (v: boolean) => {
-                this.doubleTapZoom = v;
-                ReadingConfig.doubleTapZoom = v;
-                ReadingConfig.saveAll();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
-          ListItem() {
-            SettingSwitch({
-              icon: $r('sys.symbol.hand_tap'),
-              title: Translations.t('long_press_zoom'),
-              isOn: this.longPressZoom,
-              onToggle: (v: boolean) => {
-                this.longPressZoom = v;
-                ReadingConfig.longPressZoom = v;
-                ReadingConfig.saveAll();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingSwitch({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.magnifyingglass'),
+            title: Translations.t('double_tap_zoom'),
+            isOn: this.doubleTapZoom,
+            onToggle: (v: boolean) => {
+              this.doubleTapZoom = v;
+              ReadingConfig.doubleTapZoom = v;
+              ReadingConfig.saveAll();
+            }
+          })
+          SettingSwitch({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.hand_tap'),
+            title: Translations.t('long_press_zoom'),
+            isOn: this.longPressZoom,
+            onToggle: (v: boolean) => {
+              this.longPressZoom = v;
+              ReadingConfig.longPressZoom = v;
+              ReadingConfig.saveAll();
+            }
+          })
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_image')) }) {
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.camera'),
-              title: Translations.t('image_quality'),
-              options: this.imageQualityLabels(),
-              selectedIndex: this.imageQuality,
-              onSelect: (index: number) => {
-                this.imageQuality = index;
-                ReadingConfig.imageQuality = index;
-                ReadingConfig.saveAll();  // 触发 AppStorage 同步 → ReaderImage 重载
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ topLeft: 16, topRight: 16 })
-          .clip(true)
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.square_grid_2x2'),
-              title: Translations.t('image_layout'),
-              options: this.imageLayoutLabels(),
-              selectedIndex: this.imageLayout,
-              onSelect: (index: number) => {
-                this.imageLayout = index;
-                ReadingConfig.imageLayout = index;
-                ReadingConfig.saveAll();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius({ bottomLeft: 16, bottomRight: 16 })
-          .clip(true)
+          SettingSelect({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.camera'),
+            title: Translations.t('image_quality'),
+            options: this.imageQualityLabels(),
+            selectedIndex: this.imageQuality,
+            onSelect: (index: number) => {
+              this.imageQuality = index;
+              ReadingConfig.imageQuality = index;
+              ReadingConfig.saveAll();  // 触发 AppStorage 同步 → ReaderImage 重载
+            }
+          })
+          SettingSelect({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.square_grid_2x2'),
+            title: Translations.t('image_layout'),
+            options: this.imageLayoutLabels(),
+            selectedIndex: this.imageLayout,
+            onSelect: (index: number) => {
+              this.imageLayout = index;
+              ReadingConfig.imageLayout = index;
+              ReadingConfig.saveAll();
+            }
+          })
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_auto')) }) {
-          ListItem() {
-            SettingSelect({
-              icon: $r('sys.symbol.timer'),
-              title: Translations.t('auto_page_interval'),
-              options: this.autoPageTimeLabels(),
-              selectedIndex: AUTO_TIMES.indexOf(this.autoPageTime),
-              onSelect: (index: number) => {
-                this.autoPageTime = AUTO_TIMES[index];
-                ReadingConfig.autoPageTime = this.autoPageTime;
-                ReadingConfig.saveAll();
-                this.restartAutoPlayIfOn();
-              }
-            })
-          }
-          .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius(16)
-          .clip(true)
+          SettingSelect({
+            corner: SettingCorner.ALL,
+            icon: $r('sys.symbol.timer'),
+            title: Translations.t('auto_page_interval'),
+            options: this.autoPageTimeLabels(),
+            selectedIndex: AUTO_TIMES.indexOf(this.autoPageTime),
+            onSelect: (index: number) => {
+              this.autoPageTime = AUTO_TIMES[index];
+              ReadingConfig.autoPageTime = this.autoPageTime;
+              ReadingConfig.saveAll();
+              this.restartAutoPlayIfOn();
+            }
+          })
         }
+        .padding({bottom: 24})
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
       }
       .scrollBar(BarState.Off)
       .edgeEffect(EdgeEffect.Spring)
       .width('100%')
       .layoutWeight(1)
-      .padding({ left: 16, right: 16, bottom: 24 })
+      .padding({ left: 16, right: 16})
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
     }
     .width('100%')
     .height('100%')
-    .padding({ bottom: this.bottomAvoid })
     .id('settingsSheet')
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
   }
 
   @Builder
   chaptersSheetContent() {
-    
       Column({ space: 0 }) {
       if (this.loadingChapter) {
         Column({ space: 8 }) {
@@ -1285,6 +1389,7 @@ export struct ReaderPage {
           ForEach(this.chapters, (chapter: Chapter) => {
             GridItem() {
               Text(chapter.title.length > 0 ? chapter.title : `${chapter.order}`)
+                .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
                 .fontSize(13)
                 .fontColor(chapter.order === this.currentChapterOrder ? this.themeColor : $r('app.color.text_primary'))
                 .maxLines(1)
@@ -1302,6 +1407,7 @@ export struct ReaderPage {
                   }
                 })
             }
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
             .id('chapterItem' + chapter.id)
           }, (chapter: Chapter) => `${chapter.id}-${chapter.order}`)
         }
@@ -1312,14 +1418,13 @@ export struct ReaderPage {
         .height('100%')
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring)
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         .padding({ left: 16, right: 16, bottom: 24 })
       }
     }
     .width('100%')
     .height('100%')
-    .padding({ bottom: this.bottomAvoid })
     .id('chaptersSheet')
-    
   }
 
   @Builder
@@ -1344,13 +1449,13 @@ export struct ReaderPage {
         }
       }
       .width('100%').height('100%')
-      .backgroundColor($r('sys.color.black'))
+      .backgroundColor($r('app.color.reader_bg'))
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       .bindSheet($$this.showSheet, this.sheetContent(), {
         detents: [SheetSize.MEDIUM, SheetSize.LARGE],
         blurStyle: BlurStyle.COMPONENT_THICK,
         showClose: true,
-        title:{title: Translations.t('reading_settings')},
+        title:{title: this.sheetMode === 'chapters' ? Translations.t('select_chapter') : Translations.t('reading_settings')},
         dragBar: true,
         shouldDismiss: () => {
           this.showSheet = false;
@@ -1360,12 +1465,12 @@ export struct ReaderPage {
         })
       })
     }
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+    .hideTitleBar(true)
+    .backgroundColor($r('app.color.reader_bg'))
     .systemMaterial(new uiMaterial.ImmersiveMaterial({
       style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
     }))
-    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .hideTitleBar(true)
-    .backgroundColor($r('sys.color.black'))
     .onBackPressed(() => {
       this.saveProgress();
       return false;

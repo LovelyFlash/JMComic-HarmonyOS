@@ -5,7 +5,8 @@ import { Comic } from '../data/model/Comic';
 import { JmApi } from '../data/api/JmApi';
 import { Settings } from '../data/preferences/Settings';
 import { ArrayDataSource } from '../common/ArrayDataSource';
-import { NavTitleBar } from '../components/NavTitleBar';
+import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { uiMaterial } from '@kit.ArkUI';
 
 class SortOption {
   key: string = '';
@@ -24,6 +25,7 @@ export function SearchPageBuilder(name: string, param: object) {
 @Component
 export struct SearchPage {
   pageParam: object | undefined = undefined;
+  @State title: string = Translations.t('search')
   @State keyword: string = ''
   @State dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
   @State loading: boolean = false
@@ -35,7 +37,7 @@ export struct SearchPage {
   @State sort: string = 'mr'
   
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
-  @StorageProp('themeColor') themeColor: string = '#2563EB'
+  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   private makeSorts(): SortOption[] {
     const list: SortOption[] = [];
@@ -116,37 +118,40 @@ export struct SearchPage {
 
   @Builder
   searchInput() {
-    Row({ space: 8 }) {
-      SymbolGlyph($r('sys.symbol.magnifyingglass'))
-        .fontSize(20)
-        .fontColor([$r('app.color.text_secondary')])
-      TextInput({ text: this.keyword, placeholder: Translations.t('search_hint') })
-        .layoutWeight(1)
-        .height(36)
-        .fontSize(14)
-        .backgroundColor(Color.Transparent)
-        .fontColor($r('app.color.text_primary'))
-        .placeholderColor($r('app.color.text_secondary'))
-        .caretColor(this.themeColor)
-        .onChange((value: string) => { this.keyword = value; })
-        .onSubmit(() => { this.doSearch(); })
-      if (this.keyword.length > 0) {
-        SymbolGlyph($r('sys.symbol.xmark_circle_fill'))
-          .fontSize(18)
-          .fontColor([$r('app.color.text_tertiary')])
-          .onClick(() => {
-            this.keyword = '';
-            this.dataSource = new ArrayDataSource<Comic>();
-            this.searched = false;
-          })
+    Column() {
+      Row({ space: 8 }) {
+        SymbolGlyph($r('sys.symbol.magnifyingglass'))
+          .fontSize(20)
+          .fontColor([$r('app.color.text_secondary')])
+        TextInput({ text: this.keyword, placeholder: Translations.t('search_hint') })
+          .layoutWeight(1)
+          .height(36)
+          .fontSize(14)
+          .backgroundColor(Color.Transparent)
+          .fontColor($r('app.color.text_primary'))
+          .placeholderColor($r('app.color.text_secondary'))
+          .caretColor(this.themeColor)
+          .onChange((value: string) => { this.keyword = value; })
+          .onSubmit(() => { this.doSearch(); })
+        if (this.keyword.length > 0) {
+          SymbolGlyph($r('sys.symbol.xmark_circle_fill'))
+            .fontSize(18)
+            .fontColor([$r('app.color.text_tertiary')])
+            .onClick(() => {
+              this.keyword = '';
+              this.dataSource = new ArrayDataSource<Comic>();
+              this.searched = false;
+            })
+        }
       }
+      .width('100%')
+      .height(44)
+      .padding({ left: 12, right: 12 })
+      .backgroundColor($r('app.color.bg_fill'))
+      .borderRadius(22)
     }
     .width('100%')
-    .height(44)
-    .padding({ left: 12, right: 12 })
-    .margin({ left: 16, right: 16, bottom: 8 })
-    .backgroundColor($r('app.color.bg_fill'))
-    .borderRadius(22)
+    .padding({ left: 16, right: 16, bottom: 8 })
     .id('searchInput')
   }
 
@@ -277,18 +282,20 @@ export struct SearchPage {
     NavDestination() {
       
         Column({ space: 0 }) {
-          NavTitleBar({ title: Translations.t('search') })
           this.searchInput()
           this.sortBar()
           this.results()
         }
         .width('100%').height('100%')
-        .backgroundColor($r('app.color.bg_page'))
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .hideTitleBar(true)
+    .title(this.title, { backgroundColor: $r('app.color.bg_page') })
+    .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
   }
 }
