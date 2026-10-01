@@ -9,7 +9,7 @@
 - **漫画浏览**: 最新、分类、每周必看、推荐、热搜词搜索
 - **账号系统**: JM 账号登录、自动签到、收藏夹（多文件夹）、关注
 - **在线阅读**: 六种阅读模式（从左至右/从右至左/从上至下/连续滚动/双页/双页反向）、多种翻页方式（点按/音量键/侧边）、自动翻页、双击/长按缩放、书签页码信息
-- **沉浸阅读**: 进入阅读约 2.5 秒自动隐藏状态栏，打开工具栏/设置面板临时恢复，退出阅读自动还原
+- **沉浸阅读**: 沉浸式布局全屏延伸，内容层置顶时自动隐藏状态栏、工具栏/面板显示时恢复并避让
 - **启动体验**: 独立启动页（首帧显示 + 历史数据预热 + 600ms 最短展示），窗口配置幂等初始化
 - **连续滚动稳定**: 手势护栏 + 漂移欠账补偿 + 前瞻预热，消除图片加载引起的滑动跳动
 - **图片反打乱**: 内置 JM 分段打乱逆向重组（scramble 解码），按 jm_toolkit.py `get_num` 计算分段数、`decode_and_save` 整段逆序重组像素（底段含余数行置顶，段内不旋转）
@@ -49,7 +49,7 @@ devecocli device list    # 查看已连接设备
 
 ```powershell
 devecocli log --keyword JmImage --from 5m   # 查看图片管线日志
-devecocli log --keyword ReaderPage --from 5m   # 阅读器滚动/状态栏诊断日志
+devecocli log --keyword ReaderPage --from 5m   # 阅读器滚动诊断日志
 devecocli log --crash --bundle-name com.jmcomic.harmony  # 崩溃日志
 devecocli ui screenshot --path ./shot.png   # 截图
 ```
@@ -88,8 +88,8 @@ ohos/
 | APP 版本 | 默认 2.1.7（jm_config.py），运行时可被 version.json 动态覆盖 |
 | 深色模式 | base/dark 语义颜色令牌（`$r('app.color.*')` 自动切换）+ `setColorMode` 策略（跟随系统/强制深浅），Surface 分层设计 |
 | 启动流程 | LaunchPage 首帧 + `Database.queryHistory()` 预热 + 600ms 最短展示 → MainPage；`setupWindow` 幂等，启动页/主页共用 |
-| 阅读状态栏 | 进入阅读 2.5s 后 `setSpecificSystemBarEnabled('status')` 隐藏；`@Watch` 联动工具栏/设置面板临时恢复；应用启动时兜底恢复 |
-| 连续滚动稳定 | `onAreaChange` 锚点补偿（仅视口上方）+ 手势护栏（scroll/touch 期间记欠账、停稳补齐）+ strip 前10后3 预热；诊断日志 TAG=ReaderPage |
+| 阅读状态栏 | 条件隐藏：内容层置顶→隐藏，工具栏/面板置顶→恢复（@Watch 收敛 + 世代号防乱序）；开工具栏先恢复状态栏并等 `topAvoid` 回写再渲染（渲染顺序防容器重排），沉浸式布局 + avoidArea 避让，工具栏 padding 联动 `topAvoidHeight` |
+| 连续滚动稳定 | 官方示例7 整链 expandSafeArea + 滚动容器 `clip(false)`（消除避让缺口）+ `onAreaChange` 锚点补偿（仅视口上方）+ 手势护栏（scroll/touch 期间记欠账、停稳补齐）+ strip 前10后3 预热；诊断日志 TAG=ReaderPage |
 | 图片缓存 | 阅读器 PixelMap LRU 缓存（12 张） |
 | 第三方依赖 | 无（oh-package.json5 dependencies 为空） |
 

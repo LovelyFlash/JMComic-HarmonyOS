@@ -11,12 +11,12 @@ import { ReaderParam } from '../../data/model/ReaderParam';
 import { Chapter } from '../../data/model/Chapter';
 import { JmApi } from '../../data/api/JmApi';
 import { Logger } from '../../common/Logger';
+import { ArrayDataSource } from '../../common/ArrayDataSource';
 import { ReaderImage, ReaderImageCache } from '../../components/ReaderImage';
 import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingSelect } from '../../components/SettingSelect';
 import { SettingCorner } from '../../components/SettingCommon';
 import { DEFAULT_THEME_COLOR } from '../../common/Constants';
-import EntryAbility from '../../entryability/EntryAbility';
 
 const MAX_ZOOM = 4.0;
 const DOUBLE_TAP_ZOOM = 2.5;
@@ -29,7 +29,10 @@ const AUTO_TIMES: number[] = [3, 5, 8, 10, 15];
 /** 视口懒加载窗口：仅加载距当前页 N 页内的图片（离窗丢像素、保留比例占位） */
 const ACTIVE_WINDOW_SINGLE: number = 2;
 const ACTIVE_WINDOW_DUAL: number = 2;
-const ACTIVE_WINDOW_STRIP: number = 3;
+/** 进入阅读器后隐藏状态栏的延时（ms，跨过 push 转场再切换避让） */
+const ENTRY_BAR_HIDE_DELAY: number = 400;
+/** 等待状态栏避让区回写的上限（ms，avoidAreaChange → AppStorage.topAvoidHeight） */
+const TOP_AVOID_WAIT_LIMIT: number = 500;
 
 @Builder
 export function ReaderPageBuilder(name: string, param: object) {
@@ -68,21 +71,29 @@ export struct ReaderPage {
   // 缩放
   @State zoomScale: number = 1.0;
   private pinchBaseScale: number = 1.0;
-  // 三模式页数据（章节/模式切换时重建；@State 赋值保证内容区确定性刷新）
+  // 三模式页数据（章节/模式切换时重建；@State 赋值保证内容区确定性刷新；连续模式走 stripSource 惰性刷新）
   @State singlePages: string[] = [];
   @State dualPairs: number[] = [];
-  @State stripPages: string[] = [];
   private stripScroller: Scroller = new Scroller();
-  /** 连续模式滚动中（滚动期间不做锚点补偿，避免与手势冲突） */
-  private stripScrolling: boolean = false;
-  /** 连续模式触摸中（按下到 scrollStart 之间/惯性尾巴期间抑制锚点补偿） */
-  private stripTouching: boolean = false;
-  /** 手势期间跳过的锚点补偿欠账（停稳且抬手后一次性补齐，消除漂移） */
-  private stripPendingDelta: number = 0;
-  // 状态栏显隐（阅读开始 2.5s 后隐藏，工具栏/面板打开时临时恢复）
-  private statusBarTimer: number = -1;
-  private readingStarted: boolean = false;
-  private statusBarVisible: boolean = true;
+  /** 连续模式外层缩放 Scroll（参考项目 scroll 模式：外层 pinch 缩放 + 缩放态平移，内层 List 纵向滚动） */
+  private stripOuterScroller: Scroller = new Scroller();
+  /** 连续模式缩放值。参考项目 zoomScale 用普通字段：onDidZoom 每帧写入不触发重渲（避免
+   *  pinch/滚动期间整棵内容树按帧重渲导致卡顿不跟手），仅越过阈值时翻 stripZoomed 重渲一次 */
+  private stripZoom: number = 1.0;
+  /** 连续模式是否处于缩放态（驱动 scrollable/scrollBar 切换，参考项目 isZoomed） */
+  @State stripZoomed: boolean = false;
+  /** 连续模式数据源（LazyForEach：replaceAll→onDataReloaded 切章刷新，List cachedCount 预建屏外节点） */
+  private stripSource: ArrayDataSource<string> = new ArrayDataSource<string>();
+  /** 连续模式定位重校期：期间忽略 onScrollIndex 上报（防瞬时索引污染窗口/预热/进度，参考 restoreGuard） */
+  private stripGuard: boolean = false;
+  /** 连续模式章节世代号：切章 ++，延迟回调校验后丢弃旧章结果（参考 chapterGeneration） */
+  private stripGeneration: number = 0;
+  /** 定位重校定时器集合 */
+  private stripAnchorTimers: number[] = [];
+  /** 进度防抖保存定时器 */
+  private stripSaveTimer: number = -1;
+  /** 状态栏切换世代号（并发切换仅末次生效，防止隐藏/恢复乱序） */
+  private statusBarGen: number = 0;
   // 音量键翻页订阅
   private volumeUpOptions: inputConsumer.KeyPressedConfig = {
     key: KeyCode.KEYCODE_VOLUME_UP,
@@ -125,25 +136,23 @@ export struct ReaderPage {
       this.preloadAround(this.currentIndex);
       this.restoreProgress();
     });
-    // 阅读开始 2.5s 后隐藏状态栏（工具栏/设置面板打开时临时恢复）
-    this.statusBarTimer = setTimeout(() => {
-      this.statusBarTimer = -1;
-      this.readingStarted = true;
-      this.syncStatusBar();
-    }, 2500);
+    // Q2：阅读内容层即刻为顶层 → 隐藏状态栏；延后到 push 转场结束，
+    // 避免前一页避让区在转场中塌陷（渲染顺序：转场稳定后再切换避让）
+    setTimeout(() => {
+      if (!this.showToolbar && !this.showSheet) {
+        void this.setStatusBarVisible(false);
+      }
+    }, ENTRY_BAR_HIDE_DELAY);
   }
 
   aboutToDisappear(): void {
-    this.saveProgress();
+    this.flushStripSave();
+    this.clearStripAnchorTimers();
     this.setKeepScreenOn(false);
     this.stopAutoPlay();
     this.unregisterVolumeKey();
-    if (this.statusBarTimer >= 0) {
-      clearTimeout(this.statusBarTimer);
-      this.statusBarTimer = -1;
-    }
-    this.readingStarted = false;
-    this.syncStatusBar();
+    // 离开阅读器：恢复状态栏（世代号令挂起的隐藏失效），保证下一页避让就绪
+    void this.setStatusBarVisible(true);
   }
 
   private async loadConfig(): Promise<void> {
@@ -252,32 +261,6 @@ export struct ReaderPage {
     }
   }
 
-  // ---------- 状态栏显隐（阅读开始 2.5s 后隐藏；工具栏/设置面板打开时恢复，关闭后再隐藏） ----------
-  /** 工具栏/设置面板显隐联动（@Watch 回调） */
-  private onOverlayChanged(): void {
-    this.syncStatusBar();
-  }
-
-  private syncStatusBar(): void {
-    this.setStatusBarVisible(!this.readingStarted || this.showToolbar || this.showSheet);
-  }
-
-  private async setStatusBarVisible(visible: boolean): Promise<void> {
-    if (this.statusBarVisible === visible) {
-      return;
-    }
-    this.statusBarVisible = visible;
-    try {
-      const win = await window.getLastWindow(getContext(this));
-      await win.setSpecificSystemBarEnabled('status', visible, true);
-      // 兜底刷新避让区（避免依赖 avoidAreaChange 是否触发），联动工具栏 topAvoid
-      EntryAbility.updateAvoidAreas(win);
-      Logger.info('ReaderPage', `status bar visible=${visible}`);
-    } catch (e) {
-      Logger.warn('ReaderPage', `setStatusBarVisible(${visible}) failed: ${String(e)}`);
-    }
-  }
-
   private async restoreProgress(): Promise<void> {
     if (this.comicId.length === 0 || this.source.length === 0) {
       return;
@@ -302,6 +285,10 @@ export struct ReaderPage {
           fontColor: this.themeColor,
           action: () => {
             this.navigateToIndex(page);
+            if (this.isStrip()) {
+              // 连续模式：START 对齐 + 80/400ms 重校（解码前后高度变化需重复校正落点）
+              this.stripAnchor(page);
+            }
           }
         }
       });
@@ -314,6 +301,26 @@ export struct ReaderPage {
     }
     const chapter: string = this.chapters.length > 0 ? String(this.currentChapterOrder) : '';
     await Database.updateReadingProgress(this.comicId, this.source, chapter, this.currentIndex);
+  }
+
+  /** 进度防抖保存（参考项目 scheduleSavePosition：索引变化 500ms 后落盘，快速滑动不频繁写库） */
+  private scheduleStripSave(): void {
+    if (this.stripSaveTimer >= 0) {
+      clearTimeout(this.stripSaveTimer);
+    }
+    this.stripSaveTimer = setTimeout(() => {
+      this.stripSaveTimer = -1;
+      this.saveProgress();
+    }, 500);
+  }
+
+  /** 立即落盘并清防抖定时器（退出/返回/切章前调用，参考 flushSavePosition） */
+  private flushStripSave(): void {
+    if (this.stripSaveTimer >= 0) {
+      clearTimeout(this.stripSaveTimer);
+      this.stripSaveTimer = -1;
+    }
+    this.saveProgress();
   }
 
   // ---------- 模式判定与数据映射 ----------
@@ -370,16 +377,18 @@ export struct ReaderPage {
     for (let i = 0; i < this.images.length; i++) {
       stripArr.push(this.images[i]);
     }
-    this.stripPages = stripArr;
+    // LazyForEach 刷新走 replaceAll→onDataReloaded（等价参考项目 reload()，避免切章不刷新）
+    this.stripSource.replaceAll(stripArr);
   }
 
-  /** 预取当前页：普通前向 6 页/后向 2 页；连续模式前向 10 页/后向 3 页（保证视口底部图片进场前比例已缓存，避免占位高度突变）。入队尾顺序消化、可见页优先插队，队列限流防加载风暴 */
+  /** 预取当前页：普通前向 6 页/后向 2 页；连续模式双向各 10 页（与 cachedCount 对齐，保证向上/向下滚动进场前比例已缓存，
+   *  占位高度不跳变——这是不做锚点补偿的前提，参考项目 ±10 窗口）。入队尾顺序消化、可见页优先插队，队列限流防加载风暴 */
   private preloadAround(idx: number): void {
     if (this.images.length === 0) {
       return;
     }
     const forward: number = this.isStrip() ? 10 : 6;
-    const backward: number = this.isStrip() ? 3 : 2;
+    const backward: number = this.isStrip() ? 10 : 2;
     const targets: string[] = [];
     for (let d = 1; d <= forward; d++) {
       const after: number = idx + d;
@@ -402,6 +411,7 @@ export struct ReaderPage {
   private navigateToIndex(target: number): void {
     const idx: number = Math.max(0, Math.min(target, this.images.length - 1));
     this.zoomScale = 1.0;
+    this.resetStripZoom();
     this.currentIndex = idx;
     if (this.isStrip()) {
       this.stripScrollTo(idx);
@@ -409,13 +419,54 @@ export struct ReaderPage {
     this.preloadAround(idx);
   }
 
-  /** 连续模式滚动到指定页（List 未创建时静默忽略，由 initialIndex 兜底） */
+  /** 连续模式滚动到指定页（START 顶部对齐：默认 AUTO 在图片矮于视口时贴底，导致首可见项退 1 页，参考项目踩坑注释） */
   private stripScrollTo(idx: number): void {
     try {
-      this.stripScroller.scrollToIndex(idx, false);
+      this.stripScroller.scrollToIndex(idx, false, ScrollAlign.START);
     } catch (e) {
       Logger.warn('ReaderPage', `scrollToIndex failed: ${String(e)}`);
     }
+  }
+
+  /** 关键落点重校（参考项目 restoreReadPosition）：立即 START 对齐 + 80/400ms 两次校正（图片解码前后 item 高度会变化），
+   *  期间 stripGuard 屏蔽 onScrollIndex 上报，最后一次再等 400ms 释放；全程带世代校验 */
+  private stripAnchor(idx: number): void {
+    this.clearStripAnchorTimers();
+    this.stripGuard = true;
+    const gen: number = this.stripGeneration;
+    this.stripScrollTo(idx);
+    const delays: number[] = [80, 400];
+    for (let i = 0; i < delays.length; i++) {
+      const delay: number = delays[i];
+      const isLast: boolean = i === delays.length - 1;
+      const timer: number = setTimeout(() => {
+        this.stripAnchorTimers = this.stripAnchorTimers.filter((t: number) => t !== timer);
+        if (gen !== this.stripGeneration) {
+          this.stripGuard = false;
+          return;
+        }
+        this.stripScrollTo(idx);
+        Logger.info('ReaderPage', `strip anchor idx=${idx} delay=${delay}ms gen=${gen}`);
+        if (isLast) {
+          const release: number = setTimeout(() => {
+            this.stripAnchorTimers = this.stripAnchorTimers.filter((t: number) => t !== release);
+            if (gen === this.stripGeneration) {
+              this.stripGuard = false;
+              Logger.debug('ReaderPage', `strip guard released gen=${gen}`);
+            }
+          }, 400);
+          this.stripAnchorTimers.push(release);
+        }
+      }, delay);
+      this.stripAnchorTimers.push(timer);
+    }
+  }
+
+  private clearStripAnchorTimers(): void {
+    for (let i = 0; i < this.stripAnchorTimers.length; i++) {
+      clearTimeout(this.stripAnchorTimers[i]);
+    }
+    this.stripAnchorTimers = [];
   }
 
   /** 双页一次翻一“跨”（两页），单页/TTB 翻一页 */
@@ -424,14 +475,31 @@ export struct ReaderPage {
   }
 
   // ---------- 交互 ----------
+  /** 连续模式缩放复位（普通字段 + 单个 @State 开关，两次属性切换完成复位） */
+  private resetStripZoom(): void {
+    this.stripZoom = 1.0;
+    this.stripZoomed = false;
+  }
+
   private resetZoom(): void {
+    this.resetStripZoom();
     this.getUIContext().animateTo({ duration: 150, curve: Curve.FastOutSlowIn }, () => {
       this.zoomScale = 1.0;
     });
   }
 
   private handleDoubleTap(): void {
-    if (!this.doubleTapZoom || this.readMode === 3) {
+    if (!this.doubleTapZoom) {
+      return;
+    }
+    if (this.isStrip()) {
+      // 连续模式：双击切换外层 Scroll 缩放（参考项目无双击缩放，字段模式同 pinch 路径）
+      if (this.stripZoom > 1.0) {
+        this.resetStripZoom();
+      } else {
+        this.stripZoom = DOUBLE_TAP_ZOOM;
+        this.stripZoomed = true;
+      }
       return;
     }
     if (this.zoomScale > 1.0) {
@@ -448,7 +516,55 @@ export struct ReaderPage {
       this.showSheet = false;
       return;
     }
-    this.showToolbar = !this.showToolbar;
+    if (this.showToolbar) {
+      // 先撤浮层（@Watch 随后隐藏状态栏），内容容器不读避让高度 → 高度不变
+      this.showToolbar = false;
+      return;
+    }
+    void this.openToolbarOrdered();
+  }
+
+  /**
+   * 打开工具栏的渲染顺序：先恢复状态栏 → 等避让区回写就绪 → 再渲染工具栏。
+   * 保证工具栏 padding（topAvoid）一次到位，且内容链（Scroll/List）不因避让切换重排。
+   */
+  private async openToolbarOrdered(): Promise<void> {
+    await this.setStatusBarVisible(true);
+    await this.waitTopAvoidReady();
+    if (this.showSheet) {
+      return;
+    }
+    this.showToolbar = true;
+  }
+
+  /**
+   * Q2 状态栏可见性收敛：仅阅读内容层（scroll 容器）为顶层时隐藏状态栏，
+   * 浮层（工具栏/半模态）置顶时恢复。世代号防乱序（浮层连切时仅末次状态生效）。
+   */
+  private async setStatusBarVisible(show: boolean): Promise<void> {
+    const gen: number = ++this.statusBarGen;
+    try {
+      const win: window.Window = await window.getLastWindow(getContext(this));
+      if (gen !== this.statusBarGen) {
+        return;
+      }
+      await win.setSpecificSystemBarEnabled('status', show, true);
+      Logger.debug('ReaderPage', `status bar ${show ? 'shown' : 'hidden'} gen=${gen}`);
+    } catch (e) {
+      Logger.warn('ReaderPage', `setSpecificSystemBarEnabled failed: ${String(e)}`);
+    }
+  }
+
+  /** @Watch 入口：任一浮层开关都收敛到同一切换（以最新状态为准） */
+  private onOverlayChanged(): void {
+    void this.setStatusBarVisible(this.showToolbar || this.showSheet);
+  }
+
+  /** 等待状态栏避让区回写（setSpecificSystemBarEnabled 返回≠布局完成），上限 500ms */
+  private async waitTopAvoidReady(): Promise<void> {
+    for (let i = 0; i < TOP_AVOID_WAIT_LIMIT / 25 && this.topAvoid <= 0; i++) {
+      await new Promise<void>((resolve: () => void) => setTimeout(resolve, 25));
+    }
   }
 
   private prevPage(): void {
@@ -528,17 +644,20 @@ export struct ReaderPage {
         Logger.info('ReaderPage', `chapter switch: order=${this.currentChapterOrder}` +
           ` first=${this.images.length > 0 ? this.images[0] : ''} -> order=${order}` +
           ` chapterId=${chapterId} count=${imgs.length} first=${imgs[0]}`);
+        // 切章前：落盘旧章进度（清防抖定时器）+ 世代号推进，旧章延迟定位/保存回调全部失效
+        this.flushStripSave();
+        this.stripGeneration++;
+        this.clearStripAnchorTimers();
         this.images = imgs;
         this.currentChapterOrder = order;
         this.currentIndex = startAtEnd ? imgs.length - 1 : 0;
         this.zoomScale = 1.0;
+        this.resetStripZoom();
         this.showSheet = false;
         this.refreshDataSources();
         if (this.isStrip()) {
-          // 数据重建后再定位（同步 scrollToIndex 命中的是旧条目集合）
-          setTimeout(() => {
-            this.stripScrollTo(this.currentIndex);
-          }, 50);
+          // 数据重建后再定位：START 对齐 + 80/400ms 双重校正（替换旧的 setTimeout(50)，带世代校验）
+          this.stripAnchor(this.currentIndex);
         }
         this.preloadAround(this.currentIndex);
         this.saveProgress();
@@ -773,97 +892,89 @@ export struct ReaderPage {
 
   @Builder
   buildStripList() {
-    List({ scroller: this.stripScroller, initialIndex: this.currentIndex }) {
-      ForEach(this.stripPages, (url: string, idx: number) => {
-        ListItem() {
-          if (url.length > 0) {
-            ReaderImage({
-              url: url,
-              imageLayout: this.imageLayout,
-              fill: false,
-              active: Math.abs(idx - this.currentIndex) <= ACTIVE_WINDOW_STRIP
-            })
-          } else {
-            Column({ space: 8 }) {
-              LoadingProgress().width(40).height(40).color($r('app.color.text_on_reader'))
+    // 外层 Scroll 负责 pinch 缩放/缩放态平移，内层 List 负责纵向滚动（参考项目 scroll 模式逐属性对齐）
+    Scroll(this.stripOuterScroller) {
+      List({ scroller: this.stripScroller, initialIndex: this.currentIndex }) {
+        LazyForEach(this.stripSource, (url: string, idx: number) => {
+          ListItem() {
+            if (url.length > 0) {
+              ReaderImage({
+                url: url,
+                imageLayout: this.imageLayout,
+                fill: false
+              }).expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+            } else {
+              Column({ space: 8 }) {
+                LoadingProgress().width(40).height(40).color($r('app.color.text_on_reader'))
+              }
+              .width('100%').height(400)
+              .justifyContent(FlexAlign.Center)
+              .backgroundColor($r('app.color.reader_bg'))
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
             }
-            .width('100%').height(400)
-            .justifyContent(FlexAlign.Center)
-            .backgroundColor($r('app.color.reader_bg'))
           }
+          .width('100%')
+          // 官方示例7：item 到滚动祖先间所有直接节点整链 expandSafeArea，
+          // 否则滚动后扩展失效（滚动容器内必须按嵌套关系成链配置）
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          // 加载在 ReaderImage 挂载时自行发起（等价 onAppear ±10 预建窗口），此处仅做预热
+          .onAppear(() => {
+            this.preloadAround(idx);
+          })
+        }, (url: string, idx: number) => `${idx}-${url}`)
+      }
+      .width('100%').height('100%')
+      // 官方示例7：内层滚动容器 expand + clip(false)（关闭裁剪，item 扩展绘制才不被滚动容器截断）
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+      .clip(false)
+      .listDirection(Axis.Vertical)
+      .cachedCount(10)
+      .scrollBar(BarState.Off)
+      .nestedScroll({
+        scrollForward: NestedScrollMode.PARENT_FIRST,
+        scrollBackward: NestedScrollMode.PARENT_FIRST
+      })
+      .onScrollIndex((first: number) => {
+        if (this.stripGuard) {
+          // 定位重校期：忽略瞬时首项，防止污染 currentIndex/预热/进度（参考 restoreGuard）
+          return;
         }
-        .onAreaChange((oldValue: Area, newValue: Area) => {
-          this.onStripItemAreaChange(idx, Number(oldValue.height), Number(newValue.height));
-        })
-        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-      }, (url: string, idx: number) => `${idx}-${url}`)
+        if (first >= 0 && first !== this.currentIndex) {
+          Logger.debug('ReaderPage', `strip first index -> ${first}`);
+          this.currentIndex = first;
+          this.preloadAround(first);
+          this.scheduleStripSave();
+        }
+      })
     }
     .width('100%').height('100%')
-    .scrollBar(BarState.Off)
-    .edgeEffect(EdgeEffect.Spring)
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .onScrollStart(() => {
-      this.stripScrolling = true;
-      Logger.info('ReaderPage', `strip scroll start, cur=${this.currentIndex}`);
-    })
-    .onScrollStop(() => {
-      this.stripScrolling = false;
-      Logger.info('ReaderPage', `strip scroll stop, cur=${this.currentIndex}, pending=${this.stripPendingDelta}`);
-      this.flushStripPending();
-    })
-    .onScrollIndex((first: number) => {
-      Logger.debug('ReaderPage', `strip first index -> ${first}`);
-      this.currentIndex = first;
-      this.preloadAround(first);
-    })
-    .onTouch((event: TouchEvent) => {
-      if (event.type === TouchType.Down) {
-        this.stripTouching = true;
-      } else if (event.type === TouchType.Up || event.type === TouchType.Cancel) {
-        this.stripTouching = false;
-        this.flushStripPending();
+    // 官方示例7：外层滚动容器 clip(false)（内容绘制可越过滚动容器边界进入避让区）
+    .clip(false)
+    // 未缩放时纵向滚动交给内层 List（外层禁滚），放大后交给外层 Scroll 平移（参考项目）
+    .scrollable(this.stripZoomed ? ScrollDirection.FREE : ScrollDirection.None)
+    .maxZoomScale(MAX_ZOOM)
+    .minZoomScale(1.0)
+    .zoomScale(this.stripZoom)
+    .enableBouncesZoom(true)
+    .edgeEffect(EdgeEffect.None)
+    // 放大后由外层 Scroll 接管（PARENT_FIRST），滑条常显便于横向平移定位；未缩放隐藏
+    .scrollBar(this.stripZoomed ? BarState.On : BarState.Off)
+    .scrollBarColor('#BBBBBB')
+    .scrollBarWidth(6)
+    .onDidZoom((scale: number) => {
+      // 普通字段逐帧记录（不重渲）；仅越 1.0 阈值翻 stripZoomed 触发一次属性切换（参考 onDidZoom→isZoomed）
+      this.stripZoom = scale;
+      const zoomed: boolean = scale > 1.0;
+      if (this.stripZoomed !== zoomed) {
+        this.stripZoomed = zoomed;
       }
     })
-  }
-
-  /** 上方条目高度变化引起的阅读位置漂移补偿（仅视口上方生效；手势期间记欠账，停稳后补齐） */
-  private onStripItemAreaChange(idx: number, oldHeight: number, newHeight: number): void {
-    if (!(oldHeight > 0) || !(newHeight > 0)) {
-      return;
-    }
-    const delta: number = newHeight - oldHeight;
-    Logger.info('ReaderPage',
-      `strip area change idx=${idx} h=${oldHeight}->${newHeight} scroll=${this.stripScrolling} touch=${this.stripTouching} cur=${this.currentIndex}`);
-    if (Math.abs(delta) < 0.5 || idx >= this.currentIndex) {
-      return;
-    }
-    if (this.stripScrolling || this.stripTouching) {
-      this.stripPendingDelta += delta;
-      return;
-    }
-    try {
-      this.stripScroller.scrollBy(0, delta);
-    } catch (e) {
-      Logger.warn('ReaderPage', `anchor compensate failed: ${String(e)}`);
-    }
-  }
-
-  /** 手势期间累积的补偿欠账在停稳且抬手后一次性补齐（消除滚动中图片加载导致的永久漂移） */
-  private flushStripPending(): void {
-    if (this.stripScrolling || this.stripTouching) {
-      return;
-    }
-    const delta: number = this.stripPendingDelta;
-    this.stripPendingDelta = 0;
-    if (Math.abs(delta) < 0.5) {
-      return;
-    }
-    try {
-      Logger.info('ReaderPage', `strip flush pending delta=${delta}, cur=${this.currentIndex}`);
-      this.stripScroller.scrollBy(0, delta);
-    } catch (e) {
-      Logger.warn('ReaderPage', `flush strip pending failed: ${String(e)}`);
-    }
+    .onZoomStop(() => {
+      if (this.stripZoom < ZOOM_RESET_THRESHOLD) {
+        this.resetStripZoom();
+      }
+    })
   }
 
   @Builder
@@ -1009,7 +1120,7 @@ export struct ReaderPage {
         .width(36).height(36)
         .backgroundColor(Color.Transparent)
         .onClick(() => {
-          this.saveProgress();
+          this.flushStripSave();
           NavUtil.back();
         })
         Column({ space: 2 }) {
@@ -1188,9 +1299,11 @@ export struct ReaderPage {
             onSelect: (index: number) => {
               this.readMode = index;
               this.zoomScale = 1.0;
+              this.resetStripZoom();
               this.refreshDataSources();
               if (this.isStrip()) {
-                this.stripScrollTo(this.currentIndex);
+                // 切到连续模式：START 对齐 + 重校 + 屏蔽瞬时索引（新 List 挂载期间防污染）
+                this.stripAnchor(this.currentIndex);
               }
               ReadingConfig.readMode = index;
               ReadingConfig.saveAll();
@@ -1472,7 +1585,7 @@ export struct ReaderPage {
       style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
     }))
     .onBackPressed(() => {
-      this.saveProgress();
+      this.flushStripSave();
       return false;
     })
   }

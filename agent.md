@@ -43,7 +43,7 @@ ohos/entry/src/main/ets/
 │   ├── JmWeekPage / JmPromotePage / ComicDetailPage / CommentsPage
 │   ├── HistoryPage / FollowPage / FavoritesContent / DownloadPage
 │   ├── MePage / AccountsPage
-│   ├── reader/ReaderPage.ets  -- 阅读器（6 阅读模式：LTR/RTL/TTB/连续滚动/双页/双页反向；手势缩放；状态栏自动隐藏；连续滚动锚点稳定）
+│   ├── reader/ReaderPage.ets  -- 阅读器（6 阅读模式：LTR/RTL/TTB/连续滚动/双页/双页反向；手势缩放；连续滚动锚点稳定）
 │   └── settings/          -- SettingsPage(List+Select), ReadingSettings, JmSettings, AboutPage（均为内置标题栏 .title().hideTitleBar(false)）
 └── entryability/EntryAbility.ets
 ```
@@ -131,7 +131,7 @@ $env:DEVECO_SDK_HOME = "D:\DevEco Studio\sdk"
 ```powershell
 devecocli log --keyword JmImage --from 5m       # 图片管线日志（recombine ok/skip、non-image bytes）
 devecocli log --keyword ReaderImage --from 5m   # 阅读器图片加载日志（load failed 等）
-devecocli log --keyword ReaderPage --from 5m    # 阅读器滚动/状态栏诊断日志（strip area change / flush pending / status bar）
+devecocli log --keyword ReaderPage --from 5m    # 阅读器滚动诊断日志（strip area change / flush pending）
 devecocli log --crash --bundle-name com.jmcomic.harmony  # 崩溃日志
 devecocli log clear                # 清空 hilog（复现问题前先清）
 devecocli ui screenshot --path ./shot.png       # 截图
@@ -176,19 +176,22 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 
 ## 阅读器工程要点（ReaderPage.ets + ReaderImage.ets）
 
-### 状态栏自动隐藏
-- 进入阅读 2.5s 后 `win.setSpecificSystemBarEnabled('status', false, true)`（前置条件：`setWindowLayoutFullScreen(true)` 已开；`SpecificSystemBar = 'status' | 'navigation' | 'navigationIndicator'`）
-- `showToolbar` / `showSheet` 挂 `@Watch('onOverlayChanged')`：打开临时恢复状态栏，关闭且阅读已开始（定时器已触发）则重新隐藏
-- `aboutToDisappear` 清定时器并恢复显示；EntryAbility `setupWindow` 启动时显式恢复，防上次会话隐藏状态残留
-- 隐藏/显示后手动 `EntryAbility.updateAvoidAreas(win)` 兜底刷新 `topAvoidHeight`（不依赖 avoidAreaChange 是否触发），工具栏 padding 自动联动
-- 仅隐藏状态栏，底部导航条（手势条）保持显示
+### 状态栏（Q2 条件隐藏）
+- **条件隐藏**：仅阅读内容层（scroll 容器）为顶层时隐藏状态栏，浮层（工具栏 `showToolbar` / 半模态 `showSheet`）置顶时恢复——`@Watch('onOverlayChanged')` 挂在两个状态上，收敛到 `setStatusBarVisible(show)`，内部以世代号 `statusBarGen` 防乱序（浮层连切时仅末次状态生效，如工具栏→半模态的瞬时 hide 会被随后的 show 取代）
+- **渲染顺序（防容器高度变化）**：打开工具栏走 `openToolbarOrdered()`——先恢复状态栏 → `waitTopAvoidReady()` 轮询 `topAvoidHeight` 回写（`setSpecificSystemBarEnabled` 返回≠布局完成，上限 500ms）→ 再渲染工具栏（padding `topAvoid+6` 一次到位）；关闭时先撤浮层、@Watch 随后隐藏。内容链（Stack/Scroll/List）高度一律 `100%`、**不读 topAvoid/bottomAvoid** → 避让切换不影响容器高度（topAvoid 仅工具栏、bottomAvoid 仅半模态/设置页使用）
+- **进入/退出**：`aboutToAppear` 延后 `ENTRY_BAR_HIDE_DELAY=400ms`（跨过 push 转场再切避让，避免前一页避让区在转场中塌陷）且仅在无浮层时隐藏；`aboutToDisappear` 无条件 `setStatusBarVisible(true)` 恢复（世代号令挂起的隐藏失效），保证下一页避让就绪
+- 沉浸式布局 `setWindowLayoutFullScreen(true)` 仍开启（内容延伸至系统栏区域，靠 `expandSafeArea` + `topAvoidHeight`/`bottomAvoidHeight` padding 避让，整链写法见下节）
+- API 前置条件：`setSpecificSystemBarEnabled(name, enable, animate?)` 需全屏布局 + 主窗口（`SpecificSystemBar = 'status' | 'navigation' | 'navigationIndicator'`），底部手势条用 `'navigationIndicator'`；批量版 `setWindowSystemBarEnable(['navigation'])`
+- 避让高度监听：`avoidAreaChange` 事件 → `EntryAbility.updateAvoidAreas`（状态栏隐藏/恢复也会触发该事件回写 topAvoidHeight；也可用 `@Env(SystemProperties.WINDOW_AVOID_AREA)` 响应式方案）
 
-### 连续滚动（strip 模式）锚点稳定
-- **锚点补偿**：ListItem `onAreaChange` 对 `idx < currentIndex` 且 `|delta| >= 0.5` 的高度变化 `stripScroller.scrollBy(0, delta)`
-- **手势护栏**：`stripScrolling`（onScrollStart/Stop）+ `stripTouching`（onTouch Down/Up/Cancel）期间不补偿，delta 记入 `stripPendingDelta`，停稳且抬手后 `flushStripPending()` 一次性补齐（消除滚动中图片加载导致的永久漂移）
-- **预热窗口**：strip 前向 10/后向 3，其他模式前向 6/后向 2（保证图片进场前比例已缓存，避免占位 `PLACEHOLDER_RATIO=0.7` → 真实比率的高度突变）
-- **active 门控**：`|idx - currentIndex| > ACTIVE_WINDOW_STRIP(3)` 的条目丢像素、保留比例占位，回窗复用缓存
-- **列表实现**：strip 用 ForEach（划出屏节点不下树销毁），LazyForEach 在阅读器中已废弃；诊断日志 TAG=`ReaderPage`
+### 连续滚动（strip 模式）— 完整对照参考项目 JMComic-HarmonyOS-main/ImageViewerPage.ets scroll 模式
+- **结构**：外层 `Scroll`（pinch 缩放 1x-MAX_ZOOM + 缩放态平移 `scrollable(FREE)` + `maxZoomScale/minZoomScale/enableBouncesZoom/edgeEffect(None)/onDidZoom/onZoomStop`）逐属性对齐参考项目；内层 `List`（`cachedCount(10)` + `nestedScroll PARENT_FIRST×2` + `onScrollIndex` 上报页码）
+- **缩放状态**：`stripZoom` 为**普通字段**（`onDidZoom` 逐帧写入不触发重渲），仅 `@State stripZoomed` 越 1.0 阈值翻转驱动 `scrollable/scrollBar` 切换——参考项目 zoomScale 同为普通字段 + `isZoomed` @State；**切勿把 onDidZoom 写进 @State**（pinch 期间整棵内容树按帧重渲会卡顿不跟手）。双击缩放走 `handleDoubleTap` 的 isStrip 分支，跳页/切章/切模式统一 `resetStripZoom()`
+- **加载**：ReaderImage 挂载即加载（LazyForEach cachedCount ±10 预建窗口等价参考项目 onAppear 窗口）+ item `onAppear` → `preloadAround` 双向各 10 预热（进场前比例已解码，占位高度不跳变）；**无 active 门控**（旧 `@State stripActiveIdxs` 在滚动中每个缓存窗口边界 crossing 都全量重渲 → 卡顿，已删）
+- **锚点**：`stripAnchor(idx)` = 立即 `scrollToIndex(START)` + 80/400ms 两次重校（图片解码前后 item 高度会变化）+ `stripGuard` 期间屏蔽 `onScrollIndex` 上报 + `stripGeneration` 世代校验（对应参考 restoreReadPosition/restoreGuard/chapterGeneration）
+- **expandSafeArea**：官方示例7 标准——item 到滚动祖先间**所有直接节点整链设置**（ReaderImage 根+内部各分支、占位 Column、ListItem、内层 List 均 `.expandSafeArea([SYSTEM],[TOP,BOTTOM])`），且**滚动容器必须 `clip(false)`**（内层 List + 外层 Scroll：关闭裁剪，否则 item 的扩展绘制被滚动容器截断 → 避让缺口）。`ReaderImage.expandArea` 默认 true，strip 不再传 false（判空写法 `.expandSafeArea(saTypes(), saEdges())` 仍保留，`([],[])` 官方语义=属性无效）；滚动容器内成链配置后滚动不失效（官方文档第 60 条：缺任一层滚动后可能失效）
+- **进度**：`scheduleStripSave`（索引变化 500ms 防抖落盘）/ `flushStripSave`（退出/返回/切章前立即落盘），对应参考 scheduleSavePosition/flushSavePosition
+- **列表实现**：LazyForEach + `ArrayDataSource.replaceAll → onDataReloaded`；诊断日志 TAG=`ReaderPage`（`strip first index` / `strip anchor idx=...` / `strip guard released`）
 
 ## 常见问题
 
@@ -215,7 +218,10 @@ devecocli log clear
 # 复现问题后：
 devecocli log --keyword ReaderPage --from 2m
 ```
-关注：`strip area change`（idx/高度变化/scroll/touch 标志/currentIndex）、`strip flush pending`（欠账补偿是否触发）、`anchor compensate failed`。若高度突变集中在视口底部图片，说明预热（preloadAround）未追上滑动速度；若 scroll/touch 期间出现补偿，检查护栏条件。
+关注：`strip first index`（页码上报是否正常）、`strip anchor idx=... delay=...`（切章/跳页双重校正是否执行）、`strip guard released`（护栏是否按时释放）。排查顺序：
+1. **占位高度跳变**：图片进场时比例是否已缓存（`preloadAround` 双向 10 是否追上滑动速度）；首次进章未读页比例未知时占位按 `PLACEHOLDER_RATIO=0.7` 估算，解码完成后高度会微调
+2. **避让缺口（顶/底部露背景带）**：按官方示例7 核对整链——ReaderImage（根+分支）→ 占位 Column → ListItem → 内层 List 必须全部 expandSafeArea，且内层 List / 外层 Scroll 必须 `.clip(false)`；缺任一层或漏 clip 都会滚动后失效/被裁剪出缺口。整链齐全仍有缺口，再查渲染顺序（状态栏/浮层切换是否触发了依赖 topAvoid 的容器重排）
+3. **@State 重渲**：`onDidZoom` 必须写普通字段 `stripZoom`；`stripActiveIdxs` 一类随滚动高频变更的 @State 不要恢复
 
 ### Q: API 请求全部失败怎么办？
 检查域名切换（JM 设置页换线路）、查看 `devecocli log --keyword JmApi`，确认 token/时间戳生成与 AES 解密是否正常。

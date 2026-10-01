@@ -217,6 +217,9 @@ export struct ReaderImage {
   @Prop fill: boolean = true;
   /** 双页模式：布局贴中线（布局0/1 按宽度适配铺满半屏，布局2 按高度适配靠内边对齐） */
   @Prop dual: boolean = false;
+  /** 绘制扩展至安全区（沉浸式铺满状态栏/导航条）。连续滚动模式同样传 true：
+   *  官方示例7 要求 item 到滚动祖先整链 expandSafeArea + 滚动容器 clip(false)，成链配置滚动后不失效 */
+  @Prop expandArea: boolean = true;
   /** 视口窗口门控：仅在窗口内加载；离开窗口丢弃像素（比例缓存保留 → 占位高度不变） */
   @Prop @Watch('onActiveChange') active: boolean = true;
   @StorageProp('imageQuality') @Watch('onQualityChange') imgQuality: number = 0;
@@ -266,6 +269,15 @@ export struct ReaderImage {
     return r > 0 ? r : PLACEHOLDER_RATIO;
   }
 
+  /** expandSafeArea 收敛：expandArea=false 时传空数组（官方语义：([],[]) 属性设置无效） */
+  private saTypes(): Array<SafeAreaType> {
+    return this.expandArea ? [SafeAreaType.SYSTEM] : [];
+  }
+
+  private saEdges(): Array<SafeAreaEdge> {
+    return this.expandArea ? [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP] : [];
+  }
+
   private async load(): Promise<void> {
     const url: string = this.url;
     if (url.length === 0) {
@@ -312,7 +324,7 @@ export struct ReaderImage {
         .objectFit(ImageFit.Contain)
         .draggable(false)
         .backgroundColor($r('app.color.reader_bg'))
-        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
+        .expandSafeArea(this.saTypes(), this.saEdges())
     } else if (this.fill && this.imageLayout === 2) {
       Image(source)
         .height('100%')
@@ -320,7 +332,7 @@ export struct ReaderImage {
         .objectFit(ImageFit.Contain)
         .draggable(false)
         .backgroundColor($r('app.color.reader_bg'))
-        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
+        .expandSafeArea(this.saTypes(), this.saEdges())
     } else {
       Image(source)
         .width('100%')
@@ -328,7 +340,7 @@ export struct ReaderImage {
         .objectFit(ImageFit.Contain)
         .draggable(false)
         .backgroundColor($r('app.color.reader_bg'))
-        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
+        .expandSafeArea(this.saTypes(), this.saEdges())
     }
   }
 
@@ -353,7 +365,7 @@ export struct ReaderImage {
         .height('100%')
         .justifyContent(FlexAlign.Center)
         .backgroundColor($r('app.color.reader_bg'))
-        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
+        .expandSafeArea(this.saTypes(), this.saEdges())
         .onClick(() => {
           this.retry();
         })
@@ -372,7 +384,7 @@ export struct ReaderImage {
         .aspectRatio(this.placeRatio())
         .justifyContent(FlexAlign.Center)
         .backgroundColor($r('app.color.reader_bg'))
-        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
+        .expandSafeArea(this.saTypes(), this.saEdges())
         .onClick(() => {
           this.retry();
         })
@@ -385,7 +397,7 @@ export struct ReaderImage {
       .height('100%')
       .justifyContent(FlexAlign.Center)
       .backgroundColor($r('app.color.reader_bg'))
-      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
+      .expandSafeArea(this.saTypes(), this.saEdges())
     } else {
       Column({ space: 8 }) {
         LoadingProgress().width(40).height(40).color($r('app.color.text_on_reader'))
@@ -394,7 +406,7 @@ export struct ReaderImage {
       .aspectRatio(this.placeRatio())
       .justifyContent(FlexAlign.Center)
       .backgroundColor($r('app.color.reader_bg'))
-      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
+      .expandSafeArea(this.saTypes(), this.saEdges())
     }
   }
 }

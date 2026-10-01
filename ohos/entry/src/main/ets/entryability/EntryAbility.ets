@@ -119,17 +119,13 @@ export default class EntryAbility extends UIAbility {
       // 1. 沉浸式：窗口全屏布局，界面延伸至状态栏与导航条
       win.setWindowLayoutFullScreen(true).then(() => {
         hilog.info(DOMAIN, TAG, 'setWindowLayoutFullScreen success');
-        EntryAbility.updateAvoidAreas(win);
-        // 兜底：显式恢复状态栏显示（防止上次会话阅读器隐藏状态残留）
-        win.setSpecificSystemBarEnabled('status', true, false).catch((e: BusinessError) => {
-          hilog.warn(DOMAIN, TAG, 'restore status bar failed: %{public}s', String(e.code));
-        });
+        EntryAbility.updateAvoidAreas(win, 'setupWindow');
       }).catch((e: BusinessError) => {
         hilog.error(DOMAIN, TAG, 'setWindowLayoutFullScreen failed: %{public}s', String(e.code));
       });
       // 2. 监听避让区变化（旋转/分屏/折叠）
       win.on('avoidAreaChange', (data: window.AvoidAreaOptions) => {
-        EntryAbility.updateAvoidAreas(win);
+        EntryAbility.updateAvoidAreas(win, 'avoidAreaChange');
       });
       // 3. 主题切换时联动系统栏字色
       ThemeManager.systemBarNotifier = (dark: boolean) => {
@@ -148,7 +144,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   /** 更新避让区高度（vp）到 AppStorage，供各页面避让状态栏/导航条 */
-  static updateAvoidAreas(win: window.Window): void {
+  static updateAvoidAreas(win: window.Window, caller: string = 'unknown'): void {
     try {
       const density: number = display.getDefaultDisplaySync().densityPixels;
       const sysArea: window.AvoidArea = win.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
@@ -160,7 +156,9 @@ export default class EntryAbility extends UIAbility {
       // 兼容别名（CategoryPage 等使用），与 topAvoidHeight/bottomAvoidHeight 同为 vp
       AppStorage.setOrCreate('topRectHeight', topVp);
       AppStorage.setOrCreate('bottomRectHeight', bottomVp);
-      hilog.info(DOMAIN, TAG, 'avoidArea top=%{public}f bottom=%{public}f', topVp, bottomVp);
+      hilog.info(DOMAIN, TAG, 'avoidArea caller=%{public}s density=%{public}s topPx=%{public}s bottomPx=%{public}s topVp=%{public}s bottomVp=%{public}s',
+        caller, String(density), String(sysArea.topRect.height), String(navArea.bottomRect.height),
+        topVp.toFixed(2), bottomVp.toFixed(2));
     } catch (e) {
       hilog.warn(DOMAIN, TAG, 'updateAvoidAreas failed: %{public}s', String(e));
     }

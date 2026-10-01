@@ -64,11 +64,26 @@ if ($hardcodedColors -eq 0) { Write-Host "  OK: All colors use ThemeManager" -Fo
 
 # 5. Build
 Write-Host "`n[5/5] Build" -ForegroundColor Yellow
-$env:DEVECO_SDK_HOME = "F:\DevEco Studio\sdk"
-$env:HOS_SDK_HOME = "F:\DevEco Studio\sdk\default\openharmony"
+$devEcoHome = "D:\DevEco Studio"
+if (-not (Test-Path (Join-Path $devEcoHome "tools\hvigor\bin\hvigorw.bat"))) {
+    $devEcoHome = "F:\DevEco Studio"
+}
+$env:DEVECO_SDK_HOME = Join-Path $devEcoHome "sdk"
+$env:HOS_SDK_HOME = Join-Path $devEcoHome "sdk\default\openharmony"
+$nodeBin = Join-Path $devEcoHome "tools\node"
+if (Test-Path $nodeBin) { $env:PATH = "$nodeBin;" + $env:PATH }
 Set-Location $projectRoot
-$buildOutput = & "F:\DevEco Studio\tools\hvigor\bin\hvigorw.bat" assembleHap --mode module -p module=entry -p product=default --no-daemon 2>&1
-if ($LASTEXITCODE -eq 0) {
+# hvigor 把 WARN 写到 stderr，PowerShell 在 ErrorActionPreference=Stop 下会把原生命令 stderr 当终止错误，构建期间临时降级
+$prevEap = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+$buildOutput = & (Join-Path $devEcoHome "tools\hvigor\bin\hvigorw.bat") assembleHap --mode module -p module=entry -p product=default --no-daemon 2>&1
+$ErrorActionPreference = $prevEap
+$buildFailed = $LASTEXITCODE -ne 0
+if (-not $buildFailed) {
+    $errLines = @($buildOutput | Select-String "ArkTS:ERROR")
+    if ($errLines.Count -gt 0) { $buildFailed = $true }
+}
+if (-not $buildFailed) {
     Write-Host "  BUILD SUCCESSFUL" -ForegroundColor Green
 } else {
     Write-Host "  BUILD FAILED" -ForegroundColor Red
