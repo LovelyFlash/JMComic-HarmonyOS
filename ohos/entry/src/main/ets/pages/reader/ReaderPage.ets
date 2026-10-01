@@ -31,8 +31,6 @@ const ACTIVE_WINDOW_SINGLE: number = 2;
 const ACTIVE_WINDOW_DUAL: number = 2;
 /** 进入阅读器后隐藏状态栏的延时（ms，跨过 push 转场再切换避让） */
 const ENTRY_BAR_HIDE_DELAY: number = 400;
-/** 等待状态栏避让区回写的上限（ms，avoidAreaChange → AppStorage.topAvoidHeight） */
-const TOP_AVOID_WAIT_LIMIT: number = 500;
 
 @Builder
 export function ReaderPageBuilder(name: string, param: object) {
@@ -94,6 +92,8 @@ export struct ReaderPage {
   private stripSaveTimer: number = -1;
   /** 状态栏切换世代号（并发切换仅末次生效，防止隐藏/恢复乱序） */
   private statusBarGen: number = 0;
+  /** 最近一次非零状态栏避让高度（状态栏隐藏期间打开工具栏用作首帧 padding，避免等待回写） */
+  private lastTopAvoid: number = 0;
   // 音量键翻页订阅
   private volumeUpOptions: inputConsumer.KeyPressedConfig = {
     key: KeyCode.KEYCODE_VOLUME_UP,
@@ -121,6 +121,7 @@ export struct ReaderPage {
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
 
   aboutToAppear(): void {
+    this.lastTopAvoid = this.topAvoid;
     if (this.pageParam !== undefined && this.pageParam !== null) {
       const p = this.pageParam as ReaderParam;
       this.comicId = p.comicId;
@@ -521,19 +522,6 @@ export struct ReaderPage {
       this.showToolbar = false;
       return;
     }
-    void this.openToolbarOrdered();
-  }
-
-  /**
-   * 打开工具栏的渲染顺序：先恢复状态栏 → 等避让区回写就绪 → 再渲染工具栏。
-   * 保证工具栏 padding（topAvoid）一次到位，且内容链（Scroll/List）不因避让切换重排。
-   */
-  private async openToolbarOrdered(): Promise<void> {
-    await this.setStatusBarVisible(true);
-    await this.waitTopAvoidReady();
-    if (this.showSheet) {
-      return;
-    }
     this.showToolbar = true;
   }
 
@@ -555,16 +543,12 @@ export struct ReaderPage {
     }
   }
 
-  /** @Watch 入口：任一浮层开关都收敛到同一切换（以最新状态为准） */
+  /** @Watch 入口：任一浮层开关都收敛到同一切换（以最新状态为准）；顺带缓存最新避让高度 */
   private onOverlayChanged(): void {
-    void this.setStatusBarVisible(this.showToolbar || this.showSheet);
-  }
-
-  /** 等待状态栏避让区回写（setSpecificSystemBarEnabled 返回≠布局完成），上限 500ms */
-  private async waitTopAvoidReady(): Promise<void> {
-    for (let i = 0; i < TOP_AVOID_WAIT_LIMIT / 25 && this.topAvoid <= 0; i++) {
-      await new Promise<void>((resolve: () => void) => setTimeout(resolve, 25));
+    if (this.topAvoid > 0 && this.topAvoid !== this.lastTopAvoid) {
+      this.lastTopAvoid = this.topAvoid;
     }
+    void this.setStatusBarVisible(this.showToolbar || this.showSheet);
   }
 
   private prevPage(): void {
@@ -1175,12 +1159,16 @@ export struct ReaderPage {
         })
       }
       .width('100%')
-      .padding({ left: 12, right: 12, top: this.topAvoid + 6, bottom: 6 })
+      .padding({ left: 12, right: 12, top: (this.topAvoid > 0 ? this.topAvoid : this.lastTopAvoid) + 6, bottom: 6 })
       .backgroundColor($r('app.color.reader_overlay'))
       .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
       .alignItems(VerticalAlign.Center)
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
       Blank().layoutWeight(1)
+        .onClick(() => {
+          this.showToolbar = false;
+        })
 
       Column({ space: 6 }) {
         if (this.showPageInfo) {
@@ -1236,8 +1224,10 @@ export struct ReaderPage {
       .padding({ top: 8, bottom: this.bottomAvoid + 10 })
       .backgroundColor($r('app.color.reader_overlay'))
       .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .width('100%').height('100%')
+    .clip(false)
     .id('toolbar')
     
   }
