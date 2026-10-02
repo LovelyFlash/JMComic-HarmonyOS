@@ -10,7 +10,7 @@
 - **账号系统**: JM 账号登录、自动签到、收藏夹（多文件夹）、关注
 - **在线阅读**: 六种阅读模式（从左至右/从右至左/从上至下/连续滚动/双页/双页反向）、多种翻页方式（点按/音量键/侧边）、自动翻页、双击/长按缩放、书签页码信息
 - **沉浸阅读**: 沉浸式布局全屏延伸，阅读器内状态栏全程隐藏（打开菜单/半模态不恢复，退出自动还原）
-- **沉浸详情页**: 封面模糊大图 + 深浅自适应渐变遮罩全屏延伸；标题/作者/点赞评论数/漫画源与「继续阅读」聚合于封面区，评论/分享/点赞/下载操作按钮图标+文字标签、沉浸光感材质
+- **沉浸详情页**: 封面模糊大图 + 深浅自适应渐变遮罩全屏延伸；标题/作者/点赞评论数/漫画源与「继续阅读」聚合于封面区，评论/分享/点赞/下载操作按钮图标+文字标签；顶部返回/收藏按钮悬浮于沉浸光感材质标题栏
 - **流畅进入与切章**: 详情页点击即转场（章节图片由阅读器异步自取、loading 反馈、失败可重试），切章即时反馈；单页/双页/连续三模式 LazyForEach 惰性构建，切章不再整章节点重建
 - **启动体验**: 独立启动页（首帧显示 + 历史数据预热 + 600ms 最短展示），窗口配置幂等初始化
 - **连续滚动稳定**: 手势护栏 + 漂移欠账补偿 + 前瞻预热，消除图片加载引起的滑动跳动
@@ -92,7 +92,7 @@ ohos/
 | 启动流程 | LaunchPage 首帧 + `Database.queryHistory()` 预热 + 600ms 最短展示 → MainPage；`setupWindow` 幂等，启动页/主页共用 |
 | 阅读状态栏 | 阅读器内全程隐藏：打开工具栏/半模态**不恢复**状态栏（恢复会回写 `topAvoidHeight` → `@StorageProp` 整树重渲染导致图片错位），仅进入后 400ms（跨过 push 转场）隐藏、退出恢复（世代号防乱序）；工具栏 padding 直接联动 `topAvoidHeight` |
 | 阅读器懒加载 | 单页/双页 Swiper 与连续 List 三模式均 LazyForEach + `ArrayDataSource.replaceAll`（切章/进入仅建 visible+cachedCount 节点）；详情页 push-first 同步转场、阅读器自取首章（silent：不落盘防覆盖进度，取完再续读检查）；切章 `reader_overlay` 遮罩即时反馈，诊断日志 `fetchMs`/`totalMs` TAG=ReaderPage |
-| 沉浸光感（systemMaterial） | 生效条件：`AppScope/app.json5` `targetAPIVersion ≥ 26`（app 级 enable metadata 前提）+ `module.json5` `ohos.arkui.UIMaterial.state=enable`；材质层级在不透明背景之下（组件须 `backgroundColor(Transparent)`、`systemMaterial` 放样式属性之后），勿整页+子组件嵌套材质 |
+| 沉浸光感（systemMaterial） | 生效条件：`AppScope/app.json5` `targetAPIVersion ≥ 26` + `module.json5` `ohos.arkui.UIMaterial.state=enable` + **组件位于 navigation title bar / TabBar 内**（内容区组件会刷 `Material inactive: out of scope` 并被禁用——详情页返回/收藏按钮经 `NavDestination .title()` + `barStyle: BarStyle.STACK` 悬浮标题栏实现）；材质层级在不透明背景之下且勿与 `backgroundBlurStyle` 同设（组件须 `backgroundColor(Transparent)`、`systemMaterial` 放样式属性之后），勿整页+子组件嵌套材质 |
 | 连续滚动稳定 | 官方示例7 整链 expandSafeArea + 滚动容器 `clip(false)`（消除避让缺口）+ `onAreaChange` 锚点补偿（仅视口上方）+ 手势护栏（scroll/touch 期间记欠账、停稳补齐）+ strip 前10后3 预热；诊断日志 TAG=ReaderPage |
 | 图片缓存 | 阅读器 PixelMap LRU 缓存（12 张） |
 | 第三方依赖 | 无（oh-package.json5 dependencies 为空） |

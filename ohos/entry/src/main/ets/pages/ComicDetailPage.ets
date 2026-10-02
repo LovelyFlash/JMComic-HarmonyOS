@@ -14,6 +14,7 @@ import { uiMaterial } from '@kit.ArkUI';
 
 const CHAPTER_COLLAPSE_THRESHOLD = 20;
 
+
 @Builder
 export function ComicDetailPageBuilder(name: string, param: object) {
   ComicDetailPage({ pageParam: param })
@@ -45,6 +46,16 @@ export struct ComicDetailPage {
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
+
+  private favoriteMaterial: uiMaterial.Material =
+    new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+      materialColor: 0x263B82F6,
+      colorInvert: true,
+      applyShadow: true,
+      interactive: true,
+      lightEffect: { color: undefined }
+    })
 
   aboutToAppear(): void {
     if (this.pageParam !== undefined && this.pageParam !== null) {
@@ -342,32 +353,32 @@ export struct ComicDetailPage {
   }
 
   @Builder
-  floatingTopBar() {
+  navTitleBar() {
     Row({ space: 8 }) {
-      Button({ type: ButtonType.Circle, stateEffect: true }) {
+      Button({ type: ButtonType.Normal, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.chevron_left'))
           .fontSize(24)
           .fontColor([$r('app.color.content_on_media')])
       }
       .width(40).height(40)
-      .backgroundColor($r('app.color.media_scrim'))
-      .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
+      .borderRadius(24)
+      .backgroundColor(Color.Transparent)
+      .systemMaterial(this.favoriteMaterial)
       .onClick(() => { NavUtil.back(); })
       Blank().layoutWeight(1)
-      Button({ type: ButtonType.Circle, stateEffect: true }) {
+      Button({ type: ButtonType.Normal, stateEffect: true }) {
         SymbolGlyph($r('sys.symbol.star'))
           .fontSize(20)
           .fontColor([this.isFavorite ? this.themeColor : $r('app.color.content_on_media')])
       }
       .width(40).height(40)
-      .backgroundColor($r('app.color.media_scrim'))
-      .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
+      .borderRadius(24)
+      .backgroundColor(Color.Transparent)
+      .systemMaterial(this.favoriteMaterial)
       .onClick(() => { this.toggleFavorite(); })
     }
     .width('100%')
-    .padding({ left: 12, right: 12, top: this.topAvoid + 8 })
-    .id('floatingTopBar')
-    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+    .padding({ left: 12, right: 12, top: 8, bottom: 8 })
   }
 
   @Builder
@@ -468,8 +479,8 @@ export struct ComicDetailPage {
 
   @Builder
   heroActionRow() {
-    Row({ space: 8 }) {
-      Button({ stateEffect: true }) {
+    Row({ space: 17 }) {
+      Button({type:ButtonType.Circle, stateEffect: true }) {
         Column({ space: 5 }) {
           SymbolGlyph($r('sys.symbol.message'))
             .fontSize(24)
@@ -482,14 +493,10 @@ export struct ComicDetailPage {
       }
       .layoutWeight(1)
       .height(72)
-      .borderRadius(18)
       .backgroundColor(Color.Transparent)
-      .systemMaterial(new uiMaterial.ImmersiveMaterial({
-        style: uiMaterial.ImmersiveStyle.ULTRA_THIN
-      }))
       .onClick(() => { this.openComments(); })
 
-      Button({ stateEffect: true }) {
+      Button({type:ButtonType.Circle, stateEffect: true }) {
         Column({ space: 5 }) {
           SymbolGlyph($r('sys.symbol.share'))
             .fontSize(24)
@@ -502,14 +509,10 @@ export struct ComicDetailPage {
       }
       .layoutWeight(1)
       .height(72)
-      .borderRadius(18)
       .backgroundColor(Color.Transparent)
-      .systemMaterial(new uiMaterial.ImmersiveMaterial({
-        style: uiMaterial.ImmersiveStyle.ULTRA_THIN
-      }))
       .onClick(() => { this.share(); })
 
-      Button({ stateEffect: true }) {
+      Button({type:ButtonType.Circle, stateEffect: true }) {
         Column({ space: 5 }) {
           SymbolGlyph($r('sys.symbol.heart'))
             .fontSize(24)
@@ -522,14 +525,10 @@ export struct ComicDetailPage {
       }
       .layoutWeight(1)
       .height(72)
-      .borderRadius(18)
       .backgroundColor(Color.Transparent)
-      .systemMaterial(new uiMaterial.ImmersiveMaterial({
-        style: uiMaterial.ImmersiveStyle.ULTRA_THIN
-      }))
       .onClick(() => { this.toggleLike(); })
 
-      Button({ stateEffect: true }) {
+      Button({type:ButtonType.Circle, stateEffect: true }) {
         Column({ space: 5 }) {
           SymbolGlyph($r('sys.symbol.arrow_down_circle'))
             .fontSize(24)
@@ -542,11 +541,7 @@ export struct ComicDetailPage {
       }
       .layoutWeight(1)
       .height(72)
-      .borderRadius(18)
       .backgroundColor(Color.Transparent)
-      .systemMaterial(new uiMaterial.ImmersiveMaterial({
-        style: uiMaterial.ImmersiveStyle.ULTRA_THIN
-      }))
       .onClick(() => { this.download(); })
     }
     .width('100%')
@@ -743,8 +738,6 @@ export struct ComicDetailPage {
             .scrollBar(BarState.Off)
             .edgeEffect(EdgeEffect.Spring)
             .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-
-            this.floatingTopBar()
           }
         }
         .width('100%').height('100%')
@@ -761,7 +754,8 @@ export struct ComicDetailPage {
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .hideTitleBar(true)
+    .title(this.navTitleBar(), { barStyle: BarStyle.STACK, backgroundColor: Color.Transparent })
+    .hideBackButton(true)
     .onShown(() => { this.checkResume(); })
     .backgroundColor($r('app.color.bg_page'))
   }
