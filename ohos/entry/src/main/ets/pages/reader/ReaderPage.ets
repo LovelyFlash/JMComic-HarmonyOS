@@ -47,10 +47,12 @@ export struct ReaderPage {
   @State chapters: Chapter[] = [];
   @State currentChapterOrder: number = 0;
   @State currentIndex: number = 0;
-  @State @Watch('onOverlayChanged') showToolbar: boolean = false;
-  @State @Watch('onOverlayChanged') showSheet: boolean = false;
+  @State showToolbar: boolean = false;
+  @State showSheet: boolean = false;
   @State sheetMode: string = 'settings';
   @State loadingChapter: boolean = false;
+  /** 首章自取（push-first 进入）失败：内容层错误态 + 点击重试 */
+  @State chapterError: boolean = false;
   // 阅读配置
   @State readMode: number = 2;
   @State tapTurnPage: boolean = true;
@@ -69,9 +71,10 @@ export struct ReaderPage {
   // 缩放
   @State zoomScale: number = 1.0;
   private pinchBaseScale: number = 1.0;
-  // 三模式页数据（章节/模式切换时重建；@State 赋值保证内容区确定性刷新；连续模式走 stripSource 惰性刷新）
-  @State singlePages: string[] = [];
-  @State dualPairs: number[] = [];
+  // 三模式页数据源（章节/模式切换时 replaceAll 全量重建）：单页/双页 Swiper 与连续模式 List
+  // 均走 LazyForEach 惰性构建——进入/切章只创建 visible+cachedCount 节点，避免整章 N 页一帧 eager 重建掉帧
+  private singleSource: ArrayDataSource<string> = new ArrayDataSource<string>();
+  private dualSource: ArrayDataSource<number> = new ArrayDataSource<number>();
   private stripScroller: Scroller = new Scroller();
   /** 连续模式外层缩放 Scroll（参考项目 scroll 模式：外层 pinch 缩放 + 缩放态平移，内层 List 纵向滚动） */
   private stripOuterScroller: Scroller = new Scroller();
@@ -90,10 +93,12 @@ export struct ReaderPage {
   private stripAnchorTimers: number[] = [];
   /** 进度防抖保存定时器 */
   private stripSaveTimer: number = -1;
+  /** push-first 进入：首章自取完成后触发一次续读检查（期间禁止落盘，防止把已存进度覆盖为 0） */
+  private pendingRestore: boolean = false;
+  /** 组件存活标记：异步回调（取章/续读）返回时若已退出则丢弃状态写入 */
+  private alive: boolean = true;
   /** 状态栏切换世代号（并发切换仅末次生效，防止隐藏/恢复乱序） */
   private statusBarGen: number = 0;
-  /** 最近一次非零状态栏避让高度（状态栏隐藏期间打开工具栏用作首帧 padding，避免等待回写） */
-  private lastTopAvoid: number = 0;
   // 音量键翻页订阅
   private volumeUpOptions: inputConsumer.KeyPressedConfig = {
     key: KeyCode.KEYCODE_VOLUME_UP,
@@ -121,7 +126,6 @@ export struct ReaderPage {
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
 
   aboutToAppear(): void {
-    this.lastTopAvoid = this.topAvoid;
     if (this.pageParam !== undefined && this.pageParam !== null) {
       const p = this.pageParam as ReaderParam;
       this.comicId = p.comicId;
@@ -135,18 +139,31 @@ export struct ReaderPage {
     this.loadConfig().then(() => {
       // 等配置加载完再预取，保证按正确质量档解码
       this.preloadAround(this.currentIndex);
-      this.restoreProgress();
+      if (this.images.length > 0) {
+        this.restoreProgress();
+      } else {
+        // push-first 进入：详情页同步转场后由阅读器自取首章（内容层 loading overlay），
+        // 取到图片再做续读检查（restoreProgress 依赖 images.length 判定）
+        this.pendingRestore = true;
+        const order: number = this.currentChapterOrder > 0 ? this.currentChapterOrder :
+          (this.chapters.length > 0 ? this.chapters[0].order : 0);
+        if (order > 0) {
+          void this.loadChapter(order, false, true);
+        } else {
+          this.chapterError = true;
+        }
+      }
     });
-    // Q2：阅读内容层即刻为顶层 → 隐藏状态栏；延后到 push 转场结束，
+    // Q2：阅读器内状态栏全程隐藏（打开菜单/半模态也不恢复，避免避让区变化
+    // 触发 @StorageProp 整树重渲染导致图片错位）；延后到 push 转场结束，
     // 避免前一页避让区在转场中塌陷（渲染顺序：转场稳定后再切换避让）
     setTimeout(() => {
-      if (!this.showToolbar && !this.showSheet) {
-        void this.setStatusBarVisible(false);
-      }
+      void this.setStatusBarVisible(false);
     }, ENTRY_BAR_HIDE_DELAY);
   }
 
   aboutToDisappear(): void {
+    this.alive = false;
     this.flushStripSave();
     this.clearStripAnchorTimers();
     this.setKeepScreenOn(false);
@@ -267,6 +284,9 @@ export struct ReaderPage {
       return;
     }
     const progress: ReadingProgress = await Database.getReadingProgress(this.comicId, this.source);
+    if (!this.alive) {
+      return;
+    }
     const chapterMatches: boolean = this.chapters.length === 0 ||
       progress.lastChapter.length === 0 || Number(progress.lastChapter) === this.currentChapterOrder;
     if (progress.lastPage > 0 && progress.lastPage < this.images.length && chapterMatches) {
@@ -368,12 +388,12 @@ export struct ReaderPage {
         singleArr.push(this.images[i]);
       }
     }
-    this.singlePages = singleArr;
+    this.singleSource.replaceAll(singleArr);
     const dualArr: number[] = [];
     for (let i = 0; i < this.images.length; i += 2) {
       dualArr.push(i);
     }
-    this.dualPairs = dualArr;
+    this.dualSource.replaceAll(dualArr);
     const stripArr: string[] = [];
     for (let i = 0; i < this.images.length; i++) {
       stripArr.push(this.images[i]);
@@ -518,7 +538,7 @@ export struct ReaderPage {
       return;
     }
     if (this.showToolbar) {
-      // 先撤浮层（@Watch 随后隐藏状态栏），内容容器不读避让高度 → 高度不变
+      // 先撤浮层；阅读器内状态栏本就隐藏，内容容器不读避让高度 → 高度不变
       this.showToolbar = false;
       return;
     }
@@ -526,8 +546,9 @@ export struct ReaderPage {
   }
 
   /**
-   * Q2 状态栏可见性收敛：仅阅读内容层（scroll 容器）为顶层时隐藏状态栏，
-   * 浮层（工具栏/半模态）置顶时恢复。世代号防乱序（浮层连切时仅末次状态生效）。
+   * Q2 状态栏可见性：阅读器内全程隐藏（内容层/工具栏/半模态均为顶层），
+   * 仅退出阅读器时恢复。开菜单不再切换状态栏 → 无避让区回写 → 无整树重渲染错位。
+   * 世代号防乱序（进入隐藏/退出恢复并发时仅末次生效）。
    */
   private async setStatusBarVisible(show: boolean): Promise<void> {
     const gen: number = ++this.statusBarGen;
@@ -541,14 +562,6 @@ export struct ReaderPage {
     } catch (e) {
       Logger.warn('ReaderPage', `setSpecificSystemBarEnabled failed: ${String(e)}`);
     }
-  }
-
-  /** @Watch 入口：任一浮层开关都收敛到同一切换（以最新状态为准）；顺带缓存最新避让高度 */
-  private onOverlayChanged(): void {
-    if (this.topAvoid > 0 && this.topAvoid !== this.lastTopAvoid) {
-      this.lastTopAvoid = this.topAvoid;
-    }
-    void this.setStatusBarVisible(this.showToolbar || this.showSheet);
   }
 
   private prevPage(): void {
@@ -607,11 +620,19 @@ export struct ReaderPage {
     return '';
   }
 
-  private async loadChapter(order: number, startAtEnd: boolean): Promise<void> {
+  /**
+   * 切章/首章自取。silent=true（push-first 进入）：不弹切换 toast、不落盘进度
+   * （进入时无「旧章」可存，落盘会把已存进度覆盖为第 0 页）、失败走内容层错误态。
+   */
+  private async loadChapter(order: number, startAtEnd: boolean, silent: boolean = false): Promise<void> {
     if (this.loadingChapter) {
       return;
     }
     this.loadingChapter = true;
+    this.chapterError = false;
+    // 立即关 sheet：关闭动画与内容大重建不叠在同一帧
+    this.showSheet = false;
+    const t0: number = Date.now();
     try {
       // 按章节 order 找到章节 id（JM）
       let chapterId: string = this.comicId;
@@ -622,14 +643,21 @@ export struct ReaderPage {
         }
       }
       const ch: Chapter = await JmApi.getChapter(chapterId);
+      if (!this.alive) {
+        return;
+      }
       const imgs: string[] = ch.imageUrls;
       if (imgs.length > 0) {
+        const tFetch: number = Date.now() - t0;
         // 诊断日志：切章后内容未变时用于确认接口是否返回了相同图片
         Logger.info('ReaderPage', `chapter switch: order=${this.currentChapterOrder}` +
           ` first=${this.images.length > 0 ? this.images[0] : ''} -> order=${order}` +
-          ` chapterId=${chapterId} count=${imgs.length} first=${imgs[0]}`);
-        // 切章前：落盘旧章进度（清防抖定时器）+ 世代号推进，旧章延迟定位/保存回调全部失效
-        this.flushStripSave();
+          ` chapterId=${chapterId} count=${imgs.length} first=${imgs[0]} fetchMs=${tFetch}`);
+        // 切章前：落盘旧章进度（清防抖定时器）+ 世代号推进，旧章延迟定位/保存回调全部失效；
+        // push-first 进入（pendingRestore）无旧章，跳过落盘防止覆盖已存进度
+        if (!this.pendingRestore) {
+          this.flushStripSave();
+        }
         this.stripGeneration++;
         this.clearStripAnchorTimers();
         this.images = imgs;
@@ -637,20 +665,35 @@ export struct ReaderPage {
         this.currentIndex = startAtEnd ? imgs.length - 1 : 0;
         this.zoomScale = 1.0;
         this.resetStripZoom();
-        this.showSheet = false;
         this.refreshDataSources();
         if (this.isStrip()) {
           // 数据重建后再定位：START 对齐 + 80/400ms 双重校正（替换旧的 setTimeout(50)，带世代校验）
           this.stripAnchor(this.currentIndex);
         }
         this.preloadAround(this.currentIndex);
-        this.saveProgress();
-        promptAction.showToast({ message: Translations.t('chapter_switched'), duration: 1200 });
+        Logger.info('ReaderPage', `chapter ready order=${order} totalMs=${Date.now() - t0}`);
+        if (this.pendingRestore) {
+          this.pendingRestore = false;
+          this.restoreProgress();
+        }
+        if (!silent) {
+          this.saveProgress();
+          promptAction.showToast({ message: Translations.t('chapter_switched'), duration: 1200 });
+        }
+      } else if (silent) {
+        this.chapterError = true;
       } else {
         promptAction.showToast({ message: Translations.t('no_images'), duration: 1200 });
       }
     } catch (e) {
-      promptAction.showToast({ message: Translations.t('error'), duration: 1200 });
+      Logger.warn('ReaderPage', `loadChapter failed order=${order}: ${String(e)}`);
+      if (silent) {
+        if (this.alive) {
+          this.chapterError = true;
+        }
+      } else {
+        promptAction.showToast({ message: Translations.t('error'), duration: 1200 });
+      }
     }
     this.loadingChapter = false;
   }
@@ -709,7 +752,7 @@ export struct ReaderPage {
   @Builder
   buildSingleSwiper() {
     Swiper() {
-      ForEach(this.singlePages, (url: string, idx: number) => {
+      LazyForEach(this.singleSource, (url: string, idx: number) => {
         Stack() {
           this.pageImage(url, false, this.singleActive(idx))
         }
@@ -758,7 +801,7 @@ export struct ReaderPage {
               })
           )
         )
-      }, (url: string, idx: number) => `${idx}-${this.readMode}-${url}`)
+      }, (url: string, idx: number) => `${idx}-${url}`)
     }
     .index(this.toDisplay(this.currentIndex))
     .vertical(this.isVerticalPaging())
@@ -779,7 +822,7 @@ export struct ReaderPage {
   @Builder
   buildDualSwiper() {
     Swiper() {
-      ForEach(this.dualPairs, (p: number) => {
+      LazyForEach(this.dualSource, (p: number) => {
         Row({ space: 0 }) {
           if (this.readMode === 5) {
             // 双页反向：右页在前；两半贴中线对齐（消除中部间隔）
@@ -857,7 +900,7 @@ export struct ReaderPage {
               })
           )
         )
-      }, (p: number) => `${p}-${this.readMode}-${this.images[p]}-${p + 1 < this.images.length ? this.images[p + 1] : ''}`)
+      }, (p: number) => `${p}`)
     }
     .index(Math.floor(this.currentIndex / 2))
     .cachedCount(2)
@@ -1003,6 +1046,7 @@ export struct ReaderPage {
       }
       .width('100%').height('100%')
       .hitTestBehavior(HitTestMode.Transparent)
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     } else {
       Row({ space: 0 }) {
         this.tapZone('30%', '100%', 0)
@@ -1011,6 +1055,7 @@ export struct ReaderPage {
       }
       .width('100%').height('100%')
       .hitTestBehavior(HitTestMode.Transparent)
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
   }
 
@@ -1084,6 +1129,7 @@ export struct ReaderPage {
     .justifyContent(FlexAlign.End)
     .alignItems(VerticalAlign.Center)
     .hitTestBehavior(HitTestMode.Transparent)
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   // ---------- 工具栏 ----------
@@ -1159,7 +1205,7 @@ export struct ReaderPage {
         })
       }
       .width('100%')
-      .padding({ left: 12, right: 12, top: (this.topAvoid > 0 ? this.topAvoid : this.lastTopAvoid) + 6, bottom: 6 })
+      .padding({ left: 12, right: 12, top: this.topAvoid + 30, bottom: 6 })
       .backgroundColor($r('app.color.reader_overlay'))
       .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
       .alignItems(VerticalAlign.Center)
@@ -1547,6 +1593,38 @@ export struct ReaderPage {
         if (this.sidePageTurn && !this.showToolbar && !this.showSheet && this.images.length > 1) {
           this.buildSidePageBarLayer()
         }
+        if (this.images.length === 0 && this.chapterError) {
+          // 首章自取失败：内容层错误态（盖住点按区，点击重试）
+          Column({ space: 10 }) {
+            Text(Translations.t('error'))
+              .fontSize(15)
+              .fontColor($r('app.color.text_on_reader'))
+            Text(Translations.t('retry'))
+              .fontSize(12)
+              .fontColor($r('app.color.reader_text_secondary'))
+          }
+          .width('100%').height('100%')
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor($r('app.color.reader_bg'))
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          .onClick(() => {
+            const order: number = this.currentChapterOrder > 0 ? this.currentChapterOrder :
+              (this.chapters.length > 0 ? this.chapters[0].order : 0);
+            if (order > 0) {
+              this.chapterError = false;
+              void this.loadChapter(order, false, true);
+            }
+          })
+        } else if (this.loadingChapter) {
+          // 切章/首章自取期间：半透明遮罩 + 转圈（旧章仍可见，盖住点按区防误触，工具栏在其上可操作）
+          Column() {
+            LoadingProgress().width(48).height(48).color($r('app.color.text_on_reader'))
+          }
+          .width('100%').height('100%')
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor($r('app.color.reader_overlay'))
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+        }
         if (this.showToolbar) {
           this.buildToolbar()
         }
@@ -1571,9 +1649,6 @@ export struct ReaderPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.reader_bg'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
     .onBackPressed(() => {
       this.flushStripSave();
       return false;

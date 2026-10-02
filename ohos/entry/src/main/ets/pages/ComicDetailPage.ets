@@ -33,7 +33,6 @@ export struct ComicDetailPage {
   @State chapters: Chapter[] = []
   @State chaptersReversed: boolean = false
   @State showAllChapters: boolean = false
-  @State startingRead: boolean = false
   @State resumePage: number = 0
   @State resumeChapterOrder: number = 0
   // 云收藏 sheet
@@ -209,34 +208,11 @@ export struct ComicDetailPage {
     NavUtil.push('comments', param);
   }
 
-  /** 进入阅读器：按章节 order 找章节 id 加载图片 */
-  async startReading(chapterOrder: number): Promise<void> {
-    if (this.startingRead) {
-      return;
-    }
-    this.startingRead = true;
-    try {
-      let chapterId: string = this.comicId;
-      for (let i = 0; i < this.chapters.length; i++) {
-        if (this.chapters[i].order === chapterOrder) {
-          chapterId = this.chapters[i].id;
-          break;
-        }
-      }
-      const ch: Chapter = await JmApi.getChapter(chapterId);
-      const images: string[] = ch.imageUrls;
-      if (images.length === 0) {
-        promptAction.showToast({ message: Translations.t('no_images'), duration: 1500 });
-      } else {
-        const param: ReaderParam = new ReaderParam(
-          this.comicId, this.source, this.title, images, this.chapters, chapterOrder);
-        NavUtil.push('reader', param);
-      }
-    } catch (e) {
-      this.error = String(e);
-      promptAction.showToast({ message: Translations.t('error'), duration: 1500 });
-    }
-    this.startingRead = false;
+  /** 进入阅读器：同步转场（消除点击后的网络等待「假死」），章节图片由阅读器自取并显示 loading */
+  private startReading(chapterOrder: number): void {
+    const param: ReaderParam = new ReaderParam(
+      this.comicId, this.source, this.title, [], this.chapters, chapterOrder);
+    NavUtil.push('reader', param);
   }
 
   /** 主按钮：有进度则继续（回到记录章节），否则从第 1 章开始 */
@@ -277,63 +253,90 @@ export struct ComicDetailPage {
   @Builder
   heroSection() {
     Stack({ alignContent: Alignment.TopStart }) {
-      // 模糊封面背景 + 渐变遮罩，延伸至状态栏
+      // 模糊封面背景，延伸至状态栏
       Column() {
         Image(this.comic.coverUrl)
           .width('100%').height('100%')
           .objectFit(ImageFit.Cover)
           .blur(24)
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       }
       .width('100%').height('100%')
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
-      // 前景：封面 + 基础信息
-      Row({ space: 16 }) {
-        Image(this.comic.coverUrl)
-          .width(130).height(180)
-          .objectFit(ImageFit.Cover)
-          .borderRadius(10)
-          .backgroundColor($r('app.color.bg_fill'))
-          .shadow({ radius: 12, color: $r('app.color.shadow') })
-        Column({ space: 8 }) {
-          Text(this.comic.title)
-            .fontSize(18).fontWeight(FontWeight.Bold)
-            .fontColor($r('app.color.text_primary'))
-            .maxLines(3).textOverflow({ overflow: TextOverflow.Ellipsis })
-          if (this.comic.author.length > 0) {
-            Text(Translations.t('author') + ': ' + this.comic.author)
-              .fontSize(13).fontColor($r('app.color.text_secondary'))
-              .maxLines(2)
-          }
-          Row({ space: 12 }) {
-            Row({ space: 4 }) {
-              SymbolGlyph($r('sys.symbol.heart'))
-                .fontSize(14)
-                .fontColor([$r('app.color.danger')])
-              Text(this.comic.likes.toString())
-                .fontSize(13).fontColor($r('app.color.danger'))
-            }
-            Row({ space: 4 }) {
-              SymbolGlyph($r('sys.symbol.message'))
-                .fontSize(14)
-                .fontColor([$r('app.color.text_secondary')])
-              Text(this.comic.comments.toString())
-                .fontSize(13).fontColor($r('app.color.text_secondary'))
-            }
-          }
-          Text(Translations.t('jm_name'))
-            .fontSize(12).fontColor(this.themeColor)
-            .padding({ left: 8, right: 8, top: 3, bottom: 3 })
-            .backgroundColor($r('app.color.bg_fill'))
+      // 可读性遮罩：顶部压暗模糊图，底部渐入页面底色（深浅色自适应）
+      Column()
+        .width('100%').height('100%')
+        .linearGradient({
+          angle: 180,
+          colors: [[$r('app.color.media_scrim'), 0.0], [$r('app.color.bg_page'), 1.0]]
+        })
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+
+      // 前景：封面 + 基础信息 + 开始阅读 + 操作按钮
+      Column({ space: 12 }) {
+        Row({ space: 16 }) {
+          Image(this.comic.coverUrl)
+            .width(130).height(180)
+            .objectFit(ImageFit.Cover)
             .borderRadius(10)
+            .backgroundColor($r('app.color.bg_fill'))
+            .shadow({ radius: 12, color: $r('app.color.shadow') })
+          Column({ space: 8 }) {
+            Text(this.comic.title)
+              .fontSize(20).fontWeight(FontWeight.Bold)
+              .fontColor($r('app.color.text_primary'))
+              .maxLines(3).textOverflow({ overflow: TextOverflow.Ellipsis })
+            if (this.comic.author.length > 0) {
+              Text(Translations.t('author') + ': ' + this.comic.author)
+                .fontSize(14).fontColor($r('app.color.text_secondary'))
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+            }
+            Row({ space: 12 }) {
+              Row({ space: 4 }) {
+                SymbolGlyph($r('sys.symbol.heart'))
+                  .fontSize(14)
+                  .fontColor([$r('app.color.danger')])
+                Text(this.comic.likes.toString())
+                  .fontSize(13).fontColor($r('app.color.danger'))
+              }
+              Row({ space: 4 }) {
+                SymbolGlyph($r('sys.symbol.message'))
+                  .fontSize(14)
+                  .fontColor([$r('app.color.text_secondary')])
+                Text(this.comic.comments.toString())
+                  .fontSize(13).fontColor($r('app.color.text_secondary'))
+              }
+            }
+            Text(Translations.t('jm_name'))
+              .fontSize(12).fontColor(this.themeColor)
+              .padding({ left: 8, right: 8, top: 3, bottom: 3 })
+              .backgroundColor($r('app.color.bg_fill'))
+              .borderRadius(10)
+            Button(this.primaryLabel())
+              .width('100%')
+              .height(44)
+              .fontSize(15)
+              .fontColor($r('app.color.text_on_brand'))
+              .backgroundColor(this.themeColor)
+              .borderRadius(22)
+              .margin({ top: 4 })
+              .onClick(() => { this.primaryRead(); })
+              .id('heroReadButton')
+          }
+          .layoutWeight(1).alignItems(HorizontalAlign.Start)
         }
-        .layoutWeight(1).alignItems(HorizontalAlign.Start)
+        .width('100%')
+
+        this.heroActionRow()
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: this.topAvoid + 56 })
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.TOP])
+      .padding({ left: 16, right: 16, top: this.topAvoid + 56, bottom: 16 })
     }
     .width('100%')
-    .height(280 + this.topAvoid)
+    .height(360 + this.topAvoid)
     .id('heroSection')
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
@@ -364,6 +367,7 @@ export struct ComicDetailPage {
     .width('100%')
     .padding({ left: 12, right: 12, top: this.topAvoid + 8 })
     .id('floatingTopBar')
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   @Builder
@@ -387,17 +391,21 @@ export struct ComicDetailPage {
             .width(104)
             .onClick(() => { this.openRelated(c.id, c.source); })
             .id('related' + c.id)
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           }, (c: Comic) => c.id)
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       }
       .scrollable(ScrollDirection.Horizontal)
       .scrollBar(BarState.Off)
       .edgeEffect(EdgeEffect.Spring)
       .width('100%')
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 16 })
     .id('relatedSection')
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   @Builder
@@ -434,12 +442,14 @@ export struct ComicDetailPage {
               .onClick(() => { this.startReading(chapter.order); })
             }
             .id('chapter' + chapter.id)
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           }, (chapter: Chapter) => chapter.id + chapter.order.toString() + this.chaptersReversed.toString())
       }
       .columnsTemplate('1fr 1fr 1fr')
       .columnsGap(8)
       .rowsGap(8)
       .width('100%')
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
       if (this.chapters.length > CHAPTER_COLLAPSE_THRESHOLD && !this.showAllChapters) {
         Text(`${Translations.t('show_all')} (${this.chapters.length})`)
@@ -453,67 +463,100 @@ export struct ComicDetailPage {
     .width('100%')
     .padding({ left: 16, right: 16, top: 8, bottom: 8 })
     .id('chapterGrid')
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   @Builder
-  bottomBar() {
-    Row({ space: 10 }) {
-      Button({ type: ButtonType.Circle, stateEffect: true }) {
-        SymbolGlyph($r('sys.symbol.message'))
-          .fontSize(20)
-          .fontColor([$r('app.color.text_primary')])
+  heroActionRow() {
+    Row({ space: 8 }) {
+      Button({ stateEffect: true }) {
+        Column({ space: 5 }) {
+          SymbolGlyph($r('sys.symbol.message'))
+            .fontSize(24)
+            .fontColor([$r('app.color.text_primary')])
+          Text(Translations.t('comments'))
+            .fontSize(12)
+            .fontColor($r('app.color.text_primary'))
+        }
+        .alignItems(HorizontalAlign.Center)
       }
-      .width(46).height(46)
-      .backgroundColor($r('app.color.bg_surface'))
+      .layoutWeight(1)
+      .height(72)
+      .borderRadius(18)
+      .backgroundColor(Color.Transparent)
+      .systemMaterial(new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.ULTRA_THIN
+      }))
       .onClick(() => { this.openComments(); })
 
-      Button({ type: ButtonType.Circle, stateEffect: true }) {
-        SymbolGlyph($r('sys.symbol.share'))
-          .fontSize(20)
-          .fontColor([$r('app.color.text_primary')])
+      Button({ stateEffect: true }) {
+        Column({ space: 5 }) {
+          SymbolGlyph($r('sys.symbol.share'))
+            .fontSize(24)
+            .fontColor([$r('app.color.text_primary')])
+          Text(Translations.t('share'))
+            .fontSize(12)
+            .fontColor($r('app.color.text_primary'))
+        }
+        .alignItems(HorizontalAlign.Center)
       }
-      .width(46).height(46)
-      .backgroundColor($r('app.color.bg_surface'))
+      .layoutWeight(1)
+      .height(72)
+      .borderRadius(18)
+      .backgroundColor(Color.Transparent)
+      .systemMaterial(new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.ULTRA_THIN
+      }))
       .onClick(() => { this.share(); })
 
-      Button({ type: ButtonType.Circle, stateEffect: true }) {
-        SymbolGlyph($r('sys.symbol.heart'))
-          .fontSize(20)
-          .fontColor([this.isLiked ? $r('app.color.danger') : $r('app.color.text_primary')])
+      Button({ stateEffect: true }) {
+        Column({ space: 5 }) {
+          SymbolGlyph($r('sys.symbol.heart'))
+            .fontSize(24)
+            .fontColor([this.isLiked ? $r('app.color.danger') : $r('app.color.text_primary')])
+          Text(Translations.t('likes'))
+            .fontSize(12)
+            .fontColor(this.isLiked ? $r('app.color.danger') : $r('app.color.text_primary'))
+        }
+        .alignItems(HorizontalAlign.Center)
       }
-      .width(46).height(46)
-      .backgroundColor($r('app.color.bg_surface'))
+      .layoutWeight(1)
+      .height(72)
+      .borderRadius(18)
+      .backgroundColor(Color.Transparent)
+      .systemMaterial(new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.ULTRA_THIN
+      }))
       .onClick(() => { this.toggleLike(); })
 
-      Button({ type: ButtonType.Circle, stateEffect: true }) {
-        SymbolGlyph($r('sys.symbol.arrow_down_circle'))
-          .fontSize(20)
-          .fontColor([$r('app.color.text_primary')])
+      Button({ stateEffect: true }) {
+        Column({ space: 5 }) {
+          SymbolGlyph($r('sys.symbol.arrow_down_circle'))
+            .fontSize(24)
+            .fontColor([$r('app.color.text_primary')])
+          Text(Translations.t('download'))
+            .fontSize(12)
+            .fontColor($r('app.color.text_primary'))
+        }
+        .alignItems(HorizontalAlign.Center)
       }
-      .width(46).height(46)
-      .backgroundColor($r('app.color.bg_surface'))
+      .layoutWeight(1)
+      .height(72)
+      .borderRadius(18)
+      .backgroundColor(Color.Transparent)
+      .systemMaterial(new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.ULTRA_THIN
+      }))
       .onClick(() => { this.download(); })
-
-      Button(this.primaryLabel())
-        .layoutWeight(1)
-        .height(46)
-        .fontSize(15)
-        .fontColor($r('app.color.text_on_brand'))
-        .backgroundColor(this.themeColor)
-        .borderRadius(23)
-        .onClick(() => { this.primaryRead(); })
     }
     .width('100%')
-    .padding({ left: 16, right: 16, top: 8, bottom: this.bottomAvoid + 8 })
-    .backgroundColor($r('app.color.bg_page'))
     .alignItems(VerticalAlign.Center)
-    .id('bottomBar')
-    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+    .id('heroActionRow')
   }
 
   private primaryLabel(): string {
     if (this.resumePage > 0) {
-      return `${Translations.t('continue_reading_prefix')}${this.resumePage + 1}`;
+      return `${Translations.t('continue_reading_prefix')}`;
     }
     return Translations.t('start_reading');
   }
@@ -636,6 +679,7 @@ export struct ComicDetailPage {
             }
             .width('100%').height('100%')
             .justifyContent(FlexAlign.Center)
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           } else if (this.error.length > 0) {
             Column({ space: 12 }) {
               Text(this.error).fontSize(14).fontColor($r('app.color.danger'))
@@ -647,6 +691,7 @@ export struct ComicDetailPage {
             }
             .width('100%').height('100%')
             .justifyContent(FlexAlign.Center)
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           } else {
             Scroll() {
               Column({ space: 0 }) {
@@ -659,6 +704,7 @@ export struct ComicDetailPage {
                     .lineHeight(22)
                     .width('100%')
                     .padding({ left: 16, right: 16, top: 14 })
+                    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
                 }
 
                 if (this.comic.categories.length > 0) {
@@ -677,6 +723,7 @@ export struct ComicDetailPage {
                   }
                   .width('100%')
                   .padding({ left: 16, right: 16, top: 12 })
+                  .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
                 }
 
                 if (this.chapters.length > 1) {
@@ -687,7 +734,7 @@ export struct ComicDetailPage {
                   this.relatedSection()
                 }
 
-                Blank().height(120 + this.bottomAvoid)
+                Blank().height(32 + this.bottomAvoid)
               }
               .width('100%')
               .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
@@ -698,12 +745,6 @@ export struct ComicDetailPage {
             .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
             this.floatingTopBar()
-            Column() {
-              Blank().layoutWeight(1)
-              this.bottomBar()
-            }
-            .width('100%').height('100%')
-            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
           }
         }
         .width('100%').height('100%')
@@ -721,9 +762,7 @@ export struct ComicDetailPage {
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
+    .onShown(() => { this.checkResume(); })
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
   }
 }

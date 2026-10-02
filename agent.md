@@ -43,7 +43,7 @@ ohos/entry/src/main/ets/
 │   ├── JmWeekPage / JmPromotePage / ComicDetailPage / CommentsPage
 │   ├── HistoryPage / FollowPage / FavoritesContent / DownloadPage
 │   ├── MePage / AccountsPage
-│   ├── reader/ReaderPage.ets  -- 阅读器（6 阅读模式：LTR/RTL/TTB/连续滚动/双页/双页反向；手势缩放；连续滚动锚点稳定）
+│   ├── reader/ReaderPage.ets  -- 阅读器（6 阅读模式：LTR/RTL/TTB/连续滚动/双页/双页反向；手势缩放；连续滚动锚点稳定；push-first 自取首章 + 三模式 LazyForEach 惰性构建；阅读器内状态栏全程隐藏）
 │   └── settings/          -- SettingsPage(List+Select), ReadingSettings, JmSettings, AboutPage（均为内置标题栏 .title().hideTitleBar(false)）
 └── entryability/EntryAbility.ets
 ```
@@ -176,10 +176,10 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 
 ## 阅读器工程要点（ReaderPage.ets + ReaderImage.ets）
 
-### 状态栏（Q2 条件隐藏）
-- **条件隐藏**：仅阅读内容层（scroll 容器）为顶层时隐藏状态栏，浮层（工具栏 `showToolbar` / 半模态 `showSheet`）置顶时恢复——`@Watch('onOverlayChanged')` 挂在两个状态上，收敛到 `setStatusBarVisible(show)`，内部以世代号 `statusBarGen` 防乱序（浮层连切时仅末次状态生效，如工具栏→半模态的瞬时 hide 会被随后的 show 取代）
-- **渲染顺序（防容器高度变化）**：打开工具栏走 `openToolbarOrdered()`——先恢复状态栏 → `waitTopAvoidReady()` 轮询 `topAvoidHeight` 回写（`setSpecificSystemBarEnabled` 返回≠布局完成，上限 500ms）→ 再渲染工具栏（padding `topAvoid+6` 一次到位）；关闭时先撤浮层、@Watch 随后隐藏。内容链（Stack/Scroll/List）高度一律 `100%`、**不读 topAvoid/bottomAvoid** → 避让切换不影响容器高度（topAvoid 仅工具栏、bottomAvoid 仅半模态/设置页使用）
-- **进入/退出**：`aboutToAppear` 延后 `ENTRY_BAR_HIDE_DELAY=400ms`（跨过 push 转场再切避让，避免前一页避让区在转场中塌陷）且仅在无浮层时隐藏；`aboutToDisappear` 无条件 `setStatusBarVisible(true)` 恢复（世代号令挂起的隐藏失效），保证下一页避让就绪
+### 状态栏（Q2 全程隐藏）
+- **全程隐藏**：阅读器内状态栏从进入直到退出**始终隐藏**——打开工具栏/半模态**不再恢复**状态栏。原因：状态栏恢复 → `avoidAreaChange` 回写 `topAvoidHeight` → `@StorageProp` 触发整棵树重渲染（Swiper `.index`/`.scale` 等属性重挂），图片肉眼可见错位。`@Watch('onOverlayChanged')` 与 `lastTopAvoid` 缓存已删除；`setStatusBarVisible` 仅两处调用（进入延时隐藏、退出恢复），世代号 `statusBarGen` 防乱序
+- **进入/退出**：`aboutToAppear` 延后 `ENTRY_BAR_HIDE_DELAY=400ms` 无条件隐藏（跨过 push 转场，避免前一页避让区在转场中塌陷）；`aboutToDisappear` 无条件 `setStatusBarVisible(true)` 恢复（世代号令挂起的隐藏失效），保证下一页避让就绪
+- **工具栏 padding**：直接 `topAvoid + 6`（阅读期间 topAvoid 恒为 0 → 贴顶 6vp；进入后 400ms 窗口内打开则取真实状态栏高，语义正确）。内容链（Stack/Scroll/List）高度一律 `100%`、**不读 topAvoid/bottomAvoid** → 避让切换不影响容器高度（topAvoid 仅工具栏 padding、bottomAvoid 仅工具栏底条/设置页使用）
 - 沉浸式布局 `setWindowLayoutFullScreen(true)` 仍开启（内容延伸至系统栏区域，靠 `expandSafeArea` + `topAvoidHeight`/`bottomAvoidHeight` padding 避让，整链写法见下节）
 - API 前置条件：`setSpecificSystemBarEnabled(name, enable, animate?)` 需全屏布局 + 主窗口（`SpecificSystemBar = 'status' | 'navigation' | 'navigationIndicator'`），底部手势条用 `'navigationIndicator'`；批量版 `setWindowSystemBarEnable(['navigation'])`
 - 避让高度监听：`avoidAreaChange` 事件 → `EntryAbility.updateAvoidAreas`（状态栏隐藏/恢复也会触发该事件回写 topAvoidHeight；也可用 `@Env(SystemProperties.WINDOW_AVOID_AREA)` 响应式方案）
@@ -192,6 +192,13 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 - **expandSafeArea**：官方示例7 标准——item 到滚动祖先间**所有直接节点整链设置**（ReaderImage 根+内部各分支、占位 Column、ListItem、内层 List 均 `.expandSafeArea([SYSTEM],[TOP,BOTTOM])`），且**滚动容器必须 `clip(false)`**（内层 List + 外层 Scroll：关闭裁剪，否则 item 的扩展绘制被滚动容器截断 → 避让缺口）。`ReaderImage.expandArea` 默认 true，strip 不再传 false（判空写法 `.expandSafeArea(saTypes(), saEdges())` 仍保留，`([],[])` 官方语义=属性无效）；滚动容器内成链配置后滚动不失效（官方文档第 60 条：缺任一层滚动后可能失效）
 - **进度**：`scheduleStripSave`（索引变化 500ms 防抖落盘）/ `flushStripSave`（退出/返回/切章前立即落盘），对应参考 scheduleSavePosition/flushSavePosition
 - **列表实现**：LazyForEach + `ArrayDataSource.replaceAll → onDataReloaded`；诊断日志 TAG=`ReaderPage`（`strip first index` / `strip anchor idx=...` / `strip guard released`）
+
+### 进入与切章（push-first + LazyForEach）
+- **push-first 进入**：详情页 `startReading` **同步转场**（`NavUtil.push` 传 `images=[]`，不再前置 `await getChapter`——点击后几百毫秒网络等待无反馈是「假死感」主因）；ReaderPage `aboutToAppear` 的 `loadConfig().then` 中 images 为空 → `pendingRestore=true` + `loadChapter(order, startAtEnd, silent=true)` 自取首章，取到图片后再 `restoreProgress()`（续读弹窗依赖 `images.length` 判定，必须在取图后）
+- **silent 模式**：不弹「已切换」toast、**不落盘**（`pendingRestore` 期间跳过 `flushStripSave`——进入时无旧章可存，落盘会把已存进度覆盖为第 0 页）；失败置 `@State chapterError` → 内容层「错误+重试」overlay（盖住点按区，点击重取）
+- **LazyForEach 惰性构建**：三模式数据源 `singleSource`/`dualSource`/`stripSource`（`ArrayDataSource.replaceAll → onDataReloaded`）。单页/双页 Swiper 原为 ForEach eager 构建——切章/进入一帧内销毁重建整章 N 个页面节点（50-120 页）是掉帧主因；Swiper 官方支持 LazyForEach + `cachedCount(2)` 懒加载（**Repeat 懒加载不支持 V1 状态管理，不可用**）。模式/RTL 切换统一走 `refreshDataSources()` 全量 replaceAll；`active` 窗口门控与 `scale` 绑定为 @Prop/@State 属性级绑定，LazyForEach 节点创建后仍响应状态变化
+- **切章反馈**：`loadChapter` 入口**立即** `showSheet=false`（关闭动画不与内容重建叠帧）+ 内容层半透明 `reader_overlay` 遮罩 + LoadingProgress（盖住点按区防误触，工具栏在其上仍可操作）；诊断日志 `fetchMs`/`totalMs`（TAG=ReaderPage）
+- **异步安全**：`alive` 标记（`aboutToDisappear` 置 false），取章/续读等异步回调返回时若已退出则丢弃状态写入
 
 ## 常见问题
 
@@ -225,3 +232,9 @@ devecocli log --keyword ReaderPage --from 2m
 
 ### Q: API 请求全部失败怎么办？
 检查域名切换（JM 设置页换线路）、查看 `devecocli log --keyword JmApi`，确认 token/时间戳生成与 AES 解密是否正常。
+
+### Q: `systemMaterial` 沉浸光感不生效 / 日志报 "Material inactive: out of scope"？
+1. `AppScope/app.json5` 缺 `"targetAPIVersion": 26`（app 级 enable metadata 生效要求 targetAPIVersion ≥ 26，这是最常见的根因）
+2. `module.json5` 缺 metadata `ohos.arkui.UIMaterial.state = "enable"`
+3. 材质层级在不透明背景**之下**：组件须 `.backgroundColor(Color.Transparent)`，`systemMaterial` 放样式属性之后；勿整页 + 子组件嵌套材质（官方 FAQ 反例）
+4. 用 `uiMaterial.getMaterialInfo()` 确认 `state === 1`（ENABLE）；`type === 2` 为沉浸光感类型
