@@ -579,89 +579,74 @@ export struct ComicDetailPage {
 
   @Builder
   favSheetContent() {
-    
-      Column({ space: 0 }) {
-        Row({ space: 8 }) {
-          Text(Translations.t('favorite_select_folder'))
-            .fontSize(17).fontWeight(FontWeight.Medium)
-            .fontColor($r('app.color.text_primary'))
-            .layoutWeight(1)
-          Button({ type: ButtonType.Circle, stateEffect: true }) {
-            SymbolGlyph($r('sys.symbol.xmark'))
-              .fontSize(16)
-              .fontColor([$r('app.color.text_secondary')])
+    Column({ space: 0 }) {
+      if (this.loadingFolders) {
+        Column({ space: 8 }) {
+          LoadingProgress().width(36).height(36)
+        }
+        .width('100%').height('100%')
+        .justifyContent(FlexAlign.Center)
+      } else {
+        Scroll() {
+          Column({ space: 0 }) {
+            if (this.isFavorite) {
+              Row({ space: 8 }) {
+                SymbolGlyph($r('sys.symbol.star_slash'))
+                  .fontSize(18)
+                  .fontColor([$r('app.color.danger')])
+                Text(Translations.t('cancel_favorite'))
+                  .fontSize(15).fontColor($r('app.color.danger'))
+                  .layoutWeight(1)
+              }
+              .width('100%').height(50)
+              .padding({ left: 16, right: 16 })
+              .onClick(() => {
+                this.showFavSheet = false;
+                this.toggleFavorite();
+              })
+            }
+
+            this.favFolderRow(Translations.t('uncategorized'), '0')
+            ForEach(this.folders, (folder: JmFolder) => {
+              this.favFolderRow(folder.name, folder.id)
+            }, (folder: JmFolder) => folder.id + folder.name)
           }
-          .width(32).height(32)
-          .backgroundColor(Color.Transparent)
-          .onClick(() => { this.showFavSheet = false; })
+          .width('100%')
+        }
+        .layoutWeight(1)
+        .align(Alignment.TopStart)
+        .scrollBar(BarState.Off)
+        .edgeEffect(EdgeEffect.Spring)
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+
+        Divider()
+          .color($r('app.color.divider'))
+          .margin({ top: 8, bottom: 8 })
+
+        Row({ space: 8 }) {
+          TextInput({ placeholder: Translations.t('folder_name_hint'), text: this.newFolderName })
+            .fontSize(14)
+            .fontColor($r('app.color.text_primary'))
+            .placeholderColor($r('app.color.text_secondary'))
+            .caretColor(this.themeColor)
+            .layoutWeight(1)
+            .backgroundColor($r('app.color.bg_surface'))
+            .onChange((v: string) => { this.newFolderName = v; })
+          Button(Translations.t('confirm'))
+            .fontSize(14)
+            .backgroundColor(this.themeColor)
+            .fontColor($r('app.color.text_on_brand'))
+            .onClick(() => { this.createFolder(); })
         }
         .width('100%')
-        .padding({ left: 16, right: 12, top: 14, bottom: 6 })
-        .alignItems(VerticalAlign.Center)
-
-        if (this.loadingFolders) {
-          Column({ space: 8 }) {
-            LoadingProgress().width(36).height(36)
-          }
-          .width('100%').height(200)
-          .justifyContent(FlexAlign.Center)
-        } else {
-          Scroll() {
-            Column({ space: 0 }) {
-              if (this.isFavorite) {
-                Row({ space: 8 }) {
-                  SymbolGlyph($r('sys.symbol.star_slash'))
-                    .fontSize(18)
-                    .fontColor([$r('app.color.danger')])
-                  Text(Translations.t('cancel_favorite'))
-                    .fontSize(15).fontColor($r('app.color.danger'))
-                    .layoutWeight(1)
-                }
-                .width('100%').height(50)
-                .padding({ left: 16, right: 16 })
-                .onClick(() => {
-                  this.showFavSheet = false;
-                  this.toggleFavorite();
-                })
-              }
-
-              this.favFolderRow(Translations.t('uncategorized'), '0')
-              ForEach(this.folders, (folder: JmFolder) => {
-                this.favFolderRow(folder.name, folder.id)
-              }, (folder: JmFolder) => folder.id + folder.name)
-
-              Divider()
-                .color($r('app.color.divider'))
-                .margin({ top: 8, bottom: 8 })
-
-              Row({ space: 8 }) {
-                TextInput({ placeholder: Translations.t('folder_name_hint'), text: this.newFolderName })
-                  .fontSize(14)
-                  .fontColor($r('app.color.text_primary'))
-                  .placeholderColor($r('app.color.text_secondary'))
-                  .caretColor(this.themeColor)
-                  .layoutWeight(1)
-                  .backgroundColor($r('app.color.bg_surface'))
-                  .onChange((v: string) => { this.newFolderName = v; })
-                Button(Translations.t('confirm'))
-                  .fontSize(14)
-                  .backgroundColor(this.themeColor)
-                  .fontColor($r('app.color.text_on_brand'))
-                  .onClick(() => { this.createFolder(); })
-              }
-              .width('100%')
-              .padding({ left: 16, right: 16, top: 4, bottom: 16 })
-            }
-            .width('100%')
-          }
-          .layoutWeight(1)
-          .scrollBar(BarState.Off)
-        }
+        .padding({ left: 16, right: 16, top: 4, bottom: 16 })
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
       }
-      .width('100%')
-      .height('100%')
-      .id('favSheetContent')
-    
+    }
+    .width('100%')
+    .height('100%')
+    .id('favSheetContent')
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
   }
 
   build() {
@@ -745,11 +730,15 @@ export struct ComicDetailPage {
         .bindSheet($$this.showFavSheet, this.favSheetContent(), {
           detents: [SheetSize.MEDIUM, SheetSize.LARGE],
           blurStyle: BlurStyle.COMPONENT_THICK,
-          showClose: false,
+          showClose: true,
+          title: { title: Translations.t('favorite_select_folder') },
           dragBar: true,
           shouldDismiss: () => {
             this.showFavSheet = false;
-          }
+          },
+          systemMaterial: new uiMaterial.ImmersiveMaterial({
+            style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+          })
         })
       
     }
