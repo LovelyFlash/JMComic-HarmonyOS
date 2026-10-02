@@ -2,8 +2,8 @@
   "app": {
     "bundleName": "com.jmcomic.harmony",
     "bundleType": "app",
-    "versionCode": 5,
-    "versionName": "1.0.4",
+    "versionCode": 6,
+    "versionName": "1.0.5",
     "icon": "$media:app_icon",
     "label": "$string:app_name",
     "targetAPIVersion": 26
