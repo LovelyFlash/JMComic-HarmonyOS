@@ -2,6 +2,7 @@
 import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../common/Translations';
 import { JmApi, JmComment } from '../data/api/JmApi';
+import { ArrayDataSource } from '../common/ArrayDataSource';
 import { NavTitleBar } from '../components/NavTitleBar';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
@@ -16,7 +17,7 @@ export struct CommentsPage {
   pageParam: object | undefined = undefined;
   @State comicId: string = ''
   @State title: string = ''
-  @State comments: JmComment[] = []
+  @State dataSource: ArrayDataSource<JmComment> = new ArrayDataSource<JmComment>()
   @State inputText: string = ''
   @State loading: boolean = true
   @State loadingMore: boolean = false
@@ -47,18 +48,14 @@ export struct CommentsPage {
       this.maxPage = result.maxPage > 0 ? result.maxPage : 1;
       this.currentPage = page;
       if (replace) {
-        this.comments = result.comments;
+        this.dataSource = new ArrayDataSource<JmComment>(result.comments);
       } else {
-        const merged: JmComment[] = this.comments.slice();
-        for (let i = 0; i < result.comments.length; i++) {
-          merged.push(result.comments[i]);
-        }
-        this.comments = merged;
+        this.dataSource.addAll(result.comments);
       }
     } catch (e) {
       if (replace) {
         this.error = String(e);
-        this.comments = [];
+        this.dataSource = new ArrayDataSource<JmComment>();
       }
     }
     if (replace) {
@@ -210,7 +207,7 @@ export struct CommentsPage {
                 .onClick(() => { this.loadPage(1, true); })
             }
             .layoutWeight(1).justifyContent(FlexAlign.Center)
-          } else if (this.comments.length === 0) {
+          } else if (this.dataSource.totalCount() === 0) {
             Column({ space: 12 }) {
               SymbolGlyph($r('sys.symbol.message'))
                 .fontSize(44)
@@ -221,7 +218,7 @@ export struct CommentsPage {
             .layoutWeight(1).justifyContent(FlexAlign.Center).alignItems(HorizontalAlign.Center)
           } else {
             List({ space: 1 }) {
-              ForEach(this.comments, (comment: JmComment) => {
+              LazyForEach(this.dataSource, (comment: JmComment) => {
                 ListItem() {
                   this.commentItem(comment)
                 }

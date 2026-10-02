@@ -9,6 +9,7 @@ import { ReaderParam } from '../data/model/ReaderParam';
 import { Database, ReadingProgress } from '../data/database/Database';
 import { JmApi, JmFolder } from '../data/api/JmApi';
 import { NetworkImage } from '../components/NetworkImage';
+import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
 
@@ -42,6 +43,8 @@ export struct ComicDetailPage {
   @State loadingFolders: boolean = false
   @State newFolderName: string = ''
   @State favOperating: boolean = false
+  /** 章节列表数据源（LazyForEach 惰性构建，排序/展开走 replaceAll 全量刷新） */
+  private chapterSource: ArrayDataSource<Chapter> = new ArrayDataSource<Chapter>()
   
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageProp('topAvoidHeight') topAvoid: number = 0
@@ -81,6 +84,7 @@ export struct ComicDetailPage {
       }
       this.title = this.comic.title;
       this.chapters = this.comic.chapters;
+      this.chapterSource.replaceAll(this.displayChapters());
       this.isFavorite = this.comic.isFavorite;
       this.isLiked = this.comic.isLiked;
       await Database.insertHistory(this.comicId, this.title, this.comic.coverUrl, this.source);
@@ -433,12 +437,15 @@ export struct ComicDetailPage {
           .padding({ left: 12, right: 12, top: 6, bottom: 6 })
           .backgroundColor($r('app.color.bg_fill'))
           .borderRadius(12)
-          .onClick(() => { this.chaptersReversed = !this.chaptersReversed; })
+          .onClick(() => {
+            this.chaptersReversed = !this.chaptersReversed;
+            this.chapterSource.replaceAll(this.displayChapters());
+          })
       }
       .width('100%')
 
       Grid() {
-        ForEach(this.displayChapters(), (chapter: Chapter) => {
+        LazyForEach(this.chapterSource, (chapter: Chapter) => {
           GridItem() {
             Text(chapter.title.length > 0 ? chapter.title : `${chapter.order}`)
               .fontSize(13)
@@ -454,7 +461,7 @@ export struct ComicDetailPage {
             }
             .id('chapter' + chapter.id)
             .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-          }, (chapter: Chapter) => chapter.id + chapter.order.toString() + this.chaptersReversed.toString())
+          }, (chapter: Chapter) => chapter.id + chapter.order.toString())
       }
       .columnsTemplate('1fr 1fr 1fr')
       .columnsGap(8)
@@ -468,7 +475,10 @@ export struct ComicDetailPage {
           .fontColor(this.themeColor)
           .width('100%').height(40)
           .textAlign(TextAlign.Center)
-          .onClick(() => { this.showAllChapters = true; })
+          .onClick(() => {
+            this.showAllChapters = true;
+            this.chapterSource.replaceAll(this.displayChapters());
+          })
       }
     }
     .width('100%')

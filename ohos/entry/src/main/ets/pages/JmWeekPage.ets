@@ -3,6 +3,7 @@ import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Comic } from '../data/model/Comic';
 import { JmApi, JmWeekCategory } from '../data/api/JmApi';
+import { ArrayDataSource } from '../common/ArrayDataSource';
 import { NavTitleBar } from '../components/NavTitleBar';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
@@ -26,7 +27,7 @@ export struct JmWeekPage {
   @State categories: JmWeekCategory[] = []
   @State currentId: string = ''
   @State currentType: string = ''
-  @State comics: Comic[] = []
+  @State dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
   @State catLoading: boolean = true
   @State catError: string = ''
   @State loading: boolean = false
@@ -69,10 +70,10 @@ export struct JmWeekPage {
     this.loading = true;
     this.error = '';
     try {
-      this.comics = await JmApi.getWeekComics(this.currentId, this.currentType);
+      this.dataSource = new ArrayDataSource<Comic>(await JmApi.getWeekComics(this.currentId, this.currentType));
     } catch (e) {
       this.error = String(e);
-      this.comics = [];
+      this.dataSource = new ArrayDataSource<Comic>();
     }
     this.loading = false;
   }
@@ -136,7 +137,7 @@ export struct JmWeekPage {
   @Builder
   comicRows() {
     List({ space: 1 }) {
-      ForEach(this.comics, (comic: Comic) => {
+      LazyForEach(this.dataSource, (comic: Comic) => {
         ListItem() {
           Row({ space: 12 }) {
             Image(comic.coverUrl)
@@ -216,7 +217,7 @@ export struct JmWeekPage {
                   .onClick(() => { this.loadComics(); })
               }
               .layoutWeight(1).justifyContent(FlexAlign.Center)
-            } else if (this.comics.length === 0) {
+            } else if (this.dataSource.totalCount() === 0) {
               Column({ space: 8 }) {
                 Text(Translations.t('no_data'))
                   .fontSize(14).fontColor($r('app.color.text_secondary'))

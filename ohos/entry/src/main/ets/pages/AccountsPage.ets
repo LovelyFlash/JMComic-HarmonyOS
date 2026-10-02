@@ -2,7 +2,6 @@
 import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../common/Translations';
 import { JmApi } from '../data/api/JmApi';
-import { NavTitleBar } from '../components/NavTitleBar';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
 
@@ -220,31 +219,29 @@ export struct AccountsPage {
 
   build() {
     NavDestination() {
-      
-        Column() {
-          NavTitleBar({ title: Translations.t('account') })
-          Scroll() {
-            Column({ space: 16 }) {
-              if (this.loggedIn) {
-                this.profileCard()
-              } else {
-                this.loginForm()
-              }
+      Column() {
+        Scroll() {
+          Column({ space: 16 }) {
+            if (this.loggedIn) {
+              this.profileCard()
+            } else {
+              this.loginForm()
             }
-            .width('100%')
-            .padding({ left: 16, right: 16, top: 16, bottom: this.bottomAvoid + 16 })
           }
-          .width('100%').layoutWeight(1)
-          .scrollBar(BarState.Off)
-          .edgeEffect(EdgeEffect.Spring)
-          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+          .width('100%')
+          .padding({ left: 16, right: 16, top: 16, bottom: this.bottomAvoid + 16 })
         }
-        .width('100%').height('100%')
-        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-      
+        .width('100%').layoutWeight(1)
+        .scrollBar(BarState.Off)
+        .edgeEffect(EdgeEffect.Spring)
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+      }
+      .width('100%').height('100%')
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
+    .title(Translations.t('account'), { backgroundColor: $r('app.color.bg_page') })
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .hideTitleBar(true)
+    .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
     .systemMaterial(new uiMaterial.ImmersiveMaterial({
       style: uiMaterial.ImmersiveStyle.ULTRA_THIN,

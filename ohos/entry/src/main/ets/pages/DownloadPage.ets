@@ -3,6 +3,7 @@ import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Database, DownloadItem } from '../data/database/Database';
+import { ArrayDataSource } from '../common/ArrayDataSource';
 import { NavTitleBar } from '../components/NavTitleBar';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
@@ -14,7 +15,7 @@ export function DownloadPageBuilder(name: string, param: object) {
 
 @Component
 export struct DownloadPage {
-  @State items: DownloadItem[] = []
+  @State dataSource: ArrayDataSource<DownloadItem> = new ArrayDataSource<DownloadItem>()
   @State loading: boolean = true
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
@@ -25,7 +26,7 @@ export struct DownloadPage {
 
   async loadData(): Promise<void> {
     this.loading = true;
-    this.items = await Database.queryDownloads();
+    this.dataSource = new ArrayDataSource<DownloadItem>(await Database.queryDownloads());
     this.loading = false;
   }
 
@@ -54,7 +55,7 @@ export struct DownloadPage {
   @Builder
   downloadCountBadge() {
     
-      Text(`${this.items.length}${Translations.t('items_suffix')}`)
+      Text(`${this.dataSource.totalCount()}${Translations.t('items_suffix')}`)
         .fontSize(13).fontColor($r('app.color.text_secondary'))
     
   }
@@ -71,7 +72,7 @@ export struct DownloadPage {
             .width('100%').layoutWeight(1)
             .justifyContent(FlexAlign.Center)
           
-        } else if (this.items.length === 0) {
+        } else if (this.dataSource.totalCount() === 0) {
         
           Column({ space: 12 }) {
             SymbolGlyph($r('sys.symbol.arrow_down_circle'))
@@ -89,7 +90,7 @@ export struct DownloadPage {
       } else {
         
           List({ space: 1 }) {
-            ForEach(this.items, (item: DownloadItem) => {
+            LazyForEach(this.dataSource, (item: DownloadItem) => {
               ListItem() {
                 Row({ space: 12 }) {
                   Image(item.coverUrl)

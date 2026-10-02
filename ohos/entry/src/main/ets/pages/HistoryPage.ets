@@ -2,6 +2,7 @@
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Database, HistoryItem } from '../data/database/Database';
+import { ArrayDataSource } from '../common/ArrayDataSource';
 import { NavTitleBar } from '../components/NavTitleBar';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
@@ -16,7 +17,7 @@ export struct HistoryPage {
   
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
-  @State items: HistoryItem[] = []
+  @State dataSource: ArrayDataSource<HistoryItem> = new ArrayDataSource<HistoryItem>()
   @State loading: boolean = true
 
   aboutToAppear(): void {
@@ -25,7 +26,7 @@ export struct HistoryPage {
 
   async loadData(): Promise<void> {
     this.loading = true;
-    this.items = await Database.queryHistory();
+    this.dataSource = new ArrayDataSource<HistoryItem>(await Database.queryHistory());
     this.loading = false;
   }
 
@@ -40,7 +41,7 @@ export struct HistoryPage {
             }
             .width('100%').layoutWeight(1)
             .justifyContent(FlexAlign.Center)
-          } else if (this.items.length === 0) {
+          } else if (this.dataSource.totalCount() === 0) {
             Column({ space: 8 }) {
               Text(Translations.t('no_data'))
                 .fontSize(14).fontColor($r('app.color.text_secondary'))
@@ -49,7 +50,7 @@ export struct HistoryPage {
             .justifyContent(FlexAlign.Center)
           } else {
             List({ space: 1 }) {
-              ForEach(this.items, (item: HistoryItem) => {
+              LazyForEach(this.dataSource, (item: HistoryItem) => {
                 ListItem() {
                   Row() {
                     Image(item.coverUrl)

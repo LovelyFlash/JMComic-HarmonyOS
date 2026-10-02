@@ -4,6 +4,7 @@ import { NavUtil } from '../common/NavUtil';
 import { Comic } from '../data/model/Comic';
 import { JmApi, JmHomeSection } from '../data/api/JmApi';
 import { NetworkImage } from '../components/NetworkImage';
+import { ArrayDataSource } from '../common/ArrayDataSource';
 import { HdsTabsController} from '@kit.UIDesignKit';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 
@@ -11,12 +12,12 @@ import { DEFAULT_THEME_COLOR } from '../common/Constants';
 export struct DiscoverPage {
   @State mode: number = 0
   // 主页模式
-  @State sections: JmHomeSection[] = []
+  @State homeSource: ArrayDataSource<JmHomeSection> = new ArrayDataSource<JmHomeSection>()
   @State homeLoading: boolean = false
   @State homeError: string = ''
   @State homeRefreshing: boolean = false
   // 最新模式
-  @State comics: Comic[] = []
+  @State latestSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
   @State loading: boolean = false
   @State loadingMore: boolean = false
   @State refreshing: boolean = false
@@ -36,9 +37,9 @@ export struct DiscoverPage {
       return;
     }
     this.mode = idx;
-    if (idx === 0 && this.sections.length === 0 && !this.homeLoading) {
+    if (idx === 0 && this.homeSource.totalCount() === 0 && !this.homeLoading) {
       this.loadHome();
-    } else if (idx === 1 && this.comics.length === 0 && !this.loading) {
+    } else if (idx === 1 && this.latestSource.totalCount() === 0 && !this.loading) {
       this.loadLatest(true);
     }
   }
@@ -47,10 +48,10 @@ export struct DiscoverPage {
     this.homeLoading = true;
     this.homeError = '';
     try {
-      this.sections = await JmApi.getHomePage();
+      this.homeSource = new ArrayDataSource<JmHomeSection>(await JmApi.getHomePage());
     } catch (e) {
       this.homeError = String(e);
-      this.sections = [];
+      this.homeSource = new ArrayDataSource<JmHomeSection>();
     }
     this.homeLoading = false;
     this.homeRefreshing = false;
@@ -61,17 +62,17 @@ export struct DiscoverPage {
       this.loading = true;
       this.error = '';
       this.page = 1;
-      this.comics = [];
       this.hasMore = true;
     }
     try {
       const items = await JmApi.getLatest(1);
-      this.comics = items;
+      this.latestSource = new ArrayDataSource<Comic>(items);
       this.page = 1;
       this.hasMore = items.length > 0;
     } catch (e) {
       if (reset) {
         this.error = String(e);
+        this.latestSource = new ArrayDataSource<Comic>();
       }
     }
     this.loading = false;
@@ -86,19 +87,18 @@ export struct DiscoverPage {
     try {
       const items = await JmApi.getLatest(this.page + 1);
       const existing: Set<string> = new Set<string>();
-      for (let i = 0; i < this.comics.length; i++) {
-        existing.add(this.comics[i].id);
+      const current: Comic[] = this.latestSource.getAllData();
+      for (let i = 0; i < current.length; i++) {
+        existing.add(current[i].id);
       }
-      const merged: Comic[] = this.comics.slice();
-      let added: number = 0;
+      const added: Comic[] = [];
       for (let i = 0; i < items.length; i++) {
         if (!existing.has(items[i].id)) {
-          merged.push(items[i]);
-          added++;
+          added.push(items[i]);
         }
       }
-      this.comics = merged;
-      if (added > 0) {
+      if (added.length > 0) {
+        this.latestSource.addAll(added);
         this.page = this.page + 1;
       } else {
         this.hasMore = false;
@@ -173,20 +173,17 @@ export struct DiscoverPage {
   @Builder
   homeBody() {
     Refresh({ refreshing: $$this.homeRefreshing, offset: 64, friction: 100 }) {
-      Scroll() {
-        Column({ space: 16 }) {
-          ForEach(this.sections, (section: JmHomeSection) => {
+      List({ space: 16 }) {
+        LazyForEach(this.homeSource, (section: JmHomeSection) => {
+          ListItem() {
             this.homeSectionItem(section)
-          }, (section: JmHomeSection) => section.id + section.title)
-        }
-        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-        .width('100%')
-        .padding({ top: 4, bottom: 96 })
+          }
+        }, (section: JmHomeSection) => section.id + section.title)
       }
-      .align(Alignment.Top)
       .scrollBar(BarState.Off)
       .width('100%')
       .height('100%')
+      .padding({ top: 4, bottom: 96 })
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
@@ -218,7 +215,7 @@ export struct DiscoverPage {
   latestList() {
     Refresh({ refreshing: $$this.refreshing, offset: 64, friction: 100 }) {
       List({ space: 10 }) {
-        ForEach(this.comics, (comic: Comic) => {
+        LazyForEach(this.latestSource, (comic: Comic) => {
           ListItem() {
             Row({ space: 12 }) {
               NetworkImage({ url: comic.coverUrl, imgWidth: 90, imgHeight: 120, imgBorderRadius: 8 })

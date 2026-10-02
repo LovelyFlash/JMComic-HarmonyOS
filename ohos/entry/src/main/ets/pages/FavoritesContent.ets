@@ -12,7 +12,7 @@ import { DEFAULT_THEME_COLOR } from '../common/Constants';
 export struct FavoritesContent {
   @State mode: number = 0
   // 本地收藏
-  @State items: FavoriteItem[] = []
+  @State localDataSource: ArrayDataSource<FavoriteItem> = new ArrayDataSource<FavoriteItem>()
   @State loading: boolean = true
   // 禁漫云收藏
   @State loggedIn: boolean = false
@@ -52,7 +52,7 @@ export struct FavoritesContent {
 
   async loadData(): Promise<void> {
     this.loading = true;
-    this.items = await Database.queryFavorites();
+    this.localDataSource = new ArrayDataSource<FavoriteItem>(await Database.queryFavorites());
     this.loading = false;
   }
 
@@ -235,7 +235,7 @@ export struct FavoritesContent {
       }
       .layoutWeight(1)
       .justifyContent(FlexAlign.Center)
-    } else if (this.items.length === 0) {
+    } else if (this.localDataSource.totalCount() === 0) {
       Column({ space: 12 }) {
         SymbolGlyph($r('sys.symbol.heart'))
           .fontSize(56)
@@ -250,7 +250,7 @@ export struct FavoritesContent {
       .id('localBodyEmpty')
     } else {
       List({ space: 1 }) {
-        ForEach(this.items, (item: FavoriteItem) => {
+        LazyForEach(this.localDataSource, (item: FavoriteItem) => {
           ListItem() {
             Row({ space: 12 }) {
               Image(item.coverUrl)
