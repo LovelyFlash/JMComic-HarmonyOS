@@ -3,7 +3,7 @@
 import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
 import { NavUtil } from '../../common/NavUtil';
-import { DEFAULT_THEME_COLOR, SettingsKeys } from '../../common/Constants';
+import { ApiConstants, DEFAULT_THEME_COLOR, SettingsKeys } from '../../common/Constants';
 import { Settings } from '../../data/preferences/Settings';
 import { SettingItem } from '../../components/SettingItem';
 import { SettingSwitch } from '../../components/SettingSwitch';
@@ -183,7 +183,7 @@ export struct SettingsPage {
             corner: SettingCorner.ALL,
             icon: $r('sys.symbol.questionmark_circle'),
             title: Translations.t('about'),
-            value: 'v1.0.0',
+            value: 'v' + ApiConstants.APP_VERSION,
             onTap: () => {
               NavUtil.push('about');
             }

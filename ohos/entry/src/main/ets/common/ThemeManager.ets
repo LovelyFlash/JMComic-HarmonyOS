@@ -41,7 +41,7 @@ export class ThemeManager {
         ThemeManager.systemBarNotifier(ThemeManager._isDark);
       }
     } catch (e) {
-      Logger.warn(TAG, `applyColorModeToSystem failed: ${String(e)}`);
+      Logger.warn(TAG, `applyColorModeToSystem failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -85,7 +85,7 @@ export class ThemeManager {
       AppStorage.setOrCreate('darkModePolicy', darkMode);
       Logger.info(TAG, `restored darkMode=${darkMode} themeColor=${themeColor}`);
     } catch (e) {
-      Logger.error(TAG, `restore failed: ${String(e)}`);
+      Logger.error(TAG, `restore failed: ${Logger.describe(e)}`);
     }
   }
 

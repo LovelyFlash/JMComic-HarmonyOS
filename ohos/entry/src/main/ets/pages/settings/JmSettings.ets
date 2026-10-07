@@ -92,11 +92,11 @@ export struct JmSettings {
     try {
       await JmApi.getAppVersionCode();
     } catch (e) {
-      Logger.warn(TAG, `getAppVersionCode after domain update failed: ${String(e)}`);
+      Logger.warn(TAG, `getAppVersionCode after domain update failed: ${Logger.describe(e)}`);
     }
     if (JmApi.isLoggedIn()) {
       JmApi.reLogin().catch((e: Object) => {
-        Logger.warn(TAG, `reLogin after domain update failed: ${String(e)}`);
+        Logger.warn(TAG, `reLogin after domain update failed: ${Logger.describe(e)}`);
       });
     }
     this.refreshState();
@@ -107,7 +107,7 @@ export struct JmSettings {
     await Settings.setBool(SettingsKeys.JM_AUTO_SELECT_DOMAIN, value);
     if (value && JmApi.isLoggedIn()) {
       JmApi.reLogin().catch((e: Object) => {
-        Logger.warn(TAG, `reLogin after autoSelectDomain on failed: ${String(e)}`);
+        Logger.warn(TAG, `reLogin after autoSelectDomain on failed: ${Logger.describe(e)}`);
       });
     }
   }
@@ -148,7 +148,7 @@ export struct JmSettings {
       try {
         await JmApi.dailyChk();
       } catch (e) {
-        Logger.warn(TAG, `auto check-in on toggle failed: ${String(e)}`);
+        Logger.warn(TAG, `auto check-in on toggle failed: ${Logger.describe(e)}`);
       }
     }
   }

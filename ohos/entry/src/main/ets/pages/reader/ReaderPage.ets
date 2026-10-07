@@ -212,7 +212,7 @@ export struct ReaderPage {
         inputConsumer.on('keyPressed', this.volumeDownOptions, this.volumeDownCallback);
         this.volumeRegistered = true;
       } catch (e) {
-        Logger.warn('ReaderPage', `volume key subscribe failed: ${String(e)}`);
+        Logger.warn('ReaderPage', `volume key subscribe failed: ${Logger.describe(e)}`);
         this.volumeRegistered = false;
       }
     } else if (!this.volumeKeyTurnPage && this.volumeRegistered) {
@@ -229,7 +229,7 @@ export struct ReaderPage {
       inputConsumer.off('keyPressed', this.volumeUpCallback);
       inputConsumer.off('keyPressed', this.volumeDownCallback);
     } catch (e) {
-      Logger.warn('ReaderPage', `volume key unsubscribe failed: ${String(e)}`);
+      Logger.warn('ReaderPage', `volume key unsubscribe failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -275,7 +275,7 @@ export struct ReaderPage {
       const win = await window.getLastWindow(getContext(this));
       await win.setWindowKeepScreenOn(on);
     } catch (e) {
-      Logger.error('ReaderPage', `setKeepScreenOn failed: ${String(e)}`);
+      Logger.error('ReaderPage', `setKeepScreenOn failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -445,7 +445,7 @@ export struct ReaderPage {
     try {
       this.stripScroller.scrollToIndex(idx, false, ScrollAlign.START);
     } catch (e) {
-      Logger.warn('ReaderPage', `scrollToIndex failed: ${String(e)}`);
+      Logger.warn('ReaderPage', `scrollToIndex failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -560,7 +560,7 @@ export struct ReaderPage {
       await win.setSpecificSystemBarEnabled('status', show, true);
       Logger.debug('ReaderPage', `status bar ${show ? 'shown' : 'hidden'} gen=${gen}`);
     } catch (e) {
-      Logger.warn('ReaderPage', `setSpecificSystemBarEnabled failed: ${String(e)}`);
+      Logger.warn('ReaderPage', `setSpecificSystemBarEnabled failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -686,7 +686,7 @@ export struct ReaderPage {
         promptAction.showToast({ message: Translations.t('no_images'), duration: 1200 });
       }
     } catch (e) {
-      Logger.warn('ReaderPage', `loadChapter failed order=${order}: ${String(e)}`);
+      Logger.warn('ReaderPage', `loadChapter failed order=${order}: ${Logger.describe(e)}`);
       if (silent) {
         if (this.alive) {
           this.chapterError = true;

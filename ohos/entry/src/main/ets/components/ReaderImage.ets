@@ -122,7 +122,7 @@ export class ReaderImageCache {
           done(pm);
         },
         (e: Object) => {
-          Logger.warn(TAG, `load failed: ${url} ${String(e)}`);
+          Logger.warn(TAG, `load failed: ${url} ${Logger.describe(e)}`);
           done(null);
         }
       );
@@ -179,7 +179,7 @@ export class ReaderImageCache {
           bytes = await Network.getBytesViaDownload(url, headers, ctx);
         }
       } catch (e) {
-        Logger.warn(TAG, `fallback download unavailable: ${String(e)}`);
+        Logger.warn(TAG, `fallback download unavailable: ${Logger.describe(e)}`);
       }
       if (bytes !== null && bytes.length > 0 && !JmImage.looksLikeImage(bytes)) {
         Logger.warn(TAG, `non-image bytes via download stack: len=${bytes.length} head=${JmImage.headHex(bytes)}`);
@@ -198,7 +198,7 @@ export class ReaderImageCache {
         ReaderImageCache.setRatio(url, info.size.width / info.size.height);
       }
     } catch (e) {
-      Logger.warn(TAG, `getImageInfo failed: ${String(e)}`);
+      Logger.warn(TAG, `getImageInfo failed: ${Logger.describe(e)}`);
     }
     // 质量切换竞态防护：解码期间档位已变则丢弃本次结果
     if (ReaderImageCache.pixelQuality === quality) {

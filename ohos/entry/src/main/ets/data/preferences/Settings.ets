@@ -17,7 +17,7 @@ export class Settings {
       Settings.initialized = true;
       Logger.info(TAG, 'Settings initialized');
     } catch (e) {
-      Logger.error(TAG, `Settings init failed: ${String(e)}`);
+      Logger.error(TAG, `Settings init failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -27,7 +27,7 @@ export class Settings {
       const value = await Settings.store.get(key, defaultValue) as string;
       return value;
     } catch (e) {
-      Logger.error(TAG, `getString failed for key=${key}: ${String(e)}`);
+      Logger.error(TAG, `getString failed for key=${key}: ${Logger.describe(e)}`);
       return defaultValue;
     }
   }
@@ -38,7 +38,7 @@ export class Settings {
       await Settings.store.put(key, value);
       await Settings.store.flush();
     } catch (e) {
-      Logger.error(TAG, `setString failed for key=${key}: ${String(e)}`);
+      Logger.error(TAG, `setString failed for key=${key}: ${Logger.describe(e)}`);
     }
   }
 
@@ -48,7 +48,7 @@ export class Settings {
       const value = await Settings.store.get(key, defaultValue) as boolean;
       return value;
     } catch (e) {
-      Logger.error(TAG, `getBool failed for key=${key}: ${String(e)}`);
+      Logger.error(TAG, `getBool failed for key=${key}: ${Logger.describe(e)}`);
       return defaultValue;
     }
   }
@@ -59,7 +59,7 @@ export class Settings {
       await Settings.store.put(key, value);
       await Settings.store.flush();
     } catch (e) {
-      Logger.error(TAG, `setBool failed for key=${key}: ${String(e)}`);
+      Logger.error(TAG, `setBool failed for key=${key}: ${Logger.describe(e)}`);
     }
   }
 
@@ -69,7 +69,7 @@ export class Settings {
       const value = await Settings.store.get(key, defaultValue) as number;
       return value;
     } catch (e) {
-      Logger.error(TAG, `getNumber failed for key=${key}: ${String(e)}`);
+      Logger.error(TAG, `getNumber failed for key=${key}: ${Logger.describe(e)}`);
       return defaultValue;
     }
   }
@@ -80,7 +80,7 @@ export class Settings {
       await Settings.store.put(key, value);
       await Settings.store.flush();
     } catch (e) {
-      Logger.error(TAG, `setNumber failed for key=${key}: ${String(e)}`);
+      Logger.error(TAG, `setNumber failed for key=${key}: ${Logger.describe(e)}`);
     }
   }
 
@@ -90,7 +90,7 @@ export class Settings {
       const value = await Settings.store.get(key, defaultValue) as string[];
       return value;
     } catch (e) {
-      Logger.error(TAG, `getStringList failed for key=${key}: ${String(e)}`);
+      Logger.error(TAG, `getStringList failed for key=${key}: ${Logger.describe(e)}`);
       return defaultValue;
     }
   }
@@ -101,7 +101,7 @@ export class Settings {
       await Settings.store.put(key, value);
       await Settings.store.flush();
     } catch (e) {
-      Logger.error(TAG, `putString failed for key=${key}: ${String(e)}`);
+      Logger.error(TAG, `putString failed for key=${key}: ${Logger.describe(e)}`);
     }
   }
 
@@ -111,7 +111,7 @@ export class Settings {
       await Settings.store.put(key, value);
       await Settings.store.flush();
     } catch (e) {
-      Logger.error(TAG, `putNumber failed for key=${key}: ${String(e)}`);
+      Logger.error(TAG, `putNumber failed for key=${key}: ${Logger.describe(e)}`);
     }
   }
 
@@ -121,7 +121,7 @@ export class Settings {
       await Settings.store.put(key, value);
       await Settings.store.flush();
     } catch (e) {
-      Logger.error(TAG, `putStringList failed for key=${key}: ${String(e)}`);
+      Logger.error(TAG, `putStringList failed for key=${key}: ${Logger.describe(e)}`);
     }
   }
 }

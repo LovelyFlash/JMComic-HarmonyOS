@@ -103,6 +103,36 @@ export class Network {
     }
   }
 
+  /** 大小写不敏感读取响应头，缺失返回 '' */
+  private static headerOf(headerObj: Object, key: string): string {
+    try {
+      const headers = headerObj as Record<string, Object>;
+      const target: string = key.toLowerCase();
+      const keys: string[] = Object.keys(headers);
+      for (let i = 0; i < keys.length; i++) {
+        if (keys[i].toLowerCase() === target) {
+          return String(headers[keys[i]]);
+        }
+      }
+    } catch (e) {
+      return '';
+    }
+    return '';
+  }
+
+  /** 响应摘要日志：状态码 + Content-Type + body 头部；非 200 或非 JSON 升为 warn 便于过滤 */
+  private static logResp(method: string, url: string, code: number, headerObj: Object, body: string): void {
+    const ct: string = Network.headerOf(headerObj, 'content-type');
+    const head: string = body.length > 200 ? `${body.substring(0, 200)}...` : body;
+    const trimmed: string = body.trim();
+    const looksJson: boolean = trimmed.startsWith('{') || trimmed.startsWith('[');
+    if (code !== 200 || !looksJson) {
+      Logger.warn(TAG, `${method} ${url} -> ${code}, ct=${ct}, head=${head}`);
+    } else {
+      Logger.debug(TAG, `${method} ${url} -> ${code}, ct=${ct}, bytes=${body.length}`);
+    }
+  }
+
   static async get(url: string, headers?: Record<string, string>, useCache: boolean = false): Promise<string> {
     if (useCache) {
       const cached = Network.cache.get(url);
@@ -135,11 +165,17 @@ export class Network {
         }
         return data;
       } else {
-        Logger.error(TAG, `GET ${url} failed: ${response.responseCode}`);
+        let failHead: string = '';
+        try {
+          failHead = String(response.result);
+        } catch (e) {
+          failHead = '';
+        }
+        Logger.error(TAG, `GET ${url} failed: ${response.responseCode}, ct=${Network.headerOf(response.header, 'content-type')}, head=${failHead.substring(0, 200)}`);
         return '';
       }
     } catch (e) {
-      Logger.error(TAG, `GET ${url} exception: ${String(e)}`);
+      Logger.error(TAG, `GET ${url} exception: ${Logger.describe(e)}`);
       return '';
     } finally {
       httpRequest.destroy();
@@ -169,9 +205,10 @@ export class Network {
       } catch (e) {
         body = '';
       }
+      Network.logResp('GET', url, response.responseCode, response.header, body);
       return new NetworkResp(response.responseCode, body);
     } catch (e) {
-      Logger.error(TAG, `GET ${url} exception: ${String(e)}`);
+      Logger.error(TAG, `GET ${url} exception: ${Logger.describe(e)}`);
       return new NetworkResp(-1, '');
     } finally {
       httpRequest.destroy();
@@ -202,7 +239,7 @@ export class Network {
       Logger.error(TAG, `GET bytes ${url} failed: ${response.responseCode}`);
       return null;
     } catch (e) {
-      Logger.error(TAG, `GET bytes ${url} exception: ${String(e)}`);
+      Logger.error(TAG, `GET bytes ${url} exception: ${Logger.describe(e)}`);
       return null;
     } finally {
       httpRequest.destroy();
@@ -224,7 +261,7 @@ export class Network {
         enableRoaming: true
       });
     } catch (e) {
-      Logger.error(TAG, `downloadFile init failed: ${String(e)}`);
+      Logger.error(TAG, `downloadFile init failed: ${Logger.describe(e)}`);
       return null;
     }
     return await new Promise<Uint8Array | null>((resolve: (value: Uint8Array | null) => void) => {
@@ -238,11 +275,11 @@ export class Network {
           try {
             fs.unlinkSync(filePath);
           } catch (e) {
-            Logger.debug(TAG, `unlink temp file failed: ${String(e)}`);
+            Logger.debug(TAG, `unlink temp file failed: ${Logger.describe(e)}`);
           }
           resolve(new Uint8Array(buf));
         } catch (e) {
-          Logger.error(TAG, `read downloaded file failed: ${String(e)}`);
+          Logger.error(TAG, `read downloaded file failed: ${Logger.describe(e)}`);
           try {
             fs.unlinkSync(filePath);
           } catch (e2) {
@@ -256,7 +293,7 @@ export class Network {
         try {
           fs.unlinkSync(filePath);
         } catch (e) {
-          Logger.debug(TAG, `unlink temp file failed: ${String(e)}`);
+          Logger.debug(TAG, `unlink temp file failed: ${Logger.describe(e)}`);
         }
         task!.delete().catch(() => {
         });
@@ -298,9 +335,10 @@ export class Network {
       } catch (e) {
         respBody = '';
       }
+      Network.logResp('POST', url, response.responseCode, response.header, respBody);
       return new NetworkResp(response.responseCode, respBody);
     } catch (e) {
-      Logger.error(TAG, `POST ${url} exception: ${String(e)}`);
+      Logger.error(TAG, `POST ${url} exception: ${Logger.describe(e)}`);
       return new NetworkResp(-1, '');
     } finally {
       httpRequest.destroy();

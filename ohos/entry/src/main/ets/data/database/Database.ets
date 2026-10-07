@@ -43,7 +43,7 @@ export class Database {
       await Database.store.executeSql(SQL_CREATE_COMMENTS);
       Logger.info(TAG, 'Database initialized');
     } catch (e) {
-      Logger.error(TAG, `Database init failed: ${String(e)}`);
+      Logger.error(TAG, `Database init failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -58,7 +58,7 @@ export class Database {
       };
       await Database.store.insert('history', bucket);
     } catch (e) {
-      Logger.error(TAG, `insertHistory failed: ${String(e)}`);
+      Logger.error(TAG, `insertHistory failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -72,7 +72,7 @@ export class Database {
       };
       await Database.store.update(bucket, predicates);
     } catch (e) {
-      Logger.error(TAG, `updateReadingProgress failed: ${String(e)}`);
+      Logger.error(TAG, `updateReadingProgress failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -99,7 +99,7 @@ export class Database {
       resultSet.close();
       return results;
     } catch (e) {
-      Logger.error(TAG, `queryHistory failed: ${String(e)}`);
+      Logger.error(TAG, `queryHistory failed: ${Logger.describe(e)}`);
       return [];
     }
   }
@@ -111,7 +111,7 @@ export class Database {
       predicates.equalTo('id', id).equalTo('source', source);
       await Database.store.delete(predicates);
     } catch (e) {
-      Logger.error(TAG, `removeHistory failed: ${String(e)}`);
+      Logger.error(TAG, `removeHistory failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -120,7 +120,7 @@ export class Database {
     try {
       await Database.store.executeSql('DELETE FROM history');
     } catch (e) {
-      Logger.error(TAG, `clearHistory failed: ${String(e)}`);
+      Logger.error(TAG, `clearHistory failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -152,7 +152,7 @@ export class Database {
       };
       await Database.store.insert('favorites', bucket);
     } catch (e) {
-      Logger.error(TAG, `insertFavorite failed: ${String(e)}`);
+      Logger.error(TAG, `insertFavorite failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -163,7 +163,7 @@ export class Database {
       predicates.equalTo('id', id).equalTo('source', source);
       await Database.store.delete(predicates);
     } catch (e) {
-      Logger.error(TAG, `removeFavorite failed: ${String(e)}`);
+      Logger.error(TAG, `removeFavorite failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -202,7 +202,7 @@ export class Database {
       resultSet.close();
       return results;
     } catch (e) {
-      Logger.error(TAG, `queryFavorites failed: ${String(e)}`);
+      Logger.error(TAG, `queryFavorites failed: ${Logger.describe(e)}`);
       return [];
     }
   }
@@ -218,7 +218,7 @@ export class Database {
       };
       await Database.store.insert('downloads', bucket);
     } catch (e) {
-      Logger.error(TAG, `insertDownload failed: ${String(e)}`);
+      Logger.error(TAG, `insertDownload failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -229,7 +229,7 @@ export class Database {
       predicates.equalTo('id', id).equalTo('source', source);
       await Database.store.delete(predicates);
     } catch (e) {
-      Logger.error(TAG, `removeDownload failed: ${String(e)}`);
+      Logger.error(TAG, `removeDownload failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -255,7 +255,7 @@ export class Database {
       resultSet.close();
       return results;
     } catch (e) {
-      Logger.error(TAG, `queryDownloads failed: ${String(e)}`);
+      Logger.error(TAG, `queryDownloads failed: ${Logger.describe(e)}`);
       return [];
     }
   }
@@ -270,7 +270,7 @@ export class Database {
       };
       await Database.store.insert('follows', bucket);
     } catch (e) {
-      Logger.error(TAG, `insertFollow failed: ${String(e)}`);
+      Logger.error(TAG, `insertFollow failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -281,7 +281,7 @@ export class Database {
       predicates.equalTo('id', id).equalTo('source', source);
       await Database.store.delete(predicates);
     } catch (e) {
-      Logger.error(TAG, `removeFollow failed: ${String(e)}`);
+      Logger.error(TAG, `removeFollow failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -321,7 +321,7 @@ export class Database {
       resultSet.close();
       return results;
     } catch (e) {
-      Logger.error(TAG, `queryFollows failed: ${String(e)}`);
+      Logger.error(TAG, `queryFollows failed: ${Logger.describe(e)}`);
       return [];
     }
   }
@@ -336,7 +336,7 @@ export class Database {
       };
       await Database.store.insert('comments', bucket);
     } catch (e) {
-      Logger.error(TAG, `insertComment failed: ${String(e)}`);
+      Logger.error(TAG, `insertComment failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -362,7 +362,7 @@ export class Database {
       resultSet.close();
       return results;
     } catch (e) {
-      Logger.error(TAG, `queryComments failed: ${String(e)}`);
+      Logger.error(TAG, `queryComments failed: ${Logger.describe(e)}`);
       return [];
     }
   }
@@ -374,7 +374,7 @@ export class Database {
       predicates.equalTo('id', id);
       await Database.store.executeSql(`UPDATE comments SET likeCount = likeCount + 1 WHERE id = ${id}`);
     } catch (e) {
-      Logger.error(TAG, `likeComment failed: ${String(e)}`);
+      Logger.error(TAG, `likeComment failed: ${Logger.describe(e)}`);
     }
   }
 }

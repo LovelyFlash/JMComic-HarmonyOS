@@ -3,7 +3,7 @@ import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Settings } from '../data/preferences/Settings';
 import { JmApi } from '../data/api/JmApi';
-import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { ChipTokens, DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
@@ -61,7 +61,7 @@ export struct PreSearchPage {
               SymbolGlyph($r('sys.symbol.magnifyingglass'))
                 .fontSize(20)
                 .fontColor([$r('app.color.text_secondary')])
-              TextInput({ placeholder: Translations.t('search_hint') })
+              TextInput({ text: this.inputText, placeholder: Translations.t('search_hint') })
                 .layoutWeight(1)
                 .height(36)
                 .fontSize(14)
@@ -73,6 +73,12 @@ export struct PreSearchPage {
                 .onSubmit(() => {
                   if (this.inputText.length > 0) { this.gotoSearch(this.inputText); }
                 })
+              if (this.inputText.length > 0) {
+                SymbolGlyph($r('sys.symbol.xmark_circle_fill'))
+                  .fontSize(18)
+                  .fontColor([$r('app.color.text_tertiary')])
+                  .onClick(() => { this.inputText = ''; })
+              }
             }
             .width('100%').height(44)
             .padding({ left: 12, right: 12 })
@@ -102,12 +108,15 @@ export struct PreSearchPage {
                   Flex({ wrap: FlexWrap.Wrap }) {
                     ForEach(this.historyItems, (kw: string) => {
                       Text(kw)
-                        .fontSize(13)
+                        .fontSize(ChipTokens.FONT_SIZE)
                         .fontColor($r('app.color.text_primary'))
-                        .padding({ left: 14, right: 14, top: 8, bottom: 8 })
+                        .padding({
+                          left: ChipTokens.PAD_H, right: ChipTokens.PAD_H,
+                          top: ChipTokens.PAD_V, bottom: ChipTokens.PAD_V
+                        })
                         .backgroundColor($r('app.color.bg_surface'))
-                        .borderRadius(16)
-                        .margin({ right: 8, bottom: 8 })
+                        .borderRadius(ChipTokens.RADIUS)
+                        .margin({ right: ChipTokens.GAP, bottom: ChipTokens.GAP })
                         .onClick(() => { this.gotoSearch(kw); })
                         .id('searchHistory' + kw)
                     }, (kw: string) => kw)
@@ -133,12 +142,15 @@ export struct PreSearchPage {
                   Flex({ wrap: FlexWrap.Wrap }) {
                     ForEach(this.hotTags.slice(0, 20), (tag: string) => {
                       Text(tag)
-                        .fontSize(13)
+                        .fontSize(ChipTokens.FONT_SIZE)
                         .fontColor(this.themeColor)
-                        .padding({ left: 14, right: 14, top: 8, bottom: 8 })
+                        .padding({
+                          left: ChipTokens.PAD_H, right: ChipTokens.PAD_H,
+                          top: ChipTokens.PAD_V, bottom: ChipTokens.PAD_V
+                        })
                         .backgroundColor($r('app.color.bg_surface'))
-                        .borderRadius(16)
-                        .margin({ right: 8, bottom: 8 })
+                        .borderRadius(ChipTokens.RADIUS)
+                        .margin({ right: ChipTokens.GAP, bottom: ChipTokens.GAP })
                         .onClick(() => { this.gotoSearch(tag); })
                         .id('preSearchTag' + tag)
                     }, (tag: string) => tag)

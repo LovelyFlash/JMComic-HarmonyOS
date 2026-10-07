@@ -1,8 +1,7 @@
 
 
 // entryability/EntryAbility.ets - 入口 Ability（初始化链 + 沉浸式全屏 + 避让区 + 系统深色模式监听）
-import { AbilityConstant, Configuration, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import { AbilityConstant, Configuration, ConfigurationConstant, errorManager, UIAbility, Want } from '@kit.AbilityKit';
 import { window, display } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { Database } from '../data/database/Database';
@@ -10,8 +9,8 @@ import { Settings } from '../data/preferences/Settings';
 import { ThemeManager } from '../common/ThemeManager';
 import { ReadingConfig } from '../common/ReadingConfig';
 import { JmApi } from '../data/api/JmApi';
+import { Logger } from '../common/Logger';
 
-const DOMAIN = 0x0000;
 const TAG = 'JMComic';
 
 export default class EntryAbility extends UIAbility {
@@ -20,7 +19,32 @@ export default class EntryAbility extends UIAbility {
   private windowConfigured: boolean = false;
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-    hilog.info(DOMAIN, TAG, 'Ability onCreate');
+    Logger.info(TAG, 'Ability onCreate');
+    this.registerErrorObservers();
+  }
+
+  /** 注册全局异常观测：JS 崩溃/未捕获异常、全局线程异常统一落 Logger.error */
+  private registerErrorObservers(): void {
+    try {
+      const observer: errorManager.ErrorObserver = {
+        onUnhandledException: (errorMsg: string): void => {
+          Logger.error(TAG, `unhandledException: ${errorMsg}`);
+        },
+        onException: (err: Error): void => {
+          Logger.exception(TAG, 'exception', err);
+        }
+      };
+      errorManager.on('error', observer);
+    } catch (e) {
+      Logger.warn(TAG, `error observer register failed: ${Logger.describe(e)}`);
+    }
+    try {
+      errorManager.on('globalErrorOccurred', (reason: errorManager.GlobalError): void => {
+        Logger.error(TAG, `globalError ${reason.name}: ${reason.message}\n${reason.stack ?? ''} [${reason.instanceName}]`);
+      });
+    } catch (e) {
+      Logger.warn(TAG, `globalError observer register failed: ${Logger.describe(e)}`);
+    }
   }
 
   private async initAsync(): Promise<void> {
@@ -37,7 +61,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onDestroy(): void {
-    hilog.info(DOMAIN, TAG, 'Ability onDestroy');
+    Logger.info(TAG, 'Ability onDestroy');
   }
 
   /** 读取系统深色状态并同步到主题（跟随系统策略生效） */
@@ -48,19 +72,19 @@ export default class EntryAbility extends UIAbility {
       AppStorage.setOrCreate('systemIsDark', isSystemDark);
       ThemeManager.applySystemDark(isSystemDark);
     } catch (e) {
-      hilog.warn(DOMAIN, TAG, 'colorMode read failed: %{public}s', String(e));
+      Logger.exception(TAG, 'colorMode read failed', e);
     }
   }
 
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
-    hilog.info(DOMAIN, TAG, 'Ability onWindowStageCreate');
+    Logger.info(TAG, 'Ability onWindowStageCreate');
     // 串行化：初始化 → 同步系统深色 → 加载启动页，避免首帧主题竞态闪烁
     this.initAsync().then(() => {
       this.syncSystemDark();
       this.loadLaunchPage(windowStage);
     }).catch((e: Object) => {
-      hilog.error(DOMAIN, TAG, 'initAsync failed: %{public}s', String(e));
+      Logger.exception(TAG, 'initAsync failed', e);
       // 初始化失败兜底加载页面
       this.loadMainPage(windowStage);
     });
@@ -70,18 +94,18 @@ export default class EntryAbility extends UIAbility {
   private loadLaunchPage(windowStage: window.WindowStage): void {
     windowStage.loadContent('pages/LaunchPage', (err: Error): void => {
       if (err) {
-        hilog.error(DOMAIN, TAG, 'Failed to load launch content: %{public}s', JSON.stringify(err));
+        Logger.error(TAG, `Failed to load launch content: ${JSON.stringify(err)}`);
         this.loadMainPage(windowStage);
         return;
       }
-      hilog.info(DOMAIN, TAG, 'Launch page loaded');
+      Logger.info(TAG, 'Launch page loaded');
       this.setupWindow(windowStage);
       const startedAt: number = Date.now();
       // 首个 Tab（我的页）历史数据预热，完成后 MainPage 查询走页缓存
       const homeData: Promise<void> = Database.queryHistory().then(() => {
-        hilog.info(DOMAIN, TAG, 'home data warm ready');
+        Logger.info(TAG, 'home data warm ready');
       }, (e: Object) => {
-        hilog.warn(DOMAIN, TAG, 'home data warm failed: %{public}s', String(e));
+        Logger.warn(TAG, `home data warm failed: ${Logger.describe(e)}`);
       });
       const minShow: Promise<void> = new Promise<void>((resolve) => {
         setTimeout(() => {
@@ -89,7 +113,7 @@ export default class EntryAbility extends UIAbility {
         }, 600);
       });
       Promise.all([homeData, minShow]).then(() => {
-        hilog.info(DOMAIN, TAG, 'launch finished in %{public}dms', Date.now() - startedAt);
+        Logger.info(TAG, `launch finished in ${Date.now() - startedAt}ms`);
         this.loadMainPage(windowStage);
       });
     });
@@ -99,10 +123,10 @@ export default class EntryAbility extends UIAbility {
   private loadMainPage(windowStage: window.WindowStage): void {
     windowStage.loadContent('pages/MainPage', (err: Error): void => {
       if (err) {
-        hilog.error(DOMAIN, TAG, 'Failed to load content: %{public}s', JSON.stringify(err));
+        Logger.error(TAG, `Failed to load content: ${JSON.stringify(err)}`);
         return;
       }
-      hilog.info(DOMAIN, TAG, 'Content loaded successfully');
+      Logger.info(TAG, 'Content loaded successfully');
       this.setupWindow(windowStage);
     });
   }
@@ -118,10 +142,10 @@ export default class EntryAbility extends UIAbility {
       EntryAbility.mainWindow = win;
       // 1. 沉浸式：窗口全屏布局，界面延伸至状态栏与导航条
       win.setWindowLayoutFullScreen(true).then(() => {
-        hilog.info(DOMAIN, TAG, 'setWindowLayoutFullScreen success');
+        Logger.info(TAG, 'setWindowLayoutFullScreen success');
         EntryAbility.updateAvoidAreas(win, 'setupWindow');
       }).catch((e: BusinessError) => {
-        hilog.error(DOMAIN, TAG, 'setWindowLayoutFullScreen failed: %{public}s', String(e.code));
+        Logger.error(TAG, `setWindowLayoutFullScreen failed: ${String(e.code)}`);
       });
       // 2. 监听避让区变化（旋转/分屏/折叠）
       win.on('avoidAreaChange', (data: window.AvoidAreaOptions) => {
@@ -139,7 +163,7 @@ export default class EntryAbility extends UIAbility {
       // 6. setColorMode 之后重设状态栏字色（色模式切换可能重置系统栏样式）
       EntryAbility.applySystemBarColor(ThemeManager.isDark);
     } catch (e) {
-      hilog.warn(DOMAIN, TAG, 'window setup failed: %{public}s', String(e));
+      Logger.exception(TAG, 'window setup failed', e);
     }
   }
 
@@ -156,11 +180,9 @@ export default class EntryAbility extends UIAbility {
       // 兼容别名（CategoryPage 等使用），与 topAvoidHeight/bottomAvoidHeight 同为 vp
       AppStorage.setOrCreate('topRectHeight', topVp);
       AppStorage.setOrCreate('bottomRectHeight', bottomVp);
-      hilog.info(DOMAIN, TAG, 'avoidArea caller=%{public}s density=%{public}s topPx=%{public}s bottomPx=%{public}s topVp=%{public}s bottomVp=%{public}s',
-        caller, String(density), String(sysArea.topRect.height), String(navArea.bottomRect.height),
-        topVp.toFixed(2), bottomVp.toFixed(2));
+      Logger.info(TAG, `avoidArea caller=${caller} density=${density} topPx=${sysArea.topRect.height} bottomPx=${navArea.bottomRect.height} topVp=${topVp.toFixed(2)} bottomVp=${bottomVp.toFixed(2)}`);
     } catch (e) {
-      hilog.warn(DOMAIN, TAG, 'updateAvoidAreas failed: %{public}s', String(e));
+      Logger.exception(TAG, 'updateAvoidAreas failed', e);
     }
   }
 
@@ -175,7 +197,7 @@ export default class EntryAbility extends UIAbility {
         EntryAbility.mainWindow.setWindowBackgroundColor(ThemeManager.windowBackground);
       }
     } catch (e) {
-      hilog.warn(DOMAIN, TAG, 'applySystemBarColor failed: %{public}s', String(e));
+      Logger.exception(TAG, 'applySystemBarColor failed', e);
     }
   }
 
@@ -184,26 +206,26 @@ export default class EntryAbility extends UIAbility {
   onConfigurationUpdate(config: Configuration): void {
     try {
       const isSystemDark = config.colorMode === ConfigurationConstant.ColorMode.COLOR_MODE_DARK;
-      hilog.info(DOMAIN, TAG, 'onConfigurationUpdate: colorMode=%{public}s', String(config.colorMode));
+      Logger.info(TAG, `onConfigurationUpdate: colorMode=${String(config.colorMode)}`);
       if (ThemeManager.darkMode !== 'system') {
         return;
       }
       AppStorage.setOrCreate('systemIsDark', isSystemDark);
       ThemeManager.applySystemDark(isSystemDark);
     } catch (e) {
-      hilog.warn(DOMAIN, TAG, 'onConfigurationUpdate failed: %{public}s', String(e));
+      Logger.exception(TAG, 'onConfigurationUpdate failed', e);
     }
   }
 
   onWindowStageDestroy(): void {
-    hilog.info(DOMAIN, TAG, 'Ability onWindowStageDestroy');
+    Logger.info(TAG, 'Ability onWindowStageDestroy');
   }
 
   onForeground(): void {
-    hilog.info(DOMAIN, TAG, 'Ability onForeground');
+    Logger.info(TAG, 'Ability onForeground');
   }
 
   onBackground(): void {
-    hilog.info(DOMAIN, TAG, 'Ability onBackground');
+    Logger.info(TAG, 'Ability onBackground');
   }
 }

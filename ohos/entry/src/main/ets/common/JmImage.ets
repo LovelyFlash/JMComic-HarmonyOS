@@ -160,7 +160,7 @@ export class JmImage {
           };
         }
       } catch (e) {
-        Logger.warn(TAG, `getImageInfo for desiredSize failed: ${String(e)}`);
+        Logger.warn(TAG, `getImageInfo for desiredSize failed: ${Logger.describe(e)}`);
       }
     }
     const pixelMap: image.PixelMap = await source.createPixelMap(opts);

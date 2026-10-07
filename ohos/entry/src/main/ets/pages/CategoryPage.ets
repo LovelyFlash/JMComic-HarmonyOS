@@ -1,7 +1,7 @@
 // pages/CategoryPage.ets - 分类页（禁漫固定分类 + 排行榜 + 每周推荐入口）
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
-import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { ChipTokens, DEFAULT_THEME_COLOR } from '../common/Constants';
 
 class CategoryEntry {
   label: string = '';
@@ -118,12 +118,15 @@ export struct CategoryPage {
     Flex({ wrap: FlexWrap.Wrap }) {
       ForEach(section.entries, (entry: CategoryEntry) => {
         Text(entry.label)
-          .fontSize(13)
+          .fontSize(ChipTokens.FONT_SIZE)
           .fontColor($r('app.color.text_primary'))
-          .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+          .padding({
+            left: ChipTokens.PAD_H, right: ChipTokens.PAD_H,
+            top: ChipTokens.PAD_V, bottom: ChipTokens.PAD_V
+          })
           .backgroundColor($r('app.color.bg_surface'))
-          .borderRadius(20)
-          .margin({ right: 8, bottom: 8 })
+          .borderRadius(ChipTokens.RADIUS)
+          .margin({ right: ChipTokens.GAP, bottom: ChipTokens.GAP })
           .onClick(() => {
             if (section.type === 'category') {
               const param: Record<string, Object> = { 'slug': entry.keyword, 'title': entry.label };

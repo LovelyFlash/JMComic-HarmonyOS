@@ -10,7 +10,7 @@ import { Database, ReadingProgress } from '../data/database/Database';
 import { JmApi, JmFolder } from '../data/api/JmApi';
 import { NetworkImage } from '../components/NetworkImage';
 import { ArrayDataSource } from '../common/ArrayDataSource';
-import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { ChipTokens, DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
 
 const CHAPTER_COLLAPSE_THRESHOLD = 20;
@@ -245,6 +245,16 @@ export struct ComicDetailPage {
     NavUtil.push('search', param);
   }
 
+  /** 过滤空白标签（接口偶发空串，避免渲染出空小气泡） */
+  private visibleCategories(): string[] {
+    return this.comic.categories.filter((t: string) => t.trim().length > 0);
+  }
+
+  /** 长文本值：限制在行内宽度 + 允许换行（超短文本保持紧凑小按钮） */
+  private isLongValue(expand: boolean, value: string): boolean {
+    return expand || value.length > 24;
+  }
+
   private openRelated(id: string, source: string): void {
     const param: Record<string, Object> = { 'comicId': id, 'title': '', 'source': source };
     NavUtil.push('comicDetail', param);
@@ -383,6 +393,39 @@ export struct ComicDetailPage {
     }
     .width('100%')
     .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+  }
+
+  /** 基本信息行：label chip + 值 chip（点击值即跳转搜索）。长文本（名称/超长作者）宽度限制在行内、超长换行最多 2 行 */
+  @Builder
+  infoRow(label: string, value: string, expand: boolean) {
+    Row({ space: ChipTokens.GAP }) {
+      Text(label)
+        .fontSize(ChipTokens.FONT_SIZE)
+        .fontColor($r('app.color.text_secondary'))
+        .padding({
+          left: ChipTokens.PAD_H, right: ChipTokens.PAD_H,
+          top: ChipTokens.PAD_V, bottom: ChipTokens.PAD_V
+        })
+        .backgroundColor($r('app.color.bg_fill'))
+        .borderRadius(ChipTokens.RADIUS)
+      Text(value)
+        .fontSize(ChipTokens.FONT_SIZE)
+        .fontColor(this.themeColor)
+        .backgroundColor($r('app.color.bg_fill'))
+        .padding({
+          left: ChipTokens.PAD_H, right: ChipTokens.PAD_H,
+          top: ChipTokens.PAD_V, bottom: ChipTokens.PAD_V
+        })
+        .borderRadius(ChipTokens.RADIUS)
+        .maxLines(this.isLongValue(expand, value) ? 2 : 1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .layoutWeight(this.isLongValue(expand, value) ? 1 : 0)
+        .onClick(() => { this.searchTag(value); })
+    }
+    .width('100%')
+    .alignItems(VerticalAlign.Center)
+    .id('infoRow' + label)
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   @Builder
@@ -697,16 +740,42 @@ export struct ComicDetailPage {
                     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
                 }
 
-                if (this.comic.categories.length > 0) {
+                // 基本信息栏：名称 / ID / 作者（与标签同级）
+                Column({ space: 8 }) {
+                  this.infoRow(Translations.t('name_label'), this.comic.title, true)
+                  this.infoRow(Translations.t('id_label'), this.comicId, false)
+                  if (this.comic.author.length > 0) {
+                    this.infoRow(Translations.t('author'), this.comic.author, false)
+                  }
+                }
+                .width('100%')
+                .padding({ left: 16, right: 16, top: 12 })
+                .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+
+                if (this.visibleCategories().length > 0) {
                   Flex({ wrap: FlexWrap.Wrap }) {
-                    ForEach(this.comic.categories, (tag: string) => {
+                    Text(Translations.t('tags_label'))
+                      .fontSize(ChipTokens.FONT_SIZE)
+                      .fontColor($r('app.color.text_secondary'))
+                      .backgroundColor($r('app.color.bg_fill'))
+                      .padding({
+                        left: ChipTokens.PAD_H, right: ChipTokens.PAD_H,
+                        top: ChipTokens.PAD_V, bottom: ChipTokens.PAD_V
+                      })
+                      .borderRadius(ChipTokens.RADIUS)
+                      .margin({ right: ChipTokens.GAP, bottom: ChipTokens.GAP })
+                      .id('detailTagLabel')
+                    ForEach(this.visibleCategories(), (tag: string) => {
                       Text(tag)
-                        .fontSize(12)
+                        .fontSize(ChipTokens.FONT_SIZE)
                         .fontColor(this.themeColor)
                         .backgroundColor($r('app.color.bg_fill'))
-                        .borderRadius(12)
-                        .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-                        .margin({ right: 6, bottom: 6 })
+                        .borderRadius(ChipTokens.RADIUS)
+                        .padding({
+                          left: ChipTokens.PAD_H, right: ChipTokens.PAD_H,
+                          top: ChipTokens.PAD_V, bottom: ChipTokens.PAD_V
+                        })
+                        .margin({ right: ChipTokens.GAP, bottom: ChipTokens.GAP })
                         .onClick(() => { this.searchTag(tag); })
                         .id('detailTag' + tag)
                     }, (tag: string) => tag)

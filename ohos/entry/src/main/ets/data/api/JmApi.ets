@@ -193,7 +193,7 @@ export class JmApi {
       const prev: number | undefined = AppStorage.get<number>('jmAccountChanged');
       AppStorage.setOrCreate('jmAccountChanged', prev === undefined ? 1 : prev + 1);
     } catch (e) {
-      Logger.warn(TAG, `notifyAccountChanged failed: ${String(e)}`);
+      Logger.warn(TAG, `notifyAccountChanged failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -235,12 +235,12 @@ export class JmApi {
     if (JmApi.loggedIn) {
       // cookie 短效，每次启动重新登录（与原版一致），后台执行不阻塞启动
       JmApi.reLogin().catch((e: Object) => {
-        Logger.warn(TAG, `reLogin on init failed: ${String(e)}`);
+        Logger.warn(TAG, `reLogin on init failed: ${Logger.describe(e)}`);
       });
     }
     // 后台域名保鲜：24h 周期外拉取新鲜域名，替换可能过期的内置列表
     JmApi.updateDomainsIfStale().catch((e: Object) => {
-      Logger.warn(TAG, `updateDomainsIfStale failed: ${String(e)}`);
+      Logger.warn(TAG, `updateDomainsIfStale failed: ${Logger.describe(e)}`);
     });
   }
 
@@ -284,7 +284,7 @@ export class JmApi {
     await Settings.putNumber(SettingsKeys.JM_DOMAIN_INDEX, index);
     if (JmApi.loggedIn) {
       JmApi.reLogin().catch((e: Object) => {
-        Logger.warn(TAG, `reLogin after selectDomainAt failed: ${String(e)}`);
+        Logger.warn(TAG, `reLogin after selectDomainAt failed: ${Logger.describe(e)}`);
       });
     }
   }
@@ -313,7 +313,7 @@ export class JmApi {
           return serverList.slice(0, 4);
         }
       } catch (e) {
-        Logger.error(TAG, `fetchDomains from URL[${i}] failed: ${String(e)}`);
+        Logger.error(TAG, `fetchDomains from URL[${i}] failed: ${Logger.describe(e)}`);
       }
     }
     return [];
@@ -360,7 +360,7 @@ export class JmApi {
             JmApi.domainIndex = idx;
             JmApi.currentDomain = domain;
             Settings.putNumber(SettingsKeys.JM_DOMAIN_INDEX, idx).catch((e: Object) => {
-              Logger.warn(TAG, `persist domain index failed: ${String(e)}`);
+              Logger.warn(TAG, `persist domain index failed: ${Logger.describe(e)}`);
             });
             Logger.info(TAG, `Selected JM API domain: ${domain}`);
             resolve(idx);
@@ -378,7 +378,7 @@ export class JmApi {
     try {
       return await JmApi.probeDomain(JmApi.currentDomain);
     } catch (e) {
-      Logger.error(TAG, `healthCheck failed: ${String(e)}`);
+      Logger.error(TAG, `healthCheck failed: ${Logger.describe(e)}`);
       return false;
     }
   }
@@ -399,7 +399,7 @@ export class JmApi {
         return true;
       }
     } catch (e) {
-      Logger.warn(TAG, `updateImgUrl failed: ${String(e)}`);
+      Logger.warn(TAG, `updateImgUrl failed: ${Logger.describe(e)}`);
     }
     return false;
   }
@@ -469,6 +469,21 @@ export class JmApi {
     }
   }
 
+  /** 安全 JSON 解析：非 JSON / 解析失败时记录状态码、域名、时间与 body 头部，并抛出可读错误 */
+  private static parseJsonOrThrow(body: string, code: number, time: string): Object {
+    const trimmed: string = body.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+      Logger.error(TAG, `Non-JSON response: HTTP ${code}, domain=${JmApi.currentDomain}, time=${time}, ver=${JmApi.appVersion}, head=${trimmed.substring(0, 200)}`);
+      throw new Error(`Server returned non-JSON (HTTP ${code}): ${trimmed.substring(0, 120)}`);
+    }
+    try {
+      return JSON.parse(trimmed) as Object;
+    } catch (e) {
+      Logger.error(TAG, `JSON parse failed: HTTP ${code}, domain=${JmApi.currentDomain}, time=${time}, head=${trimmed.substring(0, 200)}`);
+      throw new Error(`Invalid JSON from server (HTTP ${code}): ${trimmed.substring(0, 120)}`);
+    }
+  }
+
   private static async handleResponse(
     resp: NetworkResp,
     time: string,
@@ -492,7 +507,7 @@ export class JmApi {
     if (resp.body === '') {
       throw new Error('Empty response');
     }
-    const result: Record<string, Object> = JSON.parse(resp.body) as Record<string, Object>;
+    const result: Record<string, Object> = JmApi.parseJsonOrThrow(resp.body, resp.code, time) as Record<string, Object>;
     const code: number = JmApi.safeNum(result, 'code', 200);
     if (code !== 200) {
       const msg: string = JmApi.safeStr(result, 'errorMsg', JmApi.safeStr(result, 'info', 'Unknown error'));
@@ -512,7 +527,7 @@ export class JmApi {
       if (decrypted === '') {
         throw new Error('Decrypt failed');
       }
-      return JSON.parse(decrypted) as Object;
+      return JmApi.parseJsonOrThrow(decrypted, resp.code, time);
     }
     if (Array.isArray(dataField)) {
       const arr: Object[] = dataField as Object[];
@@ -546,6 +561,7 @@ export class JmApi {
     if (parts.length > 0) {
       url += (path.indexOf('?') !== -1 ? '&' : '?') + parts.join('&');
     }
+    Logger.debug(TAG, `GET ${url} time=${time} ver=${JmApi.appVersion}`);
     const resp: NetworkResp = await Network.getWithStatus(url, headers);
     // 网络异常：仅 GET（幂等）换域名重试一次；POST 不重试，防止开关量类接口双重执行
     if (resp.code === -1) {
@@ -562,6 +578,7 @@ export class JmApi {
     const time: string = String(Math.floor(Date.now() / 1000));
     const headers: Record<string, string> = JmApi.buildHeaders(time, true);
     const url: string = `${JmApi.currentDomain}${path}`;
+    Logger.debug(TAG, `POST ${url} time=${time} ver=${JmApi.appVersion}`);
     const resp: NetworkResp = await Network.postWithStatus(url, formBody, headers);
     if (resp.code === -1) {
       // POST 不做网络错误自动重试（与原版 post() 一致）
@@ -666,14 +683,15 @@ export class JmApi {
     const actors: string[] = JmApi.toStringArray(data['actors']);
     comic.tags = tags;
     const categories: string[] = [];
-    for (let i = 0; i < tags.length; i++) {
-      categories.push(tags[i]);
-    }
-    for (let i = 0; i < works.length; i++) {
-      categories.push(works[i]);
-    }
-    for (let i = 0; i < actors.length; i++) {
-      categories.push(actors[i]);
+    const pools: string[][] = [tags, works, actors];
+    for (let p = 0; p < pools.length; p++) {
+      const pool: string[] = pools[p];
+      for (let i = 0; i < pool.length; i++) {
+        const item: string = pool[i].trim();
+        if (item.length > 0) {
+          categories.push(item);
+        }
+      }
     }
     comic.categories = categories;
 
@@ -757,7 +775,7 @@ export class JmApi {
       }
       Logger.warn(TAG, `scramble_id not matched, fallback, body head: ${body.substring(0, 120)}`);
     } catch (e) {
-      Logger.warn(TAG, `fetch scramble_id failed: ${String(e)}`);
+      Logger.warn(TAG, `fetch scramble_id failed: ${Logger.describe(e)}`);
     }
     return ApiConstants.JM_SCRAMBLE_FALLBACK;
   }
@@ -827,7 +845,7 @@ export class JmApi {
           const msg: string = await JmApi.dailyChk();
           Logger.info(TAG, `JM auto check-in succeed: ${msg}`);
         } catch (e) {
-          Logger.warn(TAG, `JM auto check-in failed: ${String(e)}`);
+          Logger.warn(TAG, `JM auto check-in failed: ${Logger.describe(e)}`);
         }
       }
     }
@@ -838,7 +856,7 @@ export class JmApi {
     try {
       Network.clearAllCookies();
     } catch (e) {
-      Logger.warn(TAG, `clearAllCookies failed: ${String(e)}`);
+      Logger.warn(TAG, `clearAllCookies failed: ${Logger.describe(e)}`);
     }
     JmApi.account = '';
     JmApi.password = '';
@@ -861,7 +879,7 @@ export class JmApi {
       await JmApi.login(JmApi.account, JmApi.password);
       return true;
     } catch (e) {
-      Logger.warn(TAG, `reLogin failed: ${String(e)}`);
+      Logger.warn(TAG, `reLogin failed: ${Logger.describe(e)}`);
       return false;
     }
   }
@@ -1229,7 +1247,7 @@ export class JmApi {
       const decoder: util.TextDecoder = util.TextDecoder.create('utf-8');
       return decoder.decodeToString(body);
     } catch (e) {
-      Logger.error(TAG, `decodeRespData failed: ${String(e)}`);
+      Logger.error(TAG, `decodeRespData failed: ${Logger.describe(e)}`);
       return '';
     }
   }

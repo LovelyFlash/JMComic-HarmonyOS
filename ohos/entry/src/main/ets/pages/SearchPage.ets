@@ -85,6 +85,22 @@ export struct SearchPage {
     this.currentPage = 1;
     this.searched = true;
     this.saveHistory(this.keyword);
+    // 纯数字关键词按漫画 ID 处理：命中直接进入详情页，未命中回退为关键词搜索
+    if (/^\d+$/.test(this.keyword)) {
+      try {
+        const comic: Comic = await JmApi.getComicInfo(this.keyword);
+        if (comic.id.length > 0 && comic.title.length > 0 && comic.title !== '未知') {
+          this.loading = false;
+          const param: Record<string, Object> = {
+            'comicId': comic.id, 'title': comic.title, 'source': comic.source
+          };
+          NavUtil.replace('comicDetail', param);
+          return;
+        }
+      } catch (e) {
+        // ID 不存在或请求失败 → 回退关键词搜索
+      }
+    }
     try {
       await this.loadPage(1, true);
     } catch (e) {
