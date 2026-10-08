@@ -39,7 +39,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 | 项目 | 说明 |
 |------|------|
 | 包名 | `com.jmcomic.harmony` |
-| 当前版本 | 1.0.7（versionCode 8） |
+| 当前版本 | 1.0.8（versionCode 9） |
 | 目标 API | 26（HarmonyOS NEXT） |
 | 开发语言 / UI 框架 | ArkTS / ArkUI 声明式（Stage 模型，单 `entry` HAP 模块） |
 | 设备类型 | phone / tablet / 2in1 |
@@ -329,8 +329,8 @@ NavUtil.push('comicDetail', { comicId, title, source })
 ```json5
 {
   bundleName: "com.jmcomic.harmony",
-  versionCode: 8,
-  versionName: "1.0.7",
+  versionCode: 9,
+  versionName: "1.0.8",
   targetAPIVersion: 26
 }
 ```

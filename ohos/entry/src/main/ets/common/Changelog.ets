@@ -13,6 +13,9 @@ export class ReleaseNote {
 
 export class Changelog {
   static readonly releases: ReleaseNote[] = [
+    new ReleaseNote('1.0.8', '2026-10-08', [
+      '更新项目文档：README 同步版本信息、功能特性与构建配置说明'
+    ]),
     new ReleaseNote('1.0.7', '2026-10-07', [
       '搜索支持直接输入漫画 ID，可直接打开对应详情页',
       '详情页新增信息栏：名称、ID、作者与标签统一为按钮式样式，点击即可搜索',
