@@ -6,7 +6,7 @@ import { JmApi, JmWeekCategory } from '../data/api/JmApi';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { NavTitleBar } from '../components/NavTitleBar';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
+import { immersiveNavModifier } from '../common/Compat';
 
 class WeekType {
   key: string = '';
@@ -235,8 +235,6 @@ export struct JmWeekPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
+    .attributeModifier(immersiveNavModifier)
   }
 }

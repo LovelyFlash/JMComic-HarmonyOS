@@ -9,7 +9,7 @@ import { SettingItem } from '../../components/SettingItem';
 import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingSelect } from '../../components/SettingSelect';
 import { SettingCorner } from '../../components/SettingCommon';
-import { uiMaterial } from '@kit.ArkUI';
+import { immersiveNavModifier } from '../../common/Compat';
 
 @Builder
 export function SettingsPageBuilder(name: string, param: object) {
@@ -207,9 +207,7 @@ export struct SettingsPage {
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 设置标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
+    .attributeModifier(immersiveNavModifier)
     .id('settingsPage')
   }
 }

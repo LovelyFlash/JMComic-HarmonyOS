@@ -2,7 +2,7 @@
 import { Translations } from '../../common/Translations';
 import { ApiConstants, DEFAULT_THEME_COLOR } from '../../common/Constants';
 import { Changelog, ReleaseNote } from '../../common/Changelog';
-import { uiMaterial } from '@kit.ArkUI';
+import { immersiveNavModifier } from '../../common/Compat';
 
 @Builder
 export function AboutPageBuilder(name: string, param: object) {
@@ -98,9 +98,7 @@ export struct AboutPage {
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
+    .attributeModifier(immersiveNavModifier)
     .id('aboutPage')
   }
 }

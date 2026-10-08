@@ -1,5 +1,5 @@
 // pages/ComicDetailPage.ets - 漫画详情页（JM：沉浸式头图 + 章节 + 相关推荐 + 云收藏 + 点赞）- NavDestination
-import { pasteboard } from '@kit.BasicServicesKit';
+import { deviceInfo, pasteboard } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
@@ -14,6 +14,24 @@ import { ChipTokens, DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
 
 const CHAPTER_COLLAPSE_THRESHOLD = 20;
+
+/** 收藏/返回按钮光感材质修饰器：systemMaterial 自 API 26.0.0 起可用，低版本设备降级为无材质 */
+class FavMaterialModifier implements AttributeModifier<ButtonAttribute> {
+  applyNormalAttribute(instance: ButtonAttribute): void {
+    if (deviceInfo.sdkApiVersion >= 26) {
+      if (deviceInfo.apiAvailable('26.0.0')) {
+        instance.systemMaterial(new uiMaterial.ImmersiveMaterial({
+          style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+          materialColor: 0x263B82F6,
+          colorInvert: true,
+          applyShadow: true,
+          interactive: true,
+          lightEffect: { color: undefined }
+        }));
+      }
+    }
+  }
+}
 
 
 @Builder
@@ -50,15 +68,7 @@ export struct ComicDetailPage {
   @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
 
-  private favoriteMaterial: uiMaterial.Material =
-    new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-      materialColor: 0x263B82F6,
-      colorInvert: true,
-      applyShadow: true,
-      interactive: true,
-      lightEffect: { color: undefined }
-    })
+  private favMaterialModifier: FavMaterialModifier = new FavMaterialModifier()
 
   aboutToAppear(): void {
     if (this.pageParam !== undefined && this.pageParam !== null) {
@@ -377,7 +387,7 @@ export struct ComicDetailPage {
       .width(40).height(40)
       .borderRadius(24)
       .backgroundColor(Color.Transparent)
-      .systemMaterial(this.favoriteMaterial)
+      .attributeModifier(this.favMaterialModifier)
       .onClick(() => { NavUtil.back(); })
       Blank().layoutWeight(1)
       Button({ type: ButtonType.Normal, stateEffect: true }) {
@@ -388,11 +398,33 @@ export struct ComicDetailPage {
       .width(40).height(40)
       .borderRadius(24)
       .backgroundColor(Color.Transparent)
-      .systemMaterial(this.favoriteMaterial)
+      .attributeModifier(this.favMaterialModifier)
       .onClick(() => { this.toggleFavorite(); })
     }
     .width('100%')
     .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+  }
+
+  /** 收藏 sheet 配置：systemMaterial 自 API 26.0.0 起可用，低版本设备降级为 blurStyle 背景 */
+  private favSheetOptions(): SheetOptions {
+    const options: SheetOptions = {
+      detents: [SheetSize.MEDIUM, SheetSize.LARGE],
+      blurStyle: BlurStyle.COMPONENT_THICK,
+      showClose: true,
+      title: { title: Translations.t('favorite_select_folder') },
+      dragBar: true,
+      shouldDismiss: () => {
+        this.showFavSheet = false;
+      }
+    };
+    if (deviceInfo.sdkApiVersion >= 26) {
+      if (deviceInfo.apiAvailable('26.0.0')) {
+        options.systemMaterial = new uiMaterial.ImmersiveMaterial({
+          style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+        });
+      }
+    }
+    return options;
   }
 
   /** 基本信息行：label chip + 值 chip（点击值即跳转搜索）。长文本（名称/超长作者）宽度限制在行内、超长换行最多 2 行 */
@@ -806,19 +838,7 @@ export struct ComicDetailPage {
         }
         .width('100%').height('100%')
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-        .bindSheet($$this.showFavSheet, this.favSheetContent(), {
-          detents: [SheetSize.MEDIUM, SheetSize.LARGE],
-          blurStyle: BlurStyle.COMPONENT_THICK,
-          showClose: true,
-          title: { title: Translations.t('favorite_select_folder') },
-          dragBar: true,
-          shouldDismiss: () => {
-            this.showFavSheet = false;
-          },
-          systemMaterial: new uiMaterial.ImmersiveMaterial({
-            style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-          })
-        })
+        .bindSheet($$this.showFavSheet, this.favSheetContent(), this.favSheetOptions())
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])

@@ -3,7 +3,7 @@ import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../common/Translations';
 import { JmApi } from '../data/api/JmApi';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
+import { immersiveNavModifier } from '../common/Compat';
 
 @Builder
 export function AccountsPageBuilder(name: string, param: object) {
@@ -243,8 +243,6 @@ export struct AccountsPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
+    .attributeModifier(immersiveNavModifier)
   }
 }

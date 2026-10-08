@@ -1,6 +1,7 @@
 // pages/reader/ReaderPage.ets - 阅读器（6 阅读模式 + 手势缩放 + bindSheet 设置/章节 + 续读 + 进度保存）- NavDestination
 import { window } from '@kit.ArkUI';
 import { uiMaterial } from '@kit.ArkUI';
+import { deviceInfo } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
 import { inputConsumer, KeyCode, KeyEvent } from '@kit.InputKit';
 import { Translations } from '../../common/Translations';
@@ -124,6 +125,31 @@ export struct ReaderPage {
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
+
+  /** 阅读器 sheet 配置：systemMaterial 自 API 26.0.0 起可用，低版本设备降级为 blurStyle 背景 */
+  private sheetOptions(): SheetOptions {
+    const options: SheetOptions = {
+      detents: [SheetSize.MEDIUM, SheetSize.LARGE],
+      blurStyle: BlurStyle.COMPONENT_THICK,
+      showClose: true,
+      title: {
+        title: this.sheetMode === 'chapters' ? Translations.t('select_chapter') :
+          Translations.t('reading_settings')
+      },
+      dragBar: true,
+      shouldDismiss: () => {
+        this.showSheet = false;
+      }
+    };
+    if (deviceInfo.sdkApiVersion >= 26) {
+      if (deviceInfo.apiAvailable('26.0.0')) {
+        options.systemMaterial = new uiMaterial.ImmersiveMaterial({
+          style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+        });
+      }
+    }
+    return options;
+  }
 
   aboutToAppear(): void {
     if (this.pageParam !== undefined && this.pageParam !== null) {
@@ -1632,19 +1658,7 @@ export struct ReaderPage {
       .width('100%').height('100%')
       .backgroundColor($r('app.color.reader_bg'))
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-      .bindSheet($$this.showSheet, this.sheetContent(), {
-        detents: [SheetSize.MEDIUM, SheetSize.LARGE],
-        blurStyle: BlurStyle.COMPONENT_THICK,
-        showClose: true,
-        title:{title: this.sheetMode === 'chapters' ? Translations.t('select_chapter') : Translations.t('reading_settings')},
-        dragBar: true,
-        shouldDismiss: () => {
-          this.showSheet = false;
-        },
-        systemMaterial: new uiMaterial.ImmersiveMaterial({
-          style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-        })
-      })
+      .bindSheet($$this.showSheet, this.sheetContent(), this.sheetOptions())
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)

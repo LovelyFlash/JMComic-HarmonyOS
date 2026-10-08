@@ -5,7 +5,7 @@ import { NavUtil } from '../common/NavUtil';
 import { Database, FollowItem } from '../data/database/Database';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
+import { immersiveNavModifier } from '../common/Compat';
 
 @Builder
 export function FollowPageBuilder(name: string, param: object) {
@@ -133,8 +133,6 @@ export struct FollowPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
+    .attributeModifier(immersiveNavModifier)
   }
 }

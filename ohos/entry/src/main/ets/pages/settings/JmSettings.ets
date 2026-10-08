@@ -12,7 +12,7 @@ import { SettingSelect } from '../../components/SettingSelect';
 import { SettingCheckItem } from '../../components/SettingCheckItem';
 import { SettingInfoItem } from '../../components/SettingInfoItem';
 import { SettingCorner } from '../../components/SettingCommon';
-import { uiMaterial } from '@kit.ArkUI';
+import { immersiveNavModifier } from '../../common/Compat';
 
 const TAG = 'JmSettings';
 
@@ -339,9 +339,7 @@ export struct JmSettings {
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
+    .attributeModifier(immersiveNavModifier)
     .id('jmSettingsPage')
   }
 }

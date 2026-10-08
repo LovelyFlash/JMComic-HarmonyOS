@@ -6,7 +6,7 @@ import { JmApi } from '../data/api/JmApi';
 import { Settings } from '../data/preferences/Settings';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
+import { immersiveNavModifier } from '../common/Compat';
 
 class SortOption {
   key: string = '';
@@ -310,8 +310,6 @@ export struct SearchPage {
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
+    .attributeModifier(immersiveNavModifier)
   }
 }

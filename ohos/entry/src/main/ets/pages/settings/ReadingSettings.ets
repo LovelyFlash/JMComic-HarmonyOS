@@ -5,7 +5,7 @@ import { ReadingConfig } from '../../common/ReadingConfig';
 import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingSelect } from '../../components/SettingSelect';
 import { SettingCorner } from '../../components/SettingCommon';
-import { uiMaterial } from '@kit.ArkUI';
+import { immersiveNavModifier } from '../../common/Compat';
 
 @Builder
 export function ReadingSettingsBuilder(name: string, param: object) {
@@ -212,9 +212,7 @@ export struct ReadingSettings {
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
+    .attributeModifier(immersiveNavModifier)
     .onBackPressed(() => {
       this.save();
       return false;

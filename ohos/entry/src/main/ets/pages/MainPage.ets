@@ -5,8 +5,24 @@ import { MePage } from './MePage';
 import { FavoritesContent } from './FavoritesContent';
 import { DiscoverPage } from './DiscoverPage';
 import { CategoryPage } from './CategoryPage';
-import { HdsTabs, HdsTabsController, hdsMaterial} from '@kit.UIDesignKit';
+import { HdsTabs, HdsTabsAttribute, HdsTabsController, hdsMaterial} from '@kit.UIDesignKit';
+import { deviceInfo } from '@kit.BasicServicesKit';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
+
+/** 页签栏悬浮样式修饰器：barFloatingStyle 自 API 6.1.0(23) 起可用，低版本设备降级为常规底栏 */
+class TabsFloatingModifier implements AttributeModifier<HdsTabsAttribute> {
+  applyNormalAttribute(instance: HdsTabsAttribute): void {
+    if (deviceInfo.sdkApiVersion >= 23) {
+      instance.barFloatingStyle({
+        barBottomMargin: 16,
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.IMMERSIVE,
+          materialLevel: hdsMaterial.MaterialLevel.EXQUISITE
+        }
+      });
+    }
+  }
+}
 
 @Entry
 @Component
@@ -18,6 +34,7 @@ struct MainPage {
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @State shadowGlow: number = 0.25;
   private controller: HdsTabsController = new HdsTabsController();
+  private floatingModifier: TabsFloatingModifier = new TabsFloatingModifier();
 
   build() {
     Navigation(NavUtil.stack) {
@@ -63,15 +80,7 @@ struct MainPage {
         .barOverlap(true)
         .vertical(false)
         .barPosition(BarPosition.End)
-        .barFloatingStyle({
-          barBottomMargin: 16,
-          systemMaterialEffect:
-
-          {
-            materialType: hdsMaterial.MaterialType.IMMERSIVE,
-            materialLevel: hdsMaterial.MaterialLevel.EXQUISITE
-          }
-        })
+        .attributeModifier(this.floatingModifier)
       }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(true)

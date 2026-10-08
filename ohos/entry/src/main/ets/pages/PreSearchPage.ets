@@ -4,7 +4,7 @@ import { NavUtil } from '../common/NavUtil';
 import { Settings } from '../data/preferences/Settings';
 import { JmApi } from '../data/api/JmApi';
 import { ChipTokens, DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
+import { immersiveNavModifier } from '../common/Compat';
 
 @Builder
 export function PreSearchPageBuilder(name: string, param: object) {
@@ -178,8 +178,6 @@ export struct PreSearchPage {
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
+    .attributeModifier(immersiveNavModifier)
   }
 }

@@ -1,5 +1,6 @@
 // common/JmImage.ets - JM 图片分片重组（对齐 Python 爬虫 jm_toolkit.py get_num/decode_and_save）
 import { image } from '@kit.ImageKit';
+import { deviceInfo } from '@kit.BasicServicesKit';
 import { JmApi } from '../data/api/JmApi';
 import { Logger } from './Logger';
 import { ApiConstants } from './Constants';
@@ -171,7 +172,8 @@ export class JmImage {
   /**
    * 反打乱重组（对齐 jm_toolkit.py JmImageTool.decode_and_save / PicaComic _segmentationPicture）：
    * 源图按 floor(h/num) 高切段，末段附带 h%num 余数行；目标图从末段开始倒序整段贴合，段内不旋转。
-   * 全量读出像素后用 createPixelMapFromPixels 重建，规避不可编辑像素图 writePixels 失败的问题。
+   * 全量读出像素后用 createPixelMapFromPixels 重建，规避不可编辑像素图 writePixels 失败的问题
+   * （API 26 以下设备降级为 writePixels 回写 + R/B 通道交换）。
    * 返回重组后的新 PixelMap（num<=1 或尺寸异常时原样返回传入的 pixelMap）。
    */
   static async recombine(pixelMap: image.PixelMap, url: string): Promise<image.PixelMap> {
@@ -197,7 +199,16 @@ export class JmImage {
     }
     const pxCount: number = w * h;
     const srcBuf: ArrayBuffer = new ArrayBuffer(pxCount * 4);
-    await pixelMap.readAllPixelsToBuffer(srcBuf);
+    // readAllPixelsToBuffer 自 API 26.0.0 起可用，低版本走 readPixelsToBuffer（行为等价）
+    if (deviceInfo.sdkApiVersion >= 26) {
+      if (deviceInfo.apiAvailable('26.0.0')) {
+        await pixelMap.readAllPixelsToBuffer(srcBuf);
+      } else {
+        await pixelMap.readPixelsToBuffer(srcBuf);
+      }
+    } else {
+      await pixelMap.readPixelsToBuffer(srcBuf);
+    }
     const src: Uint32Array = new Uint32Array(srcBuf);
     const dstBuf: ArrayBuffer = new ArrayBuffer(pxCount * 4);
     const dst: Uint32Array = new Uint32Array(dstBuf);
@@ -215,14 +226,38 @@ export class JmImage {
       // 段内行连续 → 整段一次原生拷贝（Uint32Array.set），避免逐像素 JS 循环阻塞主线程
       dst.set(src.subarray(srcRow * w, (srcRow + blockH) * w), dstRow * w);
     }
-    pixelMap.release();
-    const initOpts: image.InitializationOptions = {
-      size: { width: w, height: h },
-      srcPixelFormat: image.PixelMapFormat.RGBA_8888,
-      pixelFormat: image.PixelMapFormat.RGBA_8888
-    };
-    const result: image.PixelMap = await image.createPixelMapFromPixels(dstBuf, initOpts);
-    Logger.info(TAG, `recombine ok: num=${num} aid=${aid} name=${pictureName} w=${w} h=${h}`);
-    return result;
+    // API 26 及以上：全量重建为新 PixelMap（原图释放）
+    if (deviceInfo.sdkApiVersion >= 26) {
+      if (deviceInfo.apiAvailable('26.0.0')) {
+        const initOpts: image.InitializationOptions = {
+          size: { width: w, height: h },
+          srcPixelFormat: image.PixelMapFormat.RGBA_8888,
+          pixelFormat: image.PixelMapFormat.RGBA_8888
+        };
+        const rebuilt: image.PixelMap = await image.createPixelMapFromPixels(dstBuf, initOpts);
+        pixelMap.release();
+        Logger.info(TAG, `recombine ok: num=${num} aid=${aid} name=${pictureName} w=${w} h=${h}`);
+        return rebuilt;
+      }
+    }
+    // API 26 以下无 createPixelMapFromPixels：writePixels 回写原像素图
+    // （writePixels 按 BGRA_8888 解析输入，先把 RGBA 缓冲交换 R/B；不可编辑时降级返回原图）
+    const words: Uint32Array = new Uint32Array(dstBuf);
+    for (let i: number = 0; i < words.length; i++) {
+      const v: number = words[i];
+      words[i] = (v & 0xFF00FF00) | ((v & 0x000000FF) << 16) | ((v & 0x00FF0000) >>> 16);
+    }
+    try {
+      await pixelMap.writePixels({
+        pixels: dstBuf,
+        offset: 0,
+        stride: w * 4,
+        region: { size: { height: h, width: w }, x: 0, y: 0 }
+      });
+    } catch (e) {
+      Logger.warn(TAG, `recombine writePixels fallback failed, keep original pixels: ${Logger.describe(e)}`);
+    }
+    Logger.info(TAG, `recombine ok: num=${num} aid=${aid} name=${pictureName} w=${w} h=${h} mode=writeback`);
+    return pixelMap;
   }
 }
