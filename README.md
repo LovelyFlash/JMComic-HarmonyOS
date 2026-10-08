@@ -39,7 +39,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 | 项目 | 说明 |
 |------|------|
 | 包名 | `com.jmcomic.harmony` |
-| 当前版本 | 1.0.6（versionCode 7） |
+| 当前版本 | 1.0.7（versionCode 8） |
 | 目标 API | 26（HarmonyOS NEXT） |
 | 开发语言 / UI 框架 | ArkTS / ArkUI 声明式（Stage 模型，单 `entry` HAP 模块） |
 | 设备类型 | phone / tablet / 2in1 |
@@ -49,7 +49,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 ## 功能特性
 
 **浏览与发现**
-- 最新漫画、分类浏览、每周必看、推荐专题、热搜词搜索与搜索历史
+- 最新漫画、分类浏览、每周必看、推荐专题、热搜词搜索、作品 ID 精确搜索与搜索历史
 - 发现页分区横滑列表（连载更新 / 推荐本本 / 去码全彩化等），主页、最新双 Tab
 
 **账号与收藏**
@@ -64,6 +64,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 
 **沉浸体验**
 - 沉浸式详情页：封面模糊大图 + 深浅自适应渐变遮罩全屏延伸，悬浮光感材质标题栏
+- 详情页信息栏：名称栏完整展示 ID / 作者 / 更新日期，标签按钮化、点击直达搜索
 - 阅读器内状态栏全程隐藏（打开菜单 / 半模态不恢复，退出自动还原）
 - 详情页点击即转场（章节图片由阅读器异步自取、loading 反馈、失败可重试）
 
@@ -76,6 +77,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 - 深色模式：跟随系统 / 禁用 / 启用；多套预设主题色
 - 中文 / 英文国际化
 - 独立启动页（首帧显示 + 历史数据预热 + 600ms 最短展示）
+- 应用内更新日志（关于页，按版本倒序展示历史更新内容）
 - 漫画评论与回复查看、点赞 / 分享 / 下载入口
 
 ## 项目架构总览
@@ -327,15 +329,15 @@ NavUtil.push('comicDetail', { comicId, title, source })
 ```json5
 {
   bundleName: "com.jmcomic.harmony",
-  versionCode: 7,
-  versionName: "1.0.6",
+  versionCode: 8,
+  versionName: "1.0.7",
   targetAPIVersion: 26
 }
 ```
 
 **工程级（`ohos/build-profile.json5`）**
 
-- `products[0]`（`default`）：`compatibleSdkVersion: '5.0.0(12)'`、`targetSdkVersion: '26.0.0'`、`runtimeOS: 'HarmonyOS'`、`strictMode.caseSensitiveCheck: true`
+- `products[0]`（`default`）：`compatibleSdkVersion: '26.0.0'`、`targetSdkVersion: '26.0.0'`、`runtimeOS: 'HarmonyOS'`、`strictMode.caseSensitiveCheck: true`
 - `signingConfigs.default`：HarmonyOS 调试签名材料（自动创建的 debug 证书，路径位于 `~/.ohos/config/`），产物即为可安装的 `entry-default-signed.hap`
 - `modules`：仅 `entry` 单模块
 
