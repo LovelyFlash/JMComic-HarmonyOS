@@ -5,6 +5,15 @@
 禁漫天堂（JMComic）鸿蒙原生漫画阅读器，基于 ArkTS/ArkUI，HarmonyOS NEXT (API 26+)。
 单漫画源（JM），包名 `com.jmcomic.harmony`，无第三方依赖。
 
+**当前状态**：
+- master = **v1.0.9**（versionCode 10，2026-10-09 发布）；发版基线在 master，最新 Release 见 GitHub `releases/tag/v1.0.9`
+- 版本三处需同步：`AppScope/app.json5`（versionCode/versionName）、`Constants.APP_VERSION`（关于页/设置页动态显示）、`Changelog.ets`（应用内更新日志，倒序新增条目）
+- `feature/compat-sdk20` 分支：`compatibleSdkVersion` 降至 `6.0.0(20)` + 新 API 版本守卫与低版本降级（0 编译兼容告警，真机冒烟通过），**已推送、暂未合并且暂不发版**
+- v1.0.9 落地的主线能力：章节真实下载（DownloadManager 队列/后台任务/页级进度/暂停重试/删除清理）、离线阅读（pages.json 页列表持久化 + 本地优先 + file:// 封面修复）、详情缓存秒开（DetailCache）、官方 `.title()`/UIContext 迁移与冗余组件（LoadingView/AppTopBar/NavTitleBar）清理
+- v1.0.7 落地的主线能力：搜索支持漫画 ID、详情页信息栏（ID/作者/日期按钮化标签、长名换行）、标签 ChipTokens 统一、关于页更新日志、Logger 级别控制与全局崩溃捕获（EntryAbility errorManager）
+
+**分支模型**：`master` 主线（发布基线）；`feature/*` 功能分支；发版流程 = 内容提交 + `chore(release): vX`（**只含 app.json5**）+ 轻量 tag + `gh release create` 上传 signed/unsigned 双包（README「版本发布流程」有完整步骤）。
+
 **参考基准（只读，本机路径）**：`D:\desktop\JMComic-Crawler-Python-master`
 - `src/jmcomic/jm_toolkit.py` — `JmCryptoTool`（token / decode_resp_data / md5hex）、`get_num` / `decode_and_save`（图片分段与反打乱）
 - `src/jmcomic/jm_config.py` — 密钥与版本参数（APP_TOKEN_SECRET / APP_TOKEN_SECRET_2 / APP_DATA_SECRET / API_DOMAIN_SERVER_SECRET / APP_VERSION）
@@ -19,32 +28,36 @@ ohos/entry/src/main/ets/
 │   ├── Constants.ets      -- ApiConstants（JM 密钥/域名/UA）、SettingsKeys、DatabaseConstants
 │   ├── JmImage.ets        -- JM 图片管线：请求头、魔数嗅探、分段数、decode、recombine（反打乱）
 │   ├── Network.ets        -- HTTP 封装：get/getWithStatus/getBytes/getBytesViaDownload/post
-│   ├── Logger.ets         -- hilog 封装（TAG 过滤：JmApi/JmImage/ReaderImage/ReaderPage/Network）
+│   ├── Logger.ets         -- hilog 封装（LogLevel 级别控制、describe/exception、崩溃捕获；TAG 过滤：JmApi/JmImage/ReaderImage/ReaderPage/Network/Database）
 │   ├── ThemeManager.ets   -- 深色策略 + 主题色（UI 颜色一律走 $r 资源令牌）
 │   ├── Translations.ets   -- 中英文案
 │   ├── ReadingConfig.ets  -- 阅读配置
 │   ├── NavUtil.ets        -- 导航工具
+│   ├── Changelog.ets      -- 应用内更新日志数据（ReleaseNote 倒序，关于页展示）
+│   ├── ToastUtil.ets      -- Toast 统一封装（UIContext.getPromptAction）
 │   └── ArrayDataSource.ets-- LazyForEach 数据源
 ├── data/
 │   ├── api/JmApi.ets      -- 禁漫 API 客户端（token/data 加解密对照 jm_toolkit.py）
 │   ├── database/Database.ets   -- SQLite（pica_comic.db: history/favorites/downloads）
+│   ├── download/DownloadManager.ets -- 章节下载队列（后台任务/页级进度/暂停重试/离线页列表）
+│   ├── cache/DetailCache.ets -- 已下载漫画详情/封面/评论本地缓存（详情页秒开）
 │   ├── model/             -- Comic, Chapter, Comment, ComicPageData, ReaderParam
 │   └── preferences/Settings.ets -- 键值存储
 ├── viewmodel/AppData.ets  -- 全局状态
 ├── components/
 │   ├── ReaderImage.ets    -- 阅读器图片（下载→解码→反打乱→LRU 缓存，失败可重试）
 │   ├── NetworkImage.ets   -- 普通网络图片（封面等，无需反打乱）
-│   ├── ComicTile/ComicGrid/LoadingView/NavTitleBar/AppTopBar/AppIcon
+│   ├── ComicTile/ComicGrid/AppIcon
 │   └── SettingItem/SettingSection/SettingSwitch/SettingSelect/SettingCommon/SettingCheckItem/SettingInfoItem
 ├── pages/
 │   ├── MainPage.ets       -- 底部 Tab 主页
 │   ├── LaunchPage.ets     -- 启动页（首帧 + 历史数据预热 + 600ms 最短展示，main_pages 首位）
 │   ├── DiscoverPage / SearchPage / PreSearchPage / CategoryPage / JmCategoryPage
 │   ├── JmWeekPage / JmPromotePage / ComicDetailPage / CommentsPage
-│   ├── HistoryPage / FollowPage / FavoritesContent / DownloadPage
+│   ├── HistoryPage / FollowPage / FavoritesContent / DownloadPage（真实下载：聚合进度/暂停继续重试/删除清理，见「下载功能」节）
 │   ├── MePage / AccountsPage
 │   ├── reader/ReaderPage.ets  -- 阅读器（6 阅读模式：LTR/RTL/TTB/连续滚动/双页/双页反向；手势缩放；连续滚动锚点稳定；push-first 自取首章 + 三模式 LazyForEach 惰性构建；阅读器内状态栏全程隐藏）
-│   └── settings/          -- SettingsPage(List+Select), ReadingSettings, JmSettings, AboutPage（均为内置标题栏 .title().hideTitleBar(false)）
+│   └── settings/          -- SettingsPage(List+Select), ReadingSettings, JmSettings, AboutPage（内置标题栏 .title().hideTitleBar(false)；AboutPage 含「更新日志」分区，数据源 Changelog.ets）
 └── entryability/EntryAbility.ets
 ```
 
@@ -126,6 +139,13 @@ $env:DEVECO_SDK_HOME = "D:\DevEco Studio\sdk"
 
 仅既有 deprecated/showToast/2in1 警告可忽略；`ArkTS:ERROR` 为真实错误。增量编译约 15s。
 
+### 发版前全量验证（仓库根执行，PS 5.1）
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-verify.ps1
+```
+五步：文件清单 → 编码损坏（U+FFFD）→ ArkTS 合规 → 设计令牌 → hvigor 构建；全绿才可打包上传 Release。
+
 ### 调试工具
 
 ```powershell
@@ -200,6 +220,26 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 - **切章反馈**：`loadChapter` 入口**立即** `showSheet=false`（关闭动画不与内容重建叠帧）+ 内容层半透明 `reader_overlay` 遮罩 + LoadingProgress（盖住点按区防误触，工具栏在其上仍可操作）；诊断日志 `fetchMs`/`totalMs`（TAG=ReaderPage）
 - **异步安全**：`alive` 标记（`aboutToDisappear` 置 false），取章/续读等异步回调返回时若已退出则丢弃状态写入
 
+## 下载功能与离线阅读（v1.0.9 已实现）
+
+### 架构（`data/download/DownloadManager.ets` + `data/cache/DetailCache.ets`）
+- **任务队列与状态机**：`ChapterTask`（class，章节任务：jobId/标题/页数/进度/状态）；状态 `QUEUED/RUNNING/PAUSED/DONE/FAILED`；`pump()` 按并发上限（MAX_ACTIVE）派发，`runChapter()` 执行：取章 → 写 `pages.json` → 逐图下载；暂停 = 中断 + 状态回写，恢复/重试从 progress 续跑；进度存 `download_chapters` 表（页级），高频刷新走普通字段不整树重渲；Logger TAG=`Download`
+- **后台长时任务**：入队 `backgroundTaskManager.startBackgroundTask` + 常驻通知（`KEEP_BACKGROUND_RUNNING` 已声明），队列空闲时 `stopBackgroundTask`
+- **落盘管线（存重组后图片）**：`JmApi.getChapter` 取 URL 列表 → `writePagesFile` 持久化页列表（离线兜底）→ 逐图 `Network.getBytes`（http 栈 → 下载栈双栈 + 魔数校验）→ `savePage` = `JmImage.decode` + `recombine`（反打乱）+ `imagePacker.packToData` JPEG（GIF 原样），tmp → rename 原子写入 `filesDir/download/{photoId}/`；读取时本地字节**只解码不重组**（ReaderImage 本地分支跳过 recombine）
+- **详情缓存（DetailCache）**：下载入队时抓详情字段/章节列表/首页评论/封面双栈落盘（受「下载时保存详情数据」开关），`loadComic/localCoverPath/loadComments` 供详情页与下载页本地秒开；封面缺失 `ensureCover` 自愈；删除记录连带清理
+- **离线阅读链路**：ReaderPage `loadChapter` 在线取章失败 → `DownloadManager.readChapterPages`（pages.json）兜底，无本地数据才报错；在线取章成功 → `cacheChapterPages` 回填（旧下载在线打开一次自动补全）；ReaderImage 本地优先（`localPathFor` → `readLocal` → decode），失败回退网络；GIF 喂 `Image()` 走 `fileUri.getUriFromPath` 转 `file://` URI（裸沙箱路径不渲染，封面同理）
+- **入口与列表**：详情页「下载」→ 选章弹窗（全选/单章、已下载打勾）→「开始下载」（EMPHASIZED 按钮）入队，有 DONE 章节回显「已下载」；DownloadPage 聚合进度（页数/百分比）+ 暂停/继续/重试 + 删除清理（`removeComic` → 章节目录 + 详情缓存 + DB 记录）
+
+### 实现约束（沿用）
+- 任务对象用 class（`ChapterTask`），禁 any/globalThis；DB 一律 `CREATE TABLE IF NOT EXISTS` + ALTER 兼容旧库
+- 进度更新勿整树重渲：进度放普通字段/item 级 `@Prop`，`ArrayDataSource.replaceAll` 局部刷新
+- 文案进 `Translations.ets` 四处同步；颜色一律 `$r` 令牌；沙箱 `filesDir` 免权限
+- 本地图片喂 `Image()` 必须 `fileUri.getUriFromPath(path)` 转 `file://` URI（ArkUI 官方要求）
+
+### 参考实现（只读）
+- `D:\desktop\JMComic-Crawler-Python-master\src\jmcomic\jm_toolkit.py` — `JmImageTools.download_image` / `decode_and_save`（下载即反打乱落盘的标准流程）
+- `jmcomic-downloader` `download_manager.rs::stitch_img`（下载侧重组）、PicaComic 下载管理交互（任务列表/进度/暂停）
+
 ## 常见问题
 
 ### Q: 如何添加/修改设置项？
@@ -239,4 +279,4 @@ devecocli log --keyword ReaderPage --from 2m
 3. `module.json5` 缺 metadata `ohos.arkui.UIMaterial.state = "enable"`（须配在 entry 类型 module）
 4. 材质层级在不透明背景**之下**（官方 FAQ）：组件须 `.backgroundColor(Color.Transparent)`，`systemMaterial` 放样式属性之后；**勿与 `backgroundBlurStyle` 同设**（模糊层覆盖材质层，且材质自带 materialFilter 已含模糊）；勿整页 + 子组件嵌套材质
 5. 用 `uiMaterial.getMaterialInfo()` 确认 `state === 1`（ENABLE）；`type === 2` 为沉浸光感类型
-6. 遗留债务：全项目 14 个页面（HistoryPage/SettingsPage/CommentsPage 等）仍在 NavDestination **根**挂 `.systemMaterial(...)` + `hideTitleBar(true)`——同样 out of scope 无效，各刷一条警告，后续应清理或迁入 `.title()`
+6. 遗留债务：全项目 14 个页面（HistoryPage/SettingsPage/CommentsPage 等）仍在 NavDestination **根**挂 `.systemMaterial(...)` + `hideTitleBar(true)`——同样 out of scope 无效，各刷一条警告，后续应清理或迁入 `.title()`。`feature/compat-sdk20` 分支已把这些链式调用替换为带版本守卫的 `.attributeModifier(immersiveNavModifier)`（`common/Compat.ets`，解决的是 SDK20 API 起始版本问题；**作用域是否仍告警，合并后真机复核**）

@@ -39,7 +39,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 | 项目 | 说明 |
 |------|------|
 | 包名 | `com.jmcomic.harmony` |
-| 当前版本 | 1.0.8（versionCode 9） |
+| 当前版本 | 1.0.9（versionCode 10） |
 | 目标 API | 26（HarmonyOS NEXT） |
 | 开发语言 / UI 框架 | ArkTS / ArkUI 声明式（Stage 模型，单 `entry` HAP 模块） |
 | 设备类型 | phone / tablet / 2in1 |
@@ -55,6 +55,11 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 **账号与收藏**
 - JM 账号登录、自动签到、多文件夹收藏夹（含收藏夹选择面板）、关注 / 追更
 - 历史记录、下载记录、追更列表、账号管理，均由 SQLite 持久化
+
+**下载与离线**
+- 章节真实下载：选章下载、暂停 / 继续 / 重试与页级进度，后台长时任务，删除记录自动清理文件
+- 离线阅读：图片列表随下载持久化，断网可读已下载章节；图片本地优先、网络回退
+- 详情本地秒开：下载时自动缓存详情 / 封面 / 首页评论（可关），支持「离线优先」跳过联网刷新
 
 **在线阅读**
 - 六种阅读模式：从左至右 / 从右至左 / 从上至下 / 连续滚动 / 双页 / 双页反向
@@ -156,14 +161,16 @@ JMComic-HarmonyOS/
             │   └── profile/           -- main_pages.json、router_map.json
             └── ets/
                 ├── entryability/      -- EntryAbility：窗口配置、状态栏、避让区广播
-                ├── common/            -- 9 个基础模块（见下表）
+                ├── common/            -- 11 个基础模块（见下表）
                 ├── data/
                 │   ├── api/           -- JmApi.ets：禁漫 API 客户端
                 │   ├── database/      -- Database.ets：SQLite 封装
+                │   ├── download/      -- DownloadManager.ets：章节下载队列（后台任务/进度/离线页列表）
+                │   ├── cache/         -- DetailCache.ets：已下载详情/封面/评论本地缓存
                 │   ├── preferences/   -- Settings.ets：键值存储封装
                 │   └── model/         -- Chapter / Comic / ComicPageData / Comment / ReaderParam
                 ├── viewmodel/         -- AppData.ets：全局状态
-                ├── components/        -- 15 个复用组件
+                ├── components/        -- 12 个复用组件
                 ├── pages/             -- 17 个业务页面
                 │   ├── reader/        -- ReaderPage.ets：阅读器
                 │   └── settings/      -- SettingsPage / ReadingSettings / JmSettings / AboutPage
@@ -183,10 +190,12 @@ JMComic-HarmonyOS/
 | `ReadingConfig.ets` | 阅读配置（模式 / 翻页 / 缩放等） |
 | `NavUtil.ets` | 路由跳转工具（push / pushSilent / back） |
 | `ArrayDataSource.ets` | `IDataource` 实现：`replaceAll`（重建）/ `addAll`（追加）/ `clearData` |
+| `Changelog.ets` | 应用内更新日志数据（`ReleaseNote` 倒序，关于页展示） |
+| `ToastUtil.ets` | Toast 统一封装（`UIContext.getPromptAction().showToast`） |
 
 **`components/` 复用组件**
 
-- 内容类：`ComicTile`、`ComicGrid`、`LoadingView`、`AppIcon`、`AppTopBar`、`NavTitleBar`
+- 内容类：`ComicTile`、`ComicGrid`、`AppIcon`
 - 图片类：`NetworkImage`（封面，无需反打乱）、`ReaderImage`（阅读器图片：下载 → 解码 → 反打乱 → LRU，失败可重试）
 - 设置类：`SettingSection` / `SettingItem` / `SettingSwitch` / `SettingSelect` / `SettingCheckItem` / `SettingInfoItem` / `SettingCommon`
 
@@ -329,8 +338,8 @@ NavUtil.push('comicDetail', { comicId, title, source })
 ```json5
 {
   bundleName: "com.jmcomic.harmony",
-  versionCode: 9,
-  versionName: "1.0.8",
+  versionCode: 10,
+  versionName: "1.0.9",
   targetAPIVersion: 26
 }
 ```

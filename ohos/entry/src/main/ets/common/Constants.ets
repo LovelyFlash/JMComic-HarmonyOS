@@ -46,7 +46,7 @@ export class ApiConstants {
   static readonly JM_PACKAGE_NAME = 'com.example.app';
 
   // App
-  static readonly APP_VERSION = '1.0.8';
+  static readonly APP_VERSION = '1.0.9';
   static readonly APP_NAME = 'JMComic';
 }
 
@@ -92,6 +92,9 @@ export class SettingsKeys {
   static readonly IMAGE_LAYOUT = 'imageLayout';
   static readonly AUTO_PAGE_TIME = 'autoPageTime';
   static readonly SEARCH_HISTORY = 'searchHistory';
+  // Download settings
+  static readonly SAVE_DETAIL_ON_DOWNLOAD = 'saveDetailOnDownload';
+  static readonly OFFLINE_FIRST = 'offlineFirst';
 }
 
 /** 标签 Chip 统一规格（详情信息行 label/值、分类入口、搜索历史/热门标签共用） */
