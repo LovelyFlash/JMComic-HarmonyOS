@@ -3,7 +3,6 @@ import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { Database, HistoryItem } from '../data/database/Database';
 import { ArrayDataSource } from '../common/ArrayDataSource';
-import { NavTitleBar } from '../components/NavTitleBar';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
 
@@ -34,7 +33,6 @@ export struct HistoryPage {
     NavDestination() {
       
         Column({ space: 0 }) {
-          NavTitleBar({ title: Translations.t('tab_history') })
           if (this.loading) {
             Column({ space: 8 }) {
               LoadingProgress().width(48).height(48)
@@ -97,7 +95,8 @@ export struct HistoryPage {
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .hideTitleBar(true)
+    .title(Translations.t('tab_history'), { backgroundColor: $r('app.color.bg_page') })
+    .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
     .systemMaterial(new uiMaterial.ImmersiveMaterial({
       style: uiMaterial.ImmersiveStyle.ULTRA_THIN,

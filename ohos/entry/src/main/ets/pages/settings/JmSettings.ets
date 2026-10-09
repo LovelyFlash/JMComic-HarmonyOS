@@ -1,8 +1,8 @@
 // pages/settings/JmSettings.ets - JM 设置（域名/图片分流/版本号/签到/收藏排序）- NavDestination
 // 主干为 List + ListItemGroup（分组 + 粘性标题 + 组内分割线）
-import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../../common/Translations';
 import { ApiConstants, DEFAULT_THEME_COLOR, SettingsKeys } from '../../common/Constants';
+import { ToastUtil } from '../../common/ToastUtil';
 import { JmApi } from '../../data/api/JmApi';
 import { Settings } from '../../data/preferences/Settings';
 import { Logger } from '../../common/Logger';
@@ -120,7 +120,7 @@ export struct JmSettings {
       const ok: boolean = await JmApi.updateImgUrl(index);
       this.imgLineIndex = JmApi.getImgLineIndex();
       if (!ok) {
-        promptAction.showToast({ message: Translations.t('image_line_fallback'), duration: 1500 });
+        ToastUtil.show(Translations.t('image_line_fallback'), 1500);
       }
     } else {
       await JmApi.setImgLineIndex(index);
@@ -132,12 +132,10 @@ export struct JmSettings {
     try {
       const version: string = await JmApi.getAppVersionCode();
       this.appVersion = JmApi.getAppVersion();
-      promptAction.showToast({
-        message: version.length > 0 ? `${Translations.t('update_version')}: ${version}` : Translations.t('error'),
-        duration: 2000
-      });
+      ToastUtil.show(version.length > 0
+        ? `${Translations.t('update_version')}: ${version}` : Translations.t('error'), 2000);
     } catch (e) {
-      promptAction.showToast({ message: `${Translations.t('error')}: ${String(e)}`, duration: 2000 });
+      ToastUtil.failDetail('error', e);
     }
   }
 
@@ -158,7 +156,7 @@ export struct JmSettings {
       return;
     }
     if (!JmApi.isLoggedIn()) {
-      promptAction.showToast({ message: Translations.t('please_login'), duration: 1500 });
+      ToastUtil.show(Translations.t('please_login'), 1500);
       return;
     }
     this.checkingIn = true;

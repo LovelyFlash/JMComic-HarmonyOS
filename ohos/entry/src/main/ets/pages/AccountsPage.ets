@@ -1,7 +1,7 @@
 // pages/AccountsPage.ets - 禁漫账号页（登录/签到/登出）- NavDestination
-import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../common/Translations';
 import { JmApi } from '../data/api/JmApi';
+import { ToastUtil } from '../common/ToastUtil';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
 
@@ -41,16 +41,16 @@ export struct AccountsPage {
 
   async doLogin(): Promise<void> {
     if (this.account.length === 0 || this.password.length === 0) {
-      promptAction.showToast({ message: Translations.t('input_account_password'), duration: 1500 });
+      ToastUtil.show(Translations.t('input_account_password'), 1500);
       return;
     }
     this.loading = true;
     try {
       await JmApi.login(this.account, this.password);
       this.refreshLoginState();
-      promptAction.showToast({ message: Translations.t('login_success'), duration: 1500 });
+      ToastUtil.show(Translations.t('login_success'), 1500);
     } catch (e) {
-      promptAction.showToast({ message: `${Translations.t('login_failed')}: ${String(e)}`, duration: 2000 });
+      ToastUtil.failDetail('login_failed', e);
     }
     this.loading = false;
   }
@@ -62,7 +62,7 @@ export struct AccountsPage {
       // 忽略登出网络错误
     }
     this.refreshLoginState();
-    promptAction.showToast({ message: Translations.t('logout_success'), duration: 1500 });
+    ToastUtil.show(Translations.t('logout_success'), 1500);
   }
 
   async doCheckIn(): Promise<void> {

@@ -1,9 +1,11 @@
-// pages/CommentsPage.ets - 评论页（禁漫网络评论）- NavDestination
-import { promptAction } from '@kit.ArkUI';
+// pages/CommentsPage.ets - 评论页（禁漫网络评论，已下载漫画支持本地缓存秒开）- NavDestination
 import { Translations } from '../common/Translations';
-import { JmApi, JmComment } from '../data/api/JmApi';
+import { ToastUtil } from '../common/ToastUtil';
+import { JmApi, JmComment, JmCommentPage } from '../data/api/JmApi';
+import { DetailCache } from '../data/cache/DetailCache';
+import { Settings } from '../data/preferences/Settings';
+import { SettingsKeys } from '../common/Constants';
 import { ArrayDataSource } from '../common/ArrayDataSource';
-import { NavTitleBar } from '../components/NavTitleBar';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
 
@@ -38,13 +40,34 @@ export struct CommentsPage {
     this.loadPage(1, true);
   }
 
+  /**
+   * 本地秒开 + 后台刷新：
+   * - 首页有缓存 → 立即渲染缓存；「离线优先」开则到此为止，否则继续联网刷新并回写缓存
+   * - 无缓存 / 翻页 → 走网络（原逻辑）；联网失败且已有缓存内容时静默保留，不清空
+   */
   async loadPage(page: number, replace: boolean): Promise<void> {
-    if (replace) {
+    let fromCache: boolean = false;
+    if (page === 1 && replace) {
+      const cached: JmCommentPage | null = await DetailCache.loadComments(this.comicId, 'jm');
+      if (cached !== null) {
+        fromCache = true;
+        this.maxPage = cached.maxPage > 0 ? cached.maxPage : 1;
+        this.currentPage = 1;
+        this.dataSource = new ArrayDataSource<JmComment>(cached.comments);
+        this.loading = false;
+        this.error = '';
+        const offline: boolean = await Settings.getBool(SettingsKeys.OFFLINE_FIRST, false);
+        if (offline) {
+          return;
+        }
+      }
+    }
+    if (replace && !fromCache) {
       this.loading = true;
       this.error = '';
     }
     try {
-      const result = await JmApi.getComments(this.comicId, page);
+      const result: JmCommentPage = await JmApi.getComments(this.comicId, page);
       this.maxPage = result.maxPage > 0 ? result.maxPage : 1;
       this.currentPage = page;
       if (replace) {
@@ -52,11 +75,15 @@ export struct CommentsPage {
       } else {
         this.dataSource.addAll(result.comments);
       }
+      if (page === 1 && replace) {
+        DetailCache.saveComments(this.comicId, 'jm', result.comments, this.maxPage);
+      }
     } catch (e) {
-      if (replace) {
+      if (replace && !fromCache) {
         this.error = String(e);
         this.dataSource = new ArrayDataSource<JmComment>();
       }
+      // 已有缓存兜底（fromCache）→ 静默保留缓存内容
     }
     if (replace) {
       this.loading = false;
@@ -78,11 +105,11 @@ export struct CommentsPage {
   async sendComment(): Promise<void> {
     const text: string = this.inputText.trim();
     if (text.length === 0) {
-      promptAction.showToast({ message: Translations.t('comment_empty_input'), duration: 1500 });
+      ToastUtil.show(Translations.t('comment_empty_input'), 1500);
       return;
     }
     if (!JmApi.isLoggedIn()) {
-      promptAction.showToast({ message: Translations.t('please_login'), duration: 1500 });
+      ToastUtil.show(Translations.t('please_login'), 1500);
       return;
     }
     if (this.sending) {
@@ -92,10 +119,10 @@ export struct CommentsPage {
     try {
       await JmApi.postComment(this.comicId, text);
       this.inputText = '';
-      promptAction.showToast({ message: Translations.t('comment_success'), duration: 1500 });
+      ToastUtil.show(Translations.t('comment_success'), 1500);
       this.loadPage(1, true);
     } catch (e) {
-      promptAction.showToast({ message: String(e), duration: 2000 });
+      ToastUtil.fail(e);
     }
     this.sending = false;
   }
@@ -191,7 +218,6 @@ export struct CommentsPage {
     NavDestination() {
       
         Column({ space: 0 }) {
-          NavTitleBar({ title: this.title.length > 0 ? this.title : Translations.t('comments') })
           if (this.loading) {
             Column() {
               LoadingProgress().width(40).height(40)
@@ -277,7 +303,9 @@ export struct CommentsPage {
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .hideTitleBar(true)
+    .title(this.title.length > 0 ? this.title : Translations.t('comments'),
+      { backgroundColor: $r('app.color.bg_page') })
+    .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
     .systemMaterial(new uiMaterial.ImmersiveMaterial({
       style: uiMaterial.ImmersiveStyle.ULTRA_THIN,

@@ -9,7 +9,10 @@ import { Settings } from '../data/preferences/Settings';
 import { ThemeManager } from '../common/ThemeManager';
 import { ReadingConfig } from '../common/ReadingConfig';
 import { JmApi } from '../data/api/JmApi';
+import { DetailCache } from '../data/cache/DetailCache';
+import { DownloadManager } from '../data/download/DownloadManager';
 import { Logger } from '../common/Logger';
+import { ToastUtil } from '../common/ToastUtil';
 
 const TAG = 'JMComic';
 
@@ -58,6 +61,9 @@ export default class EntryAbility extends UIAbility {
     // 必须 await：登录态/用户名从持久化恢复完成后才能加载页面，
     // 否则 MePage 首帧读到未登录（网络重登仍在 init 内后台执行，不阻塞）
     await JmApi.init();
+    // 下载队列恢复：须在 JmApi.init 之后（恢复的任务立即拉起网络请求）
+    DetailCache.init(this.context);
+    await DownloadManager.init(this.context);
   }
 
   onDestroy(): void {
@@ -140,6 +146,8 @@ export default class EntryAbility extends UIAbility {
     try {
       const win: window.Window = windowStage.getMainWindowSync();
       EntryAbility.mainWindow = win;
+      // 官方 toast 调用链注入：UIContext.getPromptAction()（API 18 起 promptAction.showToast 废弃）
+      ToastUtil.init(win.getUIContext());
       // 1. 沉浸式：窗口全屏布局，界面延伸至状态栏与导航条
       win.setWindowLayoutFullScreen(true).then(() => {
         Logger.info(TAG, 'setWindowLayoutFullScreen success');

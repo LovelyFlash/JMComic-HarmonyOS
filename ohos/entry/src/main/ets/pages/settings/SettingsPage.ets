@@ -23,12 +23,20 @@ export struct SettingsPage {
   @StorageProp('darkModePolicy') darkModePolicy: string = 'system'
   @State showColorSheet: boolean = false
   @State showHistoryImages: boolean = true
+  @State saveDetail: boolean = true
+  @State offlineFirst: boolean = false
   @State title: string = '设置'
 
   aboutToAppear(): void {
     Settings.getBool(SettingsKeys.SHOW_HISTORY_IMAGES, true).then((v: boolean) => {
       this.showHistoryImages = v;
       AppStorage.setOrCreate('showHistoryImages', v);
+    });
+    Settings.getBool(SettingsKeys.SAVE_DETAIL_ON_DOWNLOAD, true).then((v: boolean) => {
+      this.saveDetail = v;
+    });
+    Settings.getBool(SettingsKeys.OFFLINE_FIRST, false).then((v: boolean) => {
+      this.offlineFirst = v;
     });
   }
 
@@ -66,6 +74,16 @@ export struct SettingsPage {
     this.showHistoryImages = value;
     AppStorage.setOrCreate('showHistoryImages', value);
     await Settings.setBool(SettingsKeys.SHOW_HISTORY_IMAGES, value);
+  }
+
+  private async setSaveDetail(value: boolean): Promise<void> {
+    this.saveDetail = value;
+    await Settings.setBool(SettingsKeys.SAVE_DETAIL_ON_DOWNLOAD, value);
+  }
+
+  private async setOfflineFirst(value: boolean): Promise<void> {
+    this.offlineFirst = value;
+    await Settings.setBool(SettingsKeys.OFFLINE_FIRST, value);
   }
 
   /** 分组标题（bg_page 垫底，随列表滚动） */
@@ -178,6 +196,28 @@ export struct SettingsPage {
           })
         }
 
+        ListItemGroup({ header: this.groupHeader(Translations.t('settings_download')) }) {
+          SettingSwitch({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.arrow_down_circle'),
+            title: Translations.t('save_detail_data'),
+            isOn: this.saveDetail,
+            onToggle: (value: boolean) => {
+              this.setSaveDetail(value);
+            }
+          })
+          SettingSwitch({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.wifi'),
+            title: Translations.t('offline_first'),
+            isOn: this.offlineFirst,
+            onToggle: (value: boolean) => {
+              this.setOfflineFirst(value);
+            }
+          })
+        }
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
+
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_system')) }) {
           SettingItem({
             corner: SettingCorner.ALL,
@@ -202,6 +242,7 @@ export struct SettingsPage {
       detents: [SheetSize.MEDIUM],
       blurStyle: BlurStyle.COMPONENT_THICK,
       showClose: false,
+      scrollSizeMode: ScrollSizeMode.CONTINUOUS,
       width: '100%'
     })
     .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 设置标题文本 + 返回按钮

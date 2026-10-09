@@ -4,7 +4,6 @@ import { NavUtil } from '../common/NavUtil';
 import { Comic } from '../data/model/Comic';
 import { JmApi } from '../data/api/JmApi';
 import { ArrayDataSource } from '../common/ArrayDataSource';
-import { NavTitleBar } from '../components/NavTitleBar';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
 
@@ -138,7 +137,6 @@ export struct JmPromotePage {
     NavDestination() {
       
         Column({ space: 0 }) {
-          NavTitleBar({ title: this.promoteTitle })
           if (this.loading) {
             Column() {
               LoadingProgress().width(40).height(40)
@@ -163,7 +161,8 @@ export struct JmPromotePage {
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .hideTitleBar(true)
+    .title(this.promoteTitle, { backgroundColor: $r('app.color.bg_page') })
+    .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
     .systemMaterial(new uiMaterial.ImmersiveMaterial({
       style: uiMaterial.ImmersiveStyle.ULTRA_THIN,

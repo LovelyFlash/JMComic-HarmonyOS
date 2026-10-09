@@ -1,7 +1,9 @@
-// components/ReaderImage.ets - 阅读器图片（JM 分片重组 + LRU 像素缓存 + 宽高比缓存 + 三态布局）
+// components/ReaderImage.ets - 阅读器图片（本地优先 + JM 分片重组 + LRU 像素缓存 + 宽高比缓存 + 三态布局）
 import { image } from '@kit.ImageKit';
+import { fileUri } from '@kit.CoreFileKit';
 import { Network } from '../common/Network';
 import { JmImage } from '../common/JmImage';
+import { DownloadManager } from '../data/download/DownloadManager';
 import { Logger } from '../common/Logger';
 
 const TAG = 'ReaderImage';
@@ -166,6 +168,19 @@ export class ReaderImageCache {
     if (cached !== undefined) {
       return cached;
     }
+    // 离线优先：已下载页面直读本地文件（下载时已反打乱并落盘，无需重组）；解码失败则回退网络
+    const localPath: string = DownloadManager.localPathFor(url);
+    if (localPath.length > 0) {
+      const localBytes: Uint8Array | null = DownloadManager.readLocal(localPath);
+      if (localBytes !== null && localBytes.length > 0) {
+        try {
+          const pm: image.PixelMap = await JmImage.decode(localBytes, JmImage.maxEdgeForQuality(quality));
+          return await ReaderImageCache.settle(url, quality, pm);
+        } catch (e) {
+          Logger.warn(TAG, `local decode failed, fallback to network: ${Logger.describe(e)}`);
+        }
+      }
+    }
     const headers: Record<string, string> = JmImage.imgHeaders();
     let bytes: Uint8Array | null = await Network.getBytes(url, headers);
     if (bytes !== null && bytes.length > 0 && !JmImage.looksLikeImage(bytes)) {
@@ -192,20 +207,24 @@ export class ReaderImageCache {
     }
     const pm: image.PixelMap = await JmImage.decode(bytes, JmImage.maxEdgeForQuality(quality));
     const combined: image.PixelMap = await JmImage.recombine(pm, url);
+    return await ReaderImageCache.settle(url, quality, combined);
+  }
+
+  /** 收尾：记宽高比 + 质量竞态检查 + 入像素缓存（失败/竞态丢弃并释放像素） */
+  private static async settle(url: string, quality: number, pm: image.PixelMap): Promise<image.PixelMap | null> {
     try {
-      const info: image.ImageInfo = await combined.getImageInfo();
+      const info: image.ImageInfo = await pm.getImageInfo();
       if (info.size.width > 0 && info.size.height > 0) {
         ReaderImageCache.setRatio(url, info.size.width / info.size.height);
       }
     } catch (e) {
       Logger.warn(TAG, `getImageInfo failed: ${Logger.describe(e)}`);
     }
-    // 质量切换竞态防护：解码期间档位已变则丢弃本次结果
     if (ReaderImageCache.pixelQuality === quality) {
-      ReaderImageCache.put(url, combined);
-      return combined;
+      ReaderImageCache.put(url, pm);
+      return pm;
     }
-    combined.release();
+    pm.release();
     return null;
   }
 }
@@ -225,6 +244,8 @@ export struct ReaderImage {
   @StorageProp('imageQuality') @Watch('onQualityChange') imgQuality: number = 0;
   @State pixelMap: image.PixelMap | undefined = undefined;
   @State useRaw: boolean = false;
+  /** GIF 原图来源：本地已下载文件优先，未下载回退网络 URL */
+  @State rawUrl: string = '';
   @State loadFailed: boolean = false;
   private loadedQuality: number = -1;
 
@@ -284,6 +305,8 @@ export struct ReaderImage {
       return;
     }
     if (JmImage.isGif(url)) {
+      const localPath: string = DownloadManager.localPathFor(url);
+      this.rawUrl = DownloadManager.localExists(localPath) ? fileUri.getUriFromPath(localPath) : url;
       this.useRaw = true;
       return;
     }
@@ -348,7 +371,7 @@ export struct ReaderImage {
     if (this.pixelMap !== undefined) {
       this.layoutImage(this.pixelMap)
     } else if (this.useRaw) {
-      this.layoutImage(this.url)
+      this.layoutImage(this.rawUrl)
     } else if (this.loadFailed) {
       if (this.fill) {
         Column({ space: 12 }) {

@@ -1,7 +1,7 @@
 // pages/FollowPage.ets - 追更页面 - NavDestination
-import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
+import { ToastUtil } from '../common/ToastUtil';
 import { Database, FollowItem } from '../data/database/Database';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
@@ -43,7 +43,7 @@ export struct FollowPage {
         fontColor: $r('app.color.danger'),
         action: () => {
           Database.removeFollow(item.id, item.source).then(() => {
-            promptAction.showToast({ message: Translations.t('follow_removed'), duration: 1500 });
+            ToastUtil.show(Translations.t('follow_removed'), 1500);
             this.loadData();
           });
         }

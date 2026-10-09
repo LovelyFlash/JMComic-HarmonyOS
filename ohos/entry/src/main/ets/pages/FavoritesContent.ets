@@ -1,7 +1,7 @@
 // pages/FavoritesContent.ets - 收藏内容组件（本地收藏 | 禁漫云收藏）
-import { promptAction } from '@kit.ArkUI';
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
+import { ToastUtil } from '../common/ToastUtil';
 import { Database, FavoriteItem } from '../data/database/Database';
 import { JmApi, JmFolder } from '../data/api/JmApi';
 import { Comic } from '../data/model/Comic';
@@ -153,10 +153,10 @@ export struct FavoritesContent {
   private async deleteFolder(folder: JmFolder): Promise<void> {
     try {
       await JmApi.deleteFolder(folder.id);
-      promptAction.showToast({ message: Translations.t('folder_deleted'), duration: 1500 });
+      ToastUtil.show(Translations.t('folder_deleted'), 1500);
       this.loadFolders();
     } catch (e) {
-      promptAction.showToast({ message: String(e), duration: 2000 });
+      ToastUtil.fail(e);
     }
   }
 
@@ -169,10 +169,10 @@ export struct FavoritesContent {
       await JmApi.createFolder(name);
       this.newFolderName = '';
       this.showNewFolderSheet = false;
-      promptAction.showToast({ message: Translations.t('folder_created'), duration: 1500 });
+      ToastUtil.show(Translations.t('folder_created'), 1500);
       this.loadFolders();
     } catch (e) {
-      promptAction.showToast({ message: String(e), duration: 2000 });
+      ToastUtil.fail(e);
     }
   }
 
@@ -197,7 +197,7 @@ export struct FavoritesContent {
 
   private async confirmDelete(item: FavoriteItem): Promise<void> {
     await Database.removeFavorite(item.id, item.source);
-    promptAction.showToast({ message: Translations.t('favorite_removed'), duration: 1500 });
+    ToastUtil.show(Translations.t('favorite_removed'), 1500);
     this.loadData();
   }
 
