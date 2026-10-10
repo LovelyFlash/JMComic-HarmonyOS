@@ -437,7 +437,8 @@ export struct DownloadPage {
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .title(Translations.t('download_manager'), { backgroundColor: $r('app.color.bg_page') })
+    .title(Translations.t('download_manager'), { backgroundColor: Color.Transparent })
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
     .systemMaterial(new uiMaterial.ImmersiveMaterial({

@@ -198,10 +198,12 @@ export default class EntryAbility extends UIAbility {
   static applySystemBarColor(dark: boolean): void {
     try {
       if (EntryAbility.mainWindow !== null) {
+        // @SuppressWarnings syscap
         EntryAbility.mainWindow.setWindowSystemBarProperties({
           statusBarContentColor: dark ? '#FFFFFF' : '#000000'
         });
         // 同步窗口底色，兜底所有未绘制区域（避让条/页面根部残留），随主题即时切换
+        // @SuppressWarnings syscap
         EntryAbility.mainWindow.setWindowBackgroundColor(ThemeManager.windowBackground);
       }
     } catch (e) {

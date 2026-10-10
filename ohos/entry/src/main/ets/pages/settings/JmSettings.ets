@@ -12,7 +12,8 @@ import { SettingSelect } from '../../components/SettingSelect';
 import { SettingCheckItem } from '../../components/SettingCheckItem';
 import { SettingInfoItem } from '../../components/SettingInfoItem';
 import { SettingCorner } from '../../components/SettingCommon';
-import { uiMaterial } from '@kit.ArkUI';
+import { TitlePosition, uiMaterial } from '@kit.ArkUI';
+import { TitleSize } from '@kit.UIDesignKit';
 
 const TAG = 'JmSettings';
 
@@ -207,6 +208,7 @@ export struct JmSettings {
       .width('100%')
       .padding({ left: 4, top: 16, bottom: 8 })
       .backgroundColor($r('app.color.bg_page'))
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   private imgLineLabels(): string[] {
@@ -231,6 +233,7 @@ export struct JmSettings {
               this.setAutoSelectDomain(value);
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           ForEach(this.domains, (domain: string, index: number) => {
             SettingCheckItem({
               title: this.stripProtocol(domain),
@@ -243,6 +246,7 @@ export struct JmSettings {
                 }
               }
             })
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           }, (domain: string) => domain)
           SettingInfoItem({
             label: Translations.t('current_domain'),
@@ -250,6 +254,7 @@ export struct JmSettings {
             primary: true,
             itemId: 'infoRow' + Translations.t('current_domain')
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingItem({
             corner: SettingCorner.LAST,
             icon: $r('sys.symbol.gearshape'),
@@ -258,7 +263,9 @@ export struct JmSettings {
               this.updateDomains();
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('image_line')) }) {
@@ -272,7 +279,9 @@ export struct JmSettings {
               this.selectImgLine(index);
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
         ListItemGroup({ header: this.groupHeader(Translations.t('app_version')) }) {
           SettingInfoItem({
@@ -281,6 +290,7 @@ export struct JmSettings {
             corner: SettingCorner.FIRST,
             itemId: 'infoRow' + Translations.t('app_version')
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingItem({
             corner: SettingCorner.LAST,
             icon: $r('sys.symbol.timer'),
@@ -289,7 +299,9 @@ export struct JmSettings {
               this.updateVersion();
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('check_in')) }) {
@@ -302,6 +314,7 @@ export struct JmSettings {
               this.setAutoCheckin(value);
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingItem({
             corner: SettingCorner.LAST,
             icon: $r('sys.symbol.checkmark'),
@@ -310,7 +323,9 @@ export struct JmSettings {
               this.doCheckIn();
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('favorite_order')) }) {
@@ -324,22 +339,29 @@ export struct JmSettings {
               this.setFavoriteOrder(index);
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       }
       .scrollBar(BarState.Off)
+      .contentStartOffset(56)
       .edgeEffect(EdgeEffect.Spring)
       .width('100%')
       .height('100%')
-      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
-      .padding({ left: 16, right: 16, bottom: this.bottomAvoid + 24 })
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+      .padding({ left: 16, right: 16})
+      .systemMaterial(new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+      }))
     }
+    .title(this.title, {
+      barStyle: BarStyle.STACK,
+      scrollEffectOptions: {
+        scrollEffectType: ScrollEffectType.GRADUAL_BLUR }
+    })   // 标题文本 + 返回按钮
     .backgroundColor($r('app.color.bg_page'))
-    .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .hideTitleBar(false)
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
     .id('jmSettingsPage')
   }
 }
+

@@ -5,8 +5,8 @@ import { Comic } from '../data/model/Comic';
 import { JmApi, JmHomeSection } from '../data/api/JmApi';
 import { NetworkImage } from '../components/NetworkImage';
 import { ArrayDataSource } from '../common/ArrayDataSource';
-import { HdsTabsController} from '@kit.UIDesignKit';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { SymbolGlyphModifier, uiMaterial } from '@kit.ArkUI';
 
 @Component
 export struct DiscoverPage {
@@ -26,7 +26,6 @@ export struct DiscoverPage {
   @State hasMore: boolean = true
   
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
-  private controller: HdsTabsController = new HdsTabsController();
 
   aboutToAppear(): void {
     this.loadHome();
@@ -181,9 +180,9 @@ export struct DiscoverPage {
         }, (section: JmHomeSection) => section.id + section.title)
       }
       .scrollBar(BarState.Off)
+      .contentStartOffset(56)
       .width('100%')
       .height('100%')
-      .padding({ top: 4, bottom: 96 })
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
@@ -214,11 +213,11 @@ export struct DiscoverPage {
   @Builder
   latestList() {
     Refresh({ refreshing: $$this.refreshing, offset: 64, friction: 100 }) {
-      List({ space: 10 }) {
+      List({ space: 1 }) {
         LazyForEach(this.latestSource, (comic: Comic) => {
           ListItem() {
             Row({ space: 12 }) {
-              NetworkImage({ url: comic.coverUrl, imgWidth: 90, imgHeight: 120, imgBorderRadius: 8 })
+              NetworkImage({ url: comic.coverUrl, imgWidth: 80, imgHeight: 110, imgBorderRadius: 6 })
               Column({ space: 6 }) {
                 Text(comic.title)
                   .fontSize(15).fontWeight(FontWeight.Medium)
@@ -232,15 +231,12 @@ export struct DiscoverPage {
                     .maxLines(1)
                 }
               }
-              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
               .layoutWeight(1).alignItems(HorizontalAlign.Start)
             }
             .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
             .width('100%').padding(12)
-            .backgroundColor($r('app.color.bg_surface'))
-            .borderRadius(10)
             .onClick(() => { this.gotoDetail(comic); })
-            .id('latestCard' + comic.id)
+            .id('latestComic' + comic.id)
           }
         }, (comic: Comic) => comic.id)
 
@@ -254,14 +250,16 @@ export struct DiscoverPage {
         }
       }
       .layoutWeight(1)
-      .padding({ left: 16, right: 16, bottom: 88 })
+      .contentStartOffset(56)
       .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
       .edgeEffect(EdgeEffect.Spring)
       .onReachEnd(() => { this.loadMore(); })
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .layoutWeight(1)
     .onRefreshing(() => { this.loadLatest(true); })
     .id('latestList')
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   @Builder
@@ -284,29 +282,68 @@ export struct DiscoverPage {
     }
   }
 
+  @Builder
+  titleSwitcher() {
+    Row({ space: 4 }) {
+      this.titleSegment(Translations.t('explore_home'), 0)
+      this.titleSegment(Translations.t('explore_latest'), 1)
+    }
+    .alignItems(VerticalAlign.Center)
+    .padding({ left: 16, top: 13 })
+  }
 
+  @Builder
+  titleSegment(label: string, idx: number) {
+    Button(label)
+      .type(ButtonType.Normal)
+      .fontSize(15)
+      .fontWeight(this.mode === idx ? FontWeight.Medium : FontWeight.Normal)
+      .fontColor(this.mode === idx ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
+      .backgroundColor(this.mode === idx ? this.themeColor : Color.Transparent)
+      .constraintSize({ minHeight: 0 })
+      .height(32)
+      .padding({ left: 14, right: 14 })
+      .borderRadius(16)
+      .onClick(() => { this.switchMode(idx); })
+  }
 
+  private refreshCurrent(): void {
+    if (this.mode === 0) {
+      this.loadHome();
+    } else {
+      this.loadLatest(true);
+    }
+  }
 
   build() {
-    Tabs({
-      barPosition: BarPosition.Start,
-      controller: this.controller,
-      index: this.mode
-    }) {
-      TabContent() {
-        this.homeContent()
-      }.tabBar(Translations.t('explore_home')).expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
-      TabContent() {
-        this.latestContent()
-      }.tabBar(Translations.t('explore_latest')).expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
+    NavDestination() {
+      Column() {
+        if (this.mode === 0) {
+          this.homeContent()
+        } else {
+          this.latestContent()
+        }
+      }
+      .width('100%')
+      .height('100%')
     }
-    .onChange((index: number) => {
-      this.switchMode(index);
+    .title(this.titleSwitcher(), {
+      barStyle: BarStyle.STACK,
+      scrollEffectOptions: {
+        scrollEffectType: ScrollEffectType.GRADUAL_BLUR },
     })
-    .barMode(BarMode.Fixed)               // 固定均分，避免滚动
-    .scrollable(false)                     // 禁止横向滑动
-    .width('100%')
-    .vertical(false)
+    .menus([
+      {
+        value: Translations.t('refresh'),
+        symbolIcon: new SymbolGlyphModifier($r('sys.symbol.arrow_clockwise')),
+        action: () => { this.refreshCurrent(); }
+      }
+    ])
+    .hideBackButton(true)
+    .backgroundColor($r('app.color.bg_page'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 }

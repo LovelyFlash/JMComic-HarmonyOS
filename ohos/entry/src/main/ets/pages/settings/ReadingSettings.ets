@@ -103,6 +103,7 @@ export struct ReadingSettings {
       .width('100%')
       .padding({ left: 4, top: 16, bottom: 8 })
       .backgroundColor($r('app.color.bg_page'))
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   build() {
@@ -120,21 +121,26 @@ export struct ReadingSettings {
               this.save();
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
 
         ListItemGroup({ header: this.groupHeader(Translations.t('section_turn_control')) }) {
           SettingSwitch({ corner: SettingCorner.FIRST, icon: $r('sys.symbol.hand_tap'), title: Translations.t('tap_turn_page'), isOn: this.tapTurnPage, onToggle: (v: boolean) => {
             this.tapTurnPage = v; this.save();
           }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSwitch({ corner: SettingCorner.MIDDLE, icon: $r('sys.symbol.arrowshape_turn_up_left'), title: Translations.t('invert_tap'), isOn: this.invertTap, onToggle: (v: boolean) => {
             this.invertTap = v; this.save();
           }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSwitch({ corner: SettingCorner.MIDDLE, icon: $r('sys.symbol.speaker_wave_2'), title: Translations.t('volume_key'), isOn: this.volumeKeyTurnPage, onToggle: (v: boolean) => {
             this.volumeKeyTurnPage = v; this.save();
           }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSwitch({ corner: SettingCorner.LAST, icon: $r('sys.symbol.rectangle_3_group'), title: Translations.t('side_page_turn'), isOn: this.sidePageTurn, onToggle: (v: boolean) => {
             this.sidePageTurn = v; this.save();
           }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
@@ -142,12 +148,15 @@ export struct ReadingSettings {
           SettingSwitch({ corner: SettingCorner.FIRST, icon: $r('sys.symbol.brightness'), title: Translations.t('keep_screen_on'), isOn: this.keepScreenOn, onToggle: (v: boolean) => {
             this.keepScreenOn = v; this.save();
           }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSwitch({ corner: SettingCorner.MIDDLE, icon: $r('sys.symbol.play'), title: Translations.t('page_animation'), isOn: this.pageAnimation, onToggle: (v: boolean) => {
             this.pageAnimation = v; this.save();
           }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSwitch({ corner: SettingCorner.LAST, icon: $r('sys.symbol.info_circle'), title: Translations.t('show_page_info'), isOn: this.showPageInfo, onToggle: (v: boolean) => {
             this.showPageInfo = v; this.save();
           }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
@@ -155,9 +164,11 @@ export struct ReadingSettings {
           SettingSwitch({ corner: SettingCorner.FIRST, icon: $r('sys.symbol.magnifyingglass'), title: Translations.t('double_tap_zoom'), isOn: this.doubleTapZoom, onToggle: (v: boolean) => {
             this.doubleTapZoom = v; this.save();
           }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSwitch({ corner: SettingCorner.LAST, icon: $r('sys.symbol.hand_tap'), title: Translations.t('long_press_zoom'), isOn: this.longPressZoom, onToggle: (v: boolean) => {
             this.longPressZoom = v; this.save();
           }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
@@ -173,6 +184,7 @@ export struct ReadingSettings {
               this.save();
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSelect({
             corner: SettingCorner.LAST,
             icon: $r('sys.symbol.square_grid_2x2'),
@@ -184,6 +196,7 @@ export struct ReadingSettings {
               this.save();
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
@@ -199,22 +212,28 @@ export struct ReadingSettings {
               this.save();
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
       }
       .scrollBar(BarState.Off)
       .edgeEffect(EdgeEffect.Spring)
+      .contentStartOffset(56)
       .width('100%')
       .height('100%')
-      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
-      .padding({ left: 16, right: 16, bottom: this.bottomAvoid + 24 })
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+      .padding({ left: 16, right: 16})
+      .systemMaterial(new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+      }))
     }
+    .title(this.title, {
+      barStyle: BarStyle.STACK,
+      scrollEffectOptions: {
+        scrollEffectType: ScrollEffectType.GRADUAL_BLUR }
+    })   // 标题文本 + 返回按钮
     .backgroundColor($r('app.color.bg_page'))
-    .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
     .onBackPressed(() => {
       this.save();
       return false;
@@ -222,3 +241,4 @@ export struct ReadingSettings {
     .id('readingSettingsPage')
   }
 }
+

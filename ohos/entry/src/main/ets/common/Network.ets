@@ -253,6 +253,7 @@ export class Network {
     const filePath: string = `${ctx.cacheDir}/${fileName}`;
     let task: request.DownloadTask | null = null;
     try {
+      // @SuppressWarnings syscap
       task = await request.downloadFile(ctx, {
         url: url,
         header: headers,

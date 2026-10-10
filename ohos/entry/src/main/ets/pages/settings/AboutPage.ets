@@ -23,29 +23,36 @@ export struct AboutPage {
               SymbolGlyph($r('sys.symbol.book'))
                 .fontSize(64)
                 .fontColor([this.themeColor])
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
               Text(ApiConstants.APP_NAME)
                 .fontSize(24)
                 .fontWeight(FontWeight.Bold)
                 .fontColor($r('app.color.text_primary'))
                 .margin({ top: 48 })
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
               Text('HarmonyOS Version')
                 .fontSize(14)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ top: 4 })
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
               Text('v' + ApiConstants.APP_VERSION)
                 .fontSize(14)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ top: 4 })
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
               Text(Translations.t('about_desc'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ top: 24 })
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
               Text(Translations.t('about_original'))
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ top: 4 })
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
             }
             .alignItems(HorizontalAlign.Center)
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
             Column({ space: 16 }) {
               Text(Translations.t('changelog'))
@@ -54,6 +61,7 @@ export struct AboutPage {
                 .fontColor($r('app.color.text_primary'))
                 .width('100%')
                 .margin({ top: 48 })
+              .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
               ForEach(Changelog.releases, (rel: ReleaseNote) => {
                 Column({ space: 6 }) {
@@ -62,10 +70,12 @@ export struct AboutPage {
                       .fontSize(15)
                       .fontWeight(FontWeight.Medium)
                       .fontColor($r('app.color.text_primary'))
+                    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
                     Text(rel.date)
                       .fontSize(12)
                       .fontColor($r('app.color.text_secondary'))
                       .margin({ left: 8 })
+                    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
                   }
                   .width('100%')
 
@@ -75,6 +85,7 @@ export struct AboutPage {
                       .lineHeight(20)
                       .fontColor($r('app.color.text_secondary'))
                       .width('100%')
+                    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
                   }, (item: string, index: number) => rel.version + '_' + index)
                 }
                 .width('100%')
@@ -82,12 +93,16 @@ export struct AboutPage {
               }, (rel: ReleaseNote) => rel.version)
             }
             .width('100%')
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
             .alignItems(HorizontalAlign.Start)
             .padding({ left: 24, right: 24, bottom: 48 })
           }
           .width('100%')
           .alignItems(HorizontalAlign.Center)
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
+        .contentStartOffset(56)
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         .layoutWeight(1)
         .scrollBar(BarState.Off)
       }
@@ -95,7 +110,11 @@ export struct AboutPage {
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .backgroundColor($r('app.color.bg_page'))
-    .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 标题文本 + 返回按钮
+    .title(this.title, {
+      barStyle: BarStyle.STACK,
+      scrollEffectOptions: {
+        scrollEffectType: ScrollEffectType.GRADUAL_BLUR }
+    })   // 标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .systemMaterial(new uiMaterial.ImmersiveMaterial({
@@ -104,3 +123,4 @@ export struct AboutPage {
     .id('aboutPage')
   }
 }
+

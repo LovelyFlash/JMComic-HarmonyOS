@@ -95,17 +95,12 @@ export struct SettingsPage {
       .width('100%')
       .padding({ left: 4, top: 16, bottom: 8 })
       .backgroundColor($r('app.color.bg_page'))
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   @Builder
   colorSheetContent() {
     Column({ space: 16 }) {
-      Text(Translations.t('select_theme_color'))
-        .fontSize(16)
-        .fontWeight(FontWeight.Medium)
-        .fontColor($r('app.color.text_primary'))
-        .width('100%')
-        .padding({ left: 20, top: 8 })
       Grid() {
         ForEach(ThemeManager.themePresets, (color: string) => {
           GridItem() {
@@ -114,6 +109,7 @@ export struct SettingsPage {
                 SymbolGlyph($r('sys.symbol.checkmark'))
                   .fontSize(20)
                   .fontColor([$r('app.color.text_on_brand')])
+                .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
               }
             }
             .width(44).height(44)
@@ -142,7 +138,7 @@ export struct SettingsPage {
 
   build() {
     NavDestination() {
-      List({ space: 24 }) {
+      List({space: 24 }) {
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_appearance')) }) {
           SettingSelect({
             corner: SettingCorner.FIRST,
@@ -154,6 +150,7 @@ export struct SettingsPage {
               this.setDarkModeByIndex(index);
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingItem({
             corner: SettingCorner.MIDDLE,
             icon: $r('sys.symbol.brightness'),
@@ -162,6 +159,7 @@ export struct SettingsPage {
               this.showColorSheet = true;
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSwitch({
             corner: SettingCorner.LAST,
             icon: $r('sys.symbol.square_grid_2x2'),
@@ -171,8 +169,10 @@ export struct SettingsPage {
               this.setShowHistoryImages(value);
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_reading')) }) {
           SettingItem({
@@ -183,7 +183,9 @@ export struct SettingsPage {
               NavUtil.push('readingSettings');
             }
           })
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_comic_source')) }) {
           SettingItem({
@@ -194,7 +196,9 @@ export struct SettingsPage {
               NavUtil.push('jmSettings');
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_download')) }) {
           SettingSwitch({
@@ -206,6 +210,7 @@ export struct SettingsPage {
               this.setSaveDetail(value);
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSwitch({
             corner: SettingCorner.LAST,
             icon: $r('sys.symbol.wifi'),
@@ -215,8 +220,10 @@ export struct SettingsPage {
               this.setOfflineFirst(value);
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
 
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_system')) }) {
           SettingItem({
@@ -228,29 +235,37 @@ export struct SettingsPage {
               NavUtil.push('about');
             }
           })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       }
       .scrollBar(BarState.Off)
       .edgeEffect(EdgeEffect.Spring)
+      .contentStartOffset(56)
       .width('100%')
       .height('100%')
-      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
-      .padding({ left: 16, right: 16, bottom: this.bottomAvoid + 24 })
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+      .padding({ left: 16, right: 16})
+      .systemMaterial(new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+      }))
     }
+    .title(this.title, {
+      barStyle: BarStyle.STACK,
+      scrollEffectOptions: {
+        scrollEffectType: ScrollEffectType.GRADUAL_BLUR }
+    })   // 标题文本 + 返回按钮
     .backgroundColor($r('app.color.bg_page'))
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .bindSheet($$this.showColorSheet, this.colorSheetContent(), {
+      title: { title: Translations.t('select_theme_color') },
       detents: [SheetSize.MEDIUM],
       blurStyle: BlurStyle.COMPONENT_THICK,
       showClose: false,
       scrollSizeMode: ScrollSizeMode.CONTINUOUS,
       width: '100%'
     })
-    .title(this.title, { backgroundColor: $r('app.color.bg_page') })   // 设置标题文本 + 返回按钮
-    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .hideTitleBar(false)
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
     .id('settingsPage')
   }
 }
+

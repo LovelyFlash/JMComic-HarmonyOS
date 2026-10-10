@@ -239,7 +239,7 @@ export struct AccountsPage {
       .width('100%').height('100%')
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
-    .title(Translations.t('account'), { backgroundColor: $r('app.color.bg_page') })
+    .title(Translations.t('account'), { backgroundColor: Color.Transparent })
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))

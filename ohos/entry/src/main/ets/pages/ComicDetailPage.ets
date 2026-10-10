@@ -1087,6 +1087,7 @@ export struct ComicDetailPage {
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .title(this.navTitleBar(), { barStyle: BarStyle.STACK, backgroundColor: Color.Transparent })
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideBackButton(true)
     .onShown(() => { this.checkResume(); })
     .backgroundColor($r('app.color.bg_page'))

@@ -566,6 +566,7 @@ export struct ReaderPage {
       if (gen !== this.statusBarGen) {
         return;
       }
+      // @SuppressWarnings syscap
       await win.setSpecificSystemBarEnabled('status', show, true);
       Logger.debug('ReaderPage', `status bar ${show ? 'shown' : 'hidden'} gen=${gen}`);
     } catch (e) {
@@ -1062,8 +1063,8 @@ export struct ReaderPage {
       // 纵向（从上至下/连续）：上=上一页，中=工具栏，下=下一页
       Column({ space: 0 }) {
         this.tapZone('100%', '30%', 0)
-        this.tapZone('100%', '40%', 1)
-        this.tapZone('100%', '30%', 2)
+        this.tapZone('100%', '55%', 1)
+        this.tapZone('100%', '15%', 2)
       }
       .width('100%').height('100%')
       .hitTestBehavior(HitTestMode.Transparent)
@@ -1162,13 +1163,14 @@ export struct ReaderPage {
   buildToolbar() {
     
       Column({ space: 0 }) {
-        Row({ space: 12 }) {
-        Button({ type: ButtonType.Circle, stateEffect: true }) {
+        Row({ space: 8 }) {
+        Button({ type: ButtonType.Normal, stateEffect: true }) {
           SymbolGlyph($r('sys.symbol.chevron_left'))
-            .fontSize(22)
-            .fontColor([$r('app.color.text_on_reader')])
+            .fontSize(24)
+            .fontColor([$r('app.color.content_on_media')])
         }
-        .width(36).height(36)
+        .width(40).height(40)
+        .borderRadius(24)
         .backgroundColor(Color.Transparent)
         .onClick(() => {
           this.flushStripSave();
@@ -1188,23 +1190,25 @@ export struct ReaderPage {
         }
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
-        Button({ type: ButtonType.Circle, stateEffect: true }) {
+        Button({ type: ButtonType.Normal, stateEffect: true }) {
           SymbolGlyph(this.autoPlay ? $r('sys.symbol.pause') : $r('sys.symbol.play_fill'))
             .fontSize(20)
-            .fontColor([$r('app.color.text_on_reader')])
+            .fontColor([$r('app.color.content_on_media')])
         }
-        .width(36).height(36)
+        .width(40).height(40)
+        .borderRadius(24)
         .backgroundColor(Color.Transparent)
         .onClick(() => {
           this.toggleAutoPlay();
         })
         if (this.chapters.length > 0) {
-          Button({ type: ButtonType.Circle, stateEffect: true }) {
+          Button({ type: ButtonType.Normal, stateEffect: true }) {
             SymbolGlyph($r('sys.symbol.list_bullet'))
               .fontSize(20)
-              .fontColor([$r('app.color.text_on_reader')])
+              .fontColor([$r('app.color.content_on_media')])
           }
-          .width(36).height(36)
+          .width(40).height(40)
+          .borderRadius(24)
           .backgroundColor(Color.Transparent)
           .onClick(() => {
             this.showToolbar = false;
@@ -1212,12 +1216,13 @@ export struct ReaderPage {
             this.showSheet = true;
           })
         }
-        Button({ type: ButtonType.Circle, stateEffect: true }) {
+        Button({ type: ButtonType.Normal, stateEffect: true }) {
           SymbolGlyph($r('sys.symbol.gearshape'))
             .fontSize(20)
-            .fontColor([$r('app.color.text_on_reader')])
+            .fontColor([$r('app.color.content_on_media')])
         }
-        .width(36).height(36)
+        .width(40).height(40)
+        .borderRadius(24)
         .backgroundColor(Color.Transparent)
         .onClick(() => {
           this.showToolbar = false;
@@ -1657,7 +1662,7 @@ export struct ReaderPage {
         detents: [SheetSize.MEDIUM, SheetSize.LARGE],
         blurStyle: BlurStyle.COMPONENT_THICK,
         showClose: true,
-        title:{title: this.sheetMode === 'chapters' ? Translations.t('select_chapter') : Translations.t('reading_settings')},
+        title:{title: this.sheetMode === 'chapters' ? Translations.t('select_chapter') : Translations.t('reading_settings'),},
         dragBar: true,
         scrollSizeMode: ScrollSizeMode.CONTINUOUS,
         shouldDismiss: () => {

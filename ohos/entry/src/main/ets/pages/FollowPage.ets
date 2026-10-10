@@ -129,7 +129,7 @@ export struct FollowPage {
       .width('100%').height('100%')
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
-    .title(Translations.t('follow'), { backgroundColor: $r('app.color.bg_page') })
+    .title(Translations.t('follow'), { backgroundColor: Color.Transparent })
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))

@@ -196,33 +196,37 @@ export class JmImage {
       return pixelMap;
     }
     const pxCount: number = w * h;
-    const srcBuf: ArrayBuffer = new ArrayBuffer(pxCount * 4);
-    await pixelMap.readAllPixelsToBuffer(srcBuf);
-    const src: Uint32Array = new Uint32Array(srcBuf);
-    const dstBuf: ArrayBuffer = new ArrayBuffer(pxCount * 4);
-    const dst: Uint32Array = new Uint32Array(dstBuf);
-    // 对齐 jm_toolkit.py decode_and_save：源图底段（含 h%num 余数行）贴到顶部，其余段依次下移，段内不旋转
-    const over: number = h % num;
-    for (let i: number = 0; i < num; i++) {
-      let blockH: number = move;
-      const srcRow: number = h - move * (i + 1) - over;
-      let dstRow: number = move * i;
-      if (i === 0) {
-        blockH += over;
-      } else {
-        dstRow += over;
+    try {
+      const srcBuf: ArrayBuffer = new ArrayBuffer(pxCount * 4);
+      await pixelMap.readAllPixelsToBuffer(srcBuf);
+      const src: Uint32Array = new Uint32Array(srcBuf);
+      const dstBuf: ArrayBuffer = new ArrayBuffer(pxCount * 4);
+      const dst: Uint32Array = new Uint32Array(dstBuf);
+      // 对齐 jm_toolkit.py decode_and_save：源图底段（含 h%num 余数行）贴到顶部，其余段依次下移，段内不旋转
+      const over: number = h % num;
+      for (let i: number = 0; i < num; i++) {
+        let blockH: number = move;
+        const srcRow: number = h - move * (i + 1) - over;
+        let dstRow: number = move * i;
+        if (i === 0) {
+          blockH += over;
+        } else {
+          dstRow += over;
+        }
+        // 段内行连续 → 整段一次原生拷贝（Uint32Array.set），避免逐像素 JS 循环阻塞主线程
+        dst.set(src.subarray(srcRow * w, (srcRow + blockH) * w), dstRow * w);
       }
-      // 段内行连续 → 整段一次原生拷贝（Uint32Array.set），避免逐像素 JS 循环阻塞主线程
-      dst.set(src.subarray(srcRow * w, (srcRow + blockH) * w), dstRow * w);
+      pixelMap.release();
+      const initOpts: image.InitializationOptions = {
+        size: { width: w, height: h },
+        srcPixelFormat: image.PixelMapFormat.RGBA_8888,
+        pixelFormat: image.PixelMapFormat.RGBA_8888
+      };
+      const result: image.PixelMap = await image.createPixelMapFromPixels(dstBuf, initOpts);
+      Logger.info(TAG, `recombine ok: num=${num} aid=${aid} name=${pictureName} w=${w} h=${h}`);
+      return result;
+    } catch (e) {
+      throw new Error(`recombine failed: ${Logger.describe(e)}`);
     }
-    pixelMap.release();
-    const initOpts: image.InitializationOptions = {
-      size: { width: w, height: h },
-      srcPixelFormat: image.PixelMapFormat.RGBA_8888,
-      pixelFormat: image.PixelMapFormat.RGBA_8888
-    };
-    const result: image.PixelMap = await image.createPixelMapFromPixels(dstBuf, initOpts);
-    Logger.info(TAG, `recombine ok: num=${num} aid=${aid} name=${pictureName} w=${w} h=${h}`);
-    return result;
   }
 }

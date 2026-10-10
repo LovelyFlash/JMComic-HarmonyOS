@@ -691,20 +691,24 @@ export class DownloadManager {
   }
 
   private static writeBuffer(path: string, data: Uint8Array): void {
-    const file: fs.File = fs.openSync(path,
-      fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
     try {
-      let offset: number = 0;
-      while (offset < data.byteLength) {
-        const buf: ArrayBuffer = data.buffer.slice(data.byteOffset + offset, data.byteOffset + data.byteLength);
-        const written: number = fs.writeSync(file.fd, buf);
-        if (written <= 0) {
-          throw new Error('write returned 0');
+      const file: fs.File = fs.openSync(path,
+        fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+      try {
+        let offset: number = 0;
+        while (offset < data.byteLength) {
+          const buf: ArrayBuffer = data.buffer.slice(data.byteOffset + offset, data.byteOffset + data.byteLength);
+          const written: number = fs.writeSync(file.fd, buf);
+          if (written <= 0) {
+            throw new Error('write returned 0');
+          }
+          offset += written;
         }
-        offset += written;
+      } finally {
+        fs.closeSync(file);
       }
-    } finally {
-      fs.closeSync(file);
+    } catch (e) {
+      throw new Error(`writeBuffer failed: ${Logger.describe(e)}`);
     }
   }
 

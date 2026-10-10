@@ -1225,14 +1225,19 @@ export class JmApi {
       const keyBytes: number[] = JmApi.strToBytes(JmApi.md5Hex(`${ts}${secret}`));
       const keyData: Uint8Array = new Uint8Array(keyBytes);
 
+      // @SuppressWarnings syscap
       const generator: cryptoFramework.SymKeyGenerator = cryptoFramework.createSymKeyGenerator('AES256');
       const keyBlob: cryptoFramework.DataBlob = { data: keyData };
+      // @SuppressWarnings syscap
       const symKey: cryptoFramework.SymKey = await generator.convertKey(keyBlob);
 
+      // @SuppressWarnings syscap
       const cipher: cryptoFramework.Cipher = cryptoFramework.createCipher('AES256|ECB|NoPadding');
+      // @SuppressWarnings syscap
       await cipher.init(cryptoFramework.CryptoMode.DECRYPT_MODE, symKey, null);
 
       const input: cryptoFramework.DataBlob = { data: decoded };
+      // @SuppressWarnings syscap
       const output: cryptoFramework.DataBlob = await cipher.doFinal(input);
       // 对齐 Python data_aes[:-data_aes[-1]]：尾字节为 padding 长度 N，截掉尾部 N 字节
       const raw: Uint8Array = output.data;

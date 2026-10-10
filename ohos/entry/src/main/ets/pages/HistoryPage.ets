@@ -95,7 +95,8 @@ export struct HistoryPage {
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .title(Translations.t('tab_history'), { backgroundColor: $r('app.color.bg_page') })
+    .title(Translations.t('tab_history'), { barStyle: BarStyle.STACK, backgroundColor: Color.Transparent })
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
     .systemMaterial(new uiMaterial.ImmersiveMaterial({

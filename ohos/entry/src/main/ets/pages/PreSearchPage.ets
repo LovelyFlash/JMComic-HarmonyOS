@@ -175,7 +175,8 @@ export struct PreSearchPage {
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .title(this.title, { backgroundColor: $r('app.color.bg_page') })
+    .title(this.title, { backgroundColor: Color.Transparent })
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
     .systemMaterial(new uiMaterial.ImmersiveMaterial({

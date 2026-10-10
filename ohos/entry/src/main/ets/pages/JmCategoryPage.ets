@@ -219,7 +219,8 @@ export struct JmCategoryPage {
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .title(this.categoryTitle, { backgroundColor: $r('app.color.bg_page') })
+    .title(this.categoryTitle, { backgroundColor: Color.Transparent })
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
     .systemMaterial(new uiMaterial.ImmersiveMaterial({

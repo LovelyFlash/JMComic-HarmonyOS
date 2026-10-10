@@ -391,14 +391,18 @@ export class Database {
 
   private static rowToChapterTask(resultSet: relationalStore.ResultSet): ChapterTask {
     const task = new ChapterTask();
-    task.chapterId = resultSet.getString(resultSet.getColumnIndex('chapterId'));
-    task.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
-    task.title = resultSet.getString(resultSet.getColumnIndex('title'));
-    task.sortOrder = resultSet.getLong(resultSet.getColumnIndex('sortOrder'));
-    task.pageCount = resultSet.getLong(resultSet.getColumnIndex('pageCount'));
-    task.progress = resultSet.getLong(resultSet.getColumnIndex('progress'));
-    task.status = resultSet.getLong(resultSet.getColumnIndex('status'));
-    task.localDir = resultSet.getString(resultSet.getColumnIndex('localDir'));
+    try {
+      task.chapterId = resultSet.getString(resultSet.getColumnIndex('chapterId'));
+      task.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
+      task.title = resultSet.getString(resultSet.getColumnIndex('title'));
+      task.sortOrder = resultSet.getLong(resultSet.getColumnIndex('sortOrder'));
+      task.pageCount = resultSet.getLong(resultSet.getColumnIndex('pageCount'));
+      task.progress = resultSet.getLong(resultSet.getColumnIndex('progress'));
+      task.status = resultSet.getLong(resultSet.getColumnIndex('status'));
+      task.localDir = resultSet.getString(resultSet.getColumnIndex('localDir'));
+    } catch (e) {
+      throw new Error(`rowToChapterTask failed: ${Logger.describe(e)}`);
+    }
     return task;
   }
 

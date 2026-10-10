@@ -6,9 +6,10 @@
 单漫画源（JM），包名 `com.jmcomic.harmony`，无第三方依赖。
 
 **当前状态**：
-- master = **v1.0.9**（versionCode 10，2026-10-09 发布）；发版基线在 master，最新 Release 见 GitHub `releases/tag/v1.0.9`
+- master = **v1.0.10**（versionCode 11，2026-10-10 发布）；发版基线在 master，最新 Release 见 GitHub `releases/tag/v1.0.10`
 - 版本三处需同步：`AppScope/app.json5`（versionCode/versionName）、`Constants.APP_VERSION`（关于页/设置页动态显示）、`Changelog.ets`（应用内更新日志，倒序新增条目）
 - `feature/compat-sdk20` 分支：`compatibleSdkVersion` 降至 `6.0.0(20)` + 新 API 版本守卫与低版本降级（0 编译兼容告警，真机冒烟通过），**已推送、暂未合并且暂不发版**
+- v1.0.10 落地的主线能力：发现页 NavDestination 化（标题栏胶囊分段切换 + .menus() 刷新按钮 + STACK/GRADUAL_BLUR 沉浸材质）、全部二级页面标题背景透明 + expandSafeArea 补齐、阅读器工具栏按钮官方规格化（40vp 圆形 + content_on_media）、设置/阅读设置/关于页 STACK 标题栏、异常捕获与 syscap 告警清理
 - v1.0.9 落地的主线能力：章节真实下载（DownloadManager 队列/后台任务/页级进度/暂停重试/删除清理）、离线阅读（pages.json 页列表持久化 + 本地优先 + file:// 封面修复）、详情缓存秒开（DetailCache）、官方 `.title()`/UIContext 迁移与冗余组件（LoadingView/AppTopBar/NavTitleBar）清理
 - v1.0.7 落地的主线能力：搜索支持漫画 ID、详情页信息栏（ID/作者/日期按钮化标签、长名换行）、标签 ChipTokens 统一、关于页更新日志、Logger 级别控制与全局崩溃捕获（EntryAbility errorManager）
 

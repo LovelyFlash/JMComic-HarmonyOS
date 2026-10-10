@@ -304,7 +304,8 @@ export struct CommentsPage {
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .title(this.title.length > 0 ? this.title : Translations.t('comments'),
-      { backgroundColor: $r('app.color.bg_page') })
+      { backgroundColor: Color.Transparent })
+    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
     .systemMaterial(new uiMaterial.ImmersiveMaterial({
