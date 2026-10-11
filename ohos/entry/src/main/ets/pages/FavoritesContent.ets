@@ -1,8 +1,7 @@
-// pages/FavoritesContent.ets - 收藏内容组件（本地收藏 | 禁漫云收藏）
+// pages/FavoritesContent.ets - 收藏内容组件（禁漫云收藏）
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { ToastUtil } from '../common/ToastUtil';
-import { Database, FavoriteItem } from '../data/database/Database';
 import { JmApi, JmFolder } from '../data/api/JmApi';
 import { Comic } from '../data/model/Comic';
 import { ArrayDataSource } from '../common/ArrayDataSource';
@@ -10,10 +9,6 @@ import { DEFAULT_THEME_COLOR } from '../common/Constants';
 
 @Component
 export struct FavoritesContent {
-  @State mode: number = 0
-  // 本地收藏
-  @State localDataSource: ArrayDataSource<FavoriteItem> = new ArrayDataSource<FavoriteItem>()
-  @State loading: boolean = true
   // 禁漫云收藏
   @State loggedIn: boolean = false
   @State folders: JmFolder[] = []
@@ -26,17 +21,14 @@ export struct FavoritesContent {
   @State maxPage: number = 1
   @State showNewFolderSheet: boolean = false
   @State newFolderName: string = ''
+  /** 已加载漫画 id 集合：防服务器分页数据重叠/超页返回导致内容重复 */
+  private cloudLoadedIds: Set<string> = new Set<string>()
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
-  
+
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   aboutToAppear(): void {
-    this.loadData();
     this.refreshLoginState();
-  }
-
-  onPageShow(): void {
-    this.loadData();
   }
 
   private onAccountChanged(): void {
@@ -45,23 +37,7 @@ export struct FavoritesContent {
 
   private refreshLoginState(): void {
     this.loggedIn = JmApi.isLoggedIn();
-    if (this.loggedIn && this.mode === 1) {
-      this.loadFolders();
-    }
-  }
-
-  async loadData(): Promise<void> {
-    this.loading = true;
-    this.localDataSource = new ArrayDataSource<FavoriteItem>(await Database.queryFavorites());
-    this.loading = false;
-  }
-
-  private switchMode(idx: number): void {
-    if (this.mode === idx) {
-      return;
-    }
-    this.mode = idx;
-    if (idx === 1 && this.loggedIn) {
+    if (this.loggedIn) {
       this.loadFolders();
     }
   }
@@ -94,12 +70,33 @@ export struct FavoritesContent {
     }
     try {
       const result = await JmApi.getFolderComicsPage(this.currentFolder, page);
-      this.maxPage = result.maxPage > 0 ? result.maxPage : page;
       this.currentPage = page;
       if (replace) {
-        this.cloudDataSource = new ArrayDataSource<Comic>(result.comics);
+        // maxPage 仅按首页条数估算：用后续页条数重算会高估总页数，导致请求超范围页并重复加载
+        this.maxPage = result.maxPage > 0 ? result.maxPage : page;
+        this.cloudLoadedIds = new Set<string>();
+        const first: Comic[] = [];
+        for (let i = 0; i < result.comics.length; i++) {
+          this.cloudLoadedIds.add(result.comics[i].id);
+          first.push(result.comics[i]);
+        }
+        this.cloudDataSource = new ArrayDataSource<Comic>(first);
       } else {
-        this.cloudDataSource.addAll(result.comics);
+        const fresh: Comic[] = [];
+        for (let i = 0; i < result.comics.length; i++) {
+          const id: string = result.comics[i].id;
+          if (!this.cloudLoadedIds.has(id)) {
+            this.cloudLoadedIds.add(id);
+            fresh.push(result.comics[i]);
+          }
+        }
+        if (fresh.length > 0) {
+          this.cloudDataSource.addAll(fresh);
+        }
+        if (result.comics.length === 0) {
+          // 服务器已无更多数据：收紧 maxPage，终止后续加载
+          this.maxPage = page;
+        }
       }
     } catch (e) {
       if (replace) {
@@ -173,126 +170,6 @@ export struct FavoritesContent {
       this.loadFolders();
     } catch (e) {
       ToastUtil.fail(e);
-    }
-  }
-
-  private showDeleteConfirm(item: FavoriteItem): void {
-    this.getUIContext().showAlertDialog({
-      title: Translations.t('unfavorite'),
-      message: `${Translations.t('unfavorite_confirm_prefix')}${item.title}${Translations.t('unfavorite_confirm_suffix')}`,
-      primaryButton: {
-        value: Translations.t('cancel'),
-        action: () => {
-        }
-      },
-      secondaryButton: {
-        value: Translations.t('confirm'),
-        fontColor: $r('app.color.danger'),
-        action: () => {
-          this.confirmDelete(item);
-        }
-      }
-    });
-  }
-
-  private async confirmDelete(item: FavoriteItem): Promise<void> {
-    await Database.removeFavorite(item.id, item.source);
-    ToastUtil.show(Translations.t('favorite_removed'), 1500);
-    this.loadData();
-  }
-
-  @Builder
-  modeTabs() {
-    Row({ space: 0 }) {
-      Text(Translations.t('favorites_local'))
-        .fontSize(14)
-        .fontWeight(this.mode === 0 ? FontWeight.Bold : FontWeight.Normal)
-        .fontColor(this.mode === 0 ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
-        .backgroundColor(this.mode === 0 ? this.themeColor : Color.Transparent)
-        .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-        .borderRadius({ topLeft: 16, bottomLeft: 16 })
-        .onClick(() => { this.switchMode(0); })
-      Text(Translations.t('favorites_cloud'))
-        .fontSize(14)
-        .fontWeight(this.mode === 1 ? FontWeight.Bold : FontWeight.Normal)
-        .fontColor(this.mode === 1 ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
-        .backgroundColor(this.mode === 1 ? this.themeColor : Color.Transparent)
-        .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-        .borderRadius({ topRight: 16, bottomRight: 16 })
-        .onClick(() => { this.switchMode(1); })
-    }
-    .width('100%')
-    .padding({ left: 16, right: 16, top: 16 })
-    .justifyContent(FlexAlign.Start)
-    .id('modeTabs')
-  }
-
-  @Builder
-  localBody() {
-    if (this.loading) {
-      Column({ space: 8 }) {
-        LoadingProgress().width(48).height(48)
-      }
-      .layoutWeight(1)
-      .justifyContent(FlexAlign.Center)
-    } else if (this.localDataSource.totalCount() === 0) {
-      Column({ space: 12 }) {
-        SymbolGlyph($r('sys.symbol.heart'))
-          .fontSize(56)
-          .fontColor([$r('app.color.text_tertiary')])
-        Text(Translations.t('no_data'))
-          .fontSize(14)
-          .fontColor($r('app.color.text_secondary'))
-      }
-      .layoutWeight(1)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-      .id('localBodyEmpty')
-    } else {
-      List({ space: 1 }) {
-        LazyForEach(this.localDataSource, (item: FavoriteItem) => {
-          ListItem() {
-            Row({ space: 12 }) {
-              Image(item.coverUrl)
-                .width(72).height(100)
-                .objectFit(ImageFit.Cover)
-                .borderRadius(8)
-                .backgroundColor($r('app.color.bg_fill'))
-              Column({ space: 6 }) {
-                Text(item.title)
-                  .fontSize(15)
-                  .fontWeight(FontWeight.Medium)
-                  .fontColor($r('app.color.text_primary'))
-                  .maxLines(2)
-                  .textOverflow({ overflow: TextOverflow.Ellipsis })
-                  .width('100%')
-                Text(item.source)
-                  .fontSize(12)
-                  .fontColor(this.themeColor)
-              }
-              .layoutWeight(1)
-              .alignItems(HorizontalAlign.Start)
-
-              SymbolGlyph($r('sys.symbol.xmark'))
-                .fontSize(20)
-                .fontColor([$r('app.color.text_tertiary')])
-                .onClick(() => { this.showDeleteConfirm(item); })
-            }
-            .width('100%')
-            .padding({ left: 16, right: 16, top: 10, bottom: 10 })
-            .onClick(() => {
-              const param: Record<string, Object> = {
-                'comicId': item.id, 'title': item.title, 'source': item.source
-              };
-              NavUtil.push('comicDetail', param);
-            })
-          }
-          .id('fav' + item.id)
-        }, (item: FavoriteItem) => item.id)
-      }
-      .layoutWeight(1)
-      .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
-      .id('localBodyList')
     }
   }
 
@@ -454,68 +331,62 @@ export struct FavoritesContent {
 
   @Builder
   newFolderSheetContent() {
-    
-      Column({ space: 16 }) {
-        Text(Translations.t('new_folder'))
-          .fontSize(17)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
-          .width('100%')
-        TextInput({ placeholder: Translations.t('folder_name_hint'), text: this.newFolderName })
-          .width('100%')
-          .height(44)
-          .fontSize(14)
-          .fontColor($r('app.color.text_primary'))
-          .placeholderColor($r('app.color.text_secondary'))
-          .caretColor(this.themeColor)
-          .backgroundColor($r('app.color.bg_fill'))
-          .borderRadius(12)
-          .onChange((v: string) => { this.newFolderName = v; })
-        Row({ space: 12 }) {
-          Button(Translations.t('cancel'))
-            .layoutWeight(1)
-            .height(42)
-            .fontSize(14)
-            .backgroundColor($r('app.color.bg_fill'))
-            .fontColor($r('app.color.text_primary'))
-            .onClick(() => { this.showNewFolderSheet = false; })
-          Button(Translations.t('confirm'))
-            .layoutWeight(1)
-            .height(42)
-            .fontSize(14)
-            .backgroundColor(this.themeColor)
-            .fontColor($r('app.color.text_on_brand'))
-            .onClick(() => { this.createFolder(); })
-        }
+
+    Column({ space: 16 }) {
+      Text(Translations.t('new_folder'))
+        .fontSize(17)
+        .fontWeight(FontWeight.Bold)
+        .fontColor($r('app.color.text_primary'))
         .width('100%')
+      TextInput({ placeholder: Translations.t('folder_name_hint'), text: this.newFolderName })
+        .width('100%')
+        .height(44)
+        .fontSize(14)
+        .fontColor($r('app.color.text_primary'))
+        .placeholderColor($r('app.color.text_secondary'))
+        .caretColor(this.themeColor)
+        .backgroundColor($r('app.color.bg_fill'))
+        .borderRadius(12)
+        .onChange((v: string) => { this.newFolderName = v; })
+      Row({ space: 12 }) {
+        Button(Translations.t('cancel'))
+          .layoutWeight(1)
+          .height(42)
+          .fontSize(14)
+          .backgroundColor($r('app.color.bg_fill'))
+          .fontColor($r('app.color.text_primary'))
+          .onClick(() => { this.showNewFolderSheet = false; })
+        Button(Translations.t('confirm'))
+          .layoutWeight(1)
+          .height(42)
+          .fontSize(14)
+          .backgroundColor(this.themeColor)
+          .fontColor($r('app.color.text_on_brand'))
+          .onClick(() => { this.createFolder(); })
       }
       .width('100%')
-      .padding(20)
-      .id('newFolderSheetContent')
-    
+    }
+    .width('100%')
+    .padding(20)
+    .id('newFolderSheetContent')
+
   }
 
   build() {
-    
-      Column({ space: 0 }) {
-        this.modeTabs()
 
-        if (this.mode === 0) {
-          this.localBody()
-        } else {
-          this.cloudBody()
-        }
+    Column({ space: 0 }) {
+      this.cloudBody()
+    }
+    .width('100%')
+    .height('100%')
+    .padding({ bottom: 76 })
+    .backgroundColor($r('app.color.bg_page'))
+    .bindSheet($$this.showNewFolderSheet, this.newFolderSheetContent(), {
+      height: SheetSize.MEDIUM,
+      dragBar: true,
+      onDisappear: () => {
       }
-      .width('100%')
-      .height('100%')
-      .padding({ bottom: 76 })
-      .backgroundColor($r('app.color.bg_page'))
-      .bindSheet($$this.showNewFolderSheet, this.newFolderSheetContent(), {
-        height: SheetSize.MEDIUM,
-        dragBar: true,
-        onDisappear: () => {
-        }
-      })
-    
+    })
+
   }
 }

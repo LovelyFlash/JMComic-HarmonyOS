@@ -46,14 +46,13 @@ export class ApiConstants {
   static readonly JM_PACKAGE_NAME = 'com.example.app';
 
   // App
-  static readonly APP_VERSION = '1.0.10';
+  static readonly APP_VERSION = '1.0.11';
   static readonly APP_NAME = 'JMComic';
 }
 
 export class DatabaseConstants {
   static readonly DB_NAME = 'pica_comic.db';
   static readonly TABLE_HISTORY = 'history';
-  static readonly TABLE_FAVORITES = 'favorites';
   static readonly TABLE_DOWNLOADS = 'downloads';
 }
 
@@ -79,6 +78,7 @@ export class SettingsKeys {
   static readonly JM_APP_VERSION = 'jm_app_version';
   static readonly JM_AUTO_CHECKIN = 'jm_auto_checkin';
   static readonly JM_FAVORITE_ORDER = 'jm_favorite_order';
+  static readonly JM_LIKED_IDS = 'jm_liked_ids';
   // Reading settings
   static readonly READ_MODE = 'readMode';
   static readonly TAP_TURN_PAGE = 'tapTurnPage';

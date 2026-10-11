@@ -8,10 +8,6 @@ const SQL_CREATE_HISTORY = `CREATE TABLE IF NOT EXISTS history (
   id TEXT PRIMARY KEY, title TEXT NOT NULL, coverUrl TEXT,
   readTime INTEGER DEFAULT 0, lastChapter TEXT DEFAULT '',
   lastPage INTEGER DEFAULT 0, source TEXT DEFAULT '')`;
-const SQL_CREATE_FAVORITES = `CREATE TABLE IF NOT EXISTS favorites (
-  id TEXT NOT NULL, title TEXT NOT NULL, coverUrl TEXT DEFAULT '',
-  source TEXT DEFAULT '', addTime INTEGER DEFAULT 0,
-  PRIMARY KEY(id, source))`;
 const SQL_CREATE_DOWNLOADS = `CREATE TABLE IF NOT EXISTS downloads (
   id TEXT NOT NULL, title TEXT NOT NULL, coverUrl TEXT DEFAULT '',
   source TEXT DEFAULT '', downloadPath TEXT DEFAULT '',
@@ -56,7 +52,6 @@ export class Database {
         securityLevel: relationalStore.SecurityLevel.S1
       });
       await Database.store.executeSql(SQL_CREATE_HISTORY);
-      await Database.store.executeSql(SQL_CREATE_FAVORITES);
       await Database.store.executeSql(SQL_CREATE_DOWNLOADS);
       await Database.store.executeSql(SQL_CREATE_FOLLOWS);
       await Database.store.executeSql(SQL_CREATE_COMMENTS);
@@ -160,71 +155,6 @@ export class Database {
       return progress;
     } catch (e) {
       return new ReadingProgress();
-    }
-  }
-
-  // --- Favorites ---
-  static async insertFavorite(id: string, title: string, coverUrl: string, source: string): Promise<void> {
-    if (!Database.store) return;
-    try {
-      const bucket: relationalStore.ValuesBucket = {
-        'id': id, 'title': title, 'coverUrl': coverUrl,
-        'source': source, 'addTime': Date.now()
-      };
-      await Database.store.insert('favorites', bucket);
-    } catch (e) {
-      Logger.error(TAG, `insertFavorite failed: ${Logger.describe(e)}`);
-    }
-  }
-
-  static async removeFavorite(id: string, source: string): Promise<void> {
-    if (!Database.store) return;
-    try {
-      const predicates = new relationalStore.RdbPredicates('favorites');
-      predicates.equalTo('id', id).equalTo('source', source);
-      await Database.store.delete(predicates);
-    } catch (e) {
-      Logger.error(TAG, `removeFavorite failed: ${Logger.describe(e)}`);
-    }
-  }
-
-  static async isFavorite(id: string, source: string): Promise<boolean> {
-    if (!Database.store) return false;
-    try {
-      const predicates = new relationalStore.RdbPredicates('favorites');
-      predicates.equalTo('id', id).equalTo('source', source);
-      const resultSet = await Database.store.query(predicates, ['id']);
-      const exists = resultSet.goToNextRow();
-      resultSet.close();
-      return exists;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  static async queryFavorites(): Promise<FavoriteItem[]> {
-    if (!Database.store) return [];
-    try {
-      const predicates = new relationalStore.RdbPredicates('favorites');
-      predicates.equalTo('source', 'jm');
-      predicates.orderByDesc('addTime');
-      const resultSet = await Database.store.query(predicates,
-        ['id', 'title', 'coverUrl', 'source', 'addTime']);
-      const results: FavoriteItem[] = [];
-      while (resultSet.goToNextRow()) {
-        const item = new FavoriteItem();
-        item.id = resultSet.getString(resultSet.getColumnIndex('id'));
-        item.title = resultSet.getString(resultSet.getColumnIndex('title'));
-        item.coverUrl = resultSet.getString(resultSet.getColumnIndex('coverUrl'));
-        item.source = resultSet.getString(resultSet.getColumnIndex('source'));
-        item.addTime = resultSet.getLong(resultSet.getColumnIndex('addTime'));
-        results.push(item);
-      }
-      resultSet.close();
-      return results;
-    } catch (e) {
-      Logger.error(TAG, `queryFavorites failed: ${Logger.describe(e)}`);
-      return [];
     }
   }
 
@@ -597,14 +527,6 @@ export class HistoryItem {
   lastChapter: string = '';
   lastPage: number = 0;
   source: string = '';
-}
-
-export class FavoriteItem {
-  id: string = '';
-  title: string = '';
-  coverUrl: string = '';
-  source: string = '';
-  addTime: number = 0;
 }
 
 export class DownloadItem {

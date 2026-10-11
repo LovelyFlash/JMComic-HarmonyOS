@@ -11,7 +11,7 @@ import { Database, ReadingProgress, ChapterTask, ChapterDlStatus } from '../data
 import { DownloadManager } from '../data/download/DownloadManager';
 import { DetailCache } from '../data/cache/DetailCache';
 import { Settings } from '../data/preferences/Settings';
-import { JmApi, JmFolder } from '../data/api/JmApi';
+import { JmApi, JmFolder, LikeResp } from '../data/api/JmApi';
 import { NetworkImage } from '../components/NetworkImage';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { ChipTokens, DEFAULT_THEME_COLOR, SettingsKeys } from '../common/Constants';
@@ -38,19 +38,21 @@ export struct ComicDetailPage {
   @State error: string = ''
   @State isFavorite: boolean = false
   @State isLiked: boolean = false
+  @State likeOperating: boolean = false
   @State chapters: Chapter[] = []
   @State chaptersReversed: boolean = false
   @State showAllChapters: boolean = false
   @State resumePage: number = 0
   @State resumeChapterOrder: number = 0
-  // 云收藏 sheet
-  @State showFavSheet: boolean = false
+  // 半模态 sheet（单 bindSheet：一个节点仅支持一个，双绑会互相覆盖导致收藏 sheet 无法弹出）
+  @State showSheet: boolean = false
+  @State sheetKind: string = 'fav'
   @State folders: JmFolder[] = []
   @State loadingFolders: boolean = false
   @State newFolderName: string = ''
   @State favOperating: boolean = false
+  @State favPicking: boolean = false
   // 下载章节选择 sheet
-  @State showDlSheet: boolean = false
   @State dlPicks: string[] = []
   @State dlStatuses: Map<string, number> = new Map()
   @State isDownloaded: boolean = false
@@ -178,25 +180,75 @@ export struct ComicDetailPage {
 
   /** 收藏星标：已收藏→取消；未收藏→弹收藏夹 sheet */
   async toggleFavorite(): Promise<void> {
+    if (this.favOperating) {
+      return;
+    }
     if (!JmApi.isLoggedIn()) {
       ToastUtil.show(Translations.t('please_login'), 1500);
       return;
     }
     if (this.isFavorite) {
-      try {
-        await JmApi.favoriteComic(this.comicId, null);
-        this.isFavorite = false;
-        ToastUtil.show(Translations.t('favorite_removed'), 1500);
-      } catch (e) {
-        ToastUtil.fail(e);
-      }
+      await this.doFavorite(null);
     } else {
       this.openFavSheet();
     }
   }
 
+  /** 收藏操作统一入口（folder=null 取消收藏）：请求期间禁用按钮，完成后弹结果窗（失败可重试） */
+  private async doFavorite(folder: string | null): Promise<void> {
+    if (this.favOperating) {
+      return;
+    }
+    this.favOperating = true;
+    this.favPicking = true;
+    try {
+      await JmApi.favoriteComic(this.comicId, folder);
+      this.isFavorite = folder !== null;
+      this.showSheet = false;
+      this.showFavResult(folder !== null ? Translations.t('favorite_added') : Translations.t('favorite_removed'), false, null);
+    } catch (e) {
+      Logger.error(TAG, `favorite failed: ${Logger.describe(e)}`);
+      this.showFavResult(`${Translations.t('favorite_failed')}: ${String(e)}`, true, folder);
+    }
+    this.favOperating = false;
+    this.favPicking = false;
+  }
+
+  /** 收藏结果弹窗：成功单确认；失败带「重试」（retryFolder 记录重试所需的目标收藏夹，null=取消操作） */
+  private showFavResult(message: string, failed: boolean, retryFolder: string | null): void {
+    if (failed) {
+      this.getUIContext().showAlertDialog({
+        title: Translations.t('favorite_title'),
+        message: message,
+        primaryButton: {
+          value: Translations.t('cancel'),
+          action: () => {
+          }
+        },
+        secondaryButton: {
+          value: Translations.t('retry'),
+          fontColor: this.themeColor,
+          action: () => {
+            this.doFavorite(retryFolder);
+          }
+        }
+      });
+    } else {
+      this.getUIContext().showAlertDialog({
+        title: Translations.t('favorite_title'),
+        message: message,
+        confirm: {
+          value: Translations.t('confirm'),
+          action: () => {
+          }
+        }
+      });
+    }
+  }
+
   private openFavSheet(): void {
-    this.showFavSheet = true;
+    this.sheetKind = 'fav';
+    this.showSheet = true;
     this.newFolderName = '';
     this.loadFolders();
   }
@@ -217,16 +269,7 @@ export struct ComicDetailPage {
     if (this.favOperating) {
       return;
     }
-    this.favOperating = true;
-    try {
-      await JmApi.favoriteComic(this.comicId, folderId);
-      this.isFavorite = true;
-      this.showFavSheet = false;
-      ToastUtil.show(Translations.t('favorite_added'), 1500);
-    } catch (e) {
-      ToastUtil.fail(e);
-    }
-    this.favOperating = false;
+    await this.doFavorite(folderId);
   }
 
   /** 新建收藏夹（成功后刷新列表） */
@@ -251,19 +294,30 @@ export struct ComicDetailPage {
     this.favOperating = false;
   }
 
-  /** 点赞 */
+  /** 点赞：POST /like 后按服务器确认状态同步本地（服务器 /album 的 liked 字段不可靠，已赞过的返回「已经评价」） */
   private async toggleLike(): Promise<void> {
     if (!JmApi.isLoggedIn()) {
       ToastUtil.show(Translations.t('please_login'), 1500);
       return;
     }
+    if (this.likeOperating) {
+      return;
+    }
+    this.likeOperating = true;
     try {
-      await JmApi.likeComic(this.comicId);
-      this.isLiked = !this.isLiked;
-      this.comic.likes = this.isLiked ? this.comic.likes + 1 : Math.max(0, this.comic.likes - 1);
+      const resp: LikeResp = await JmApi.likeComic(this.comicId);
+      if (resp.liked !== this.isLiked) {
+        this.comic.likes = resp.liked ? this.comic.likes + 1 : Math.max(0, this.comic.likes - 1);
+      }
+      this.isLiked = resp.liked;
+      if (resp.liked) {
+        await JmApi.addLikedLocal(this.comicId);
+      }
     } catch (e) {
+      Logger.error(TAG, `toggleLike failed: ${Logger.describe(e)}`);
       ToastUtil.fail(e);
     }
+    this.likeOperating = false;
   }
 
   private comicLink(): string {
@@ -295,7 +349,8 @@ export struct ComicDetailPage {
       statuses.set(task.chapterId, task.status);
     }
     this.dlStatuses = statuses;
-    this.showDlSheet = true;
+    this.sheetKind = 'dl';
+    this.showSheet = true;
   }
 
   /** 下载按钮状态：存在任一下载完成的章节 → 「已下载」（删除下载后回到「下载」） */
@@ -338,7 +393,7 @@ export struct ComicDetailPage {
   private async startDl(): Promise<void> {
     const picked: Chapter[] = this.chapters.filter(
       (c: Chapter): boolean => this.dlPicks.includes(c.id));
-    this.showDlSheet = false;
+    this.showSheet = false;
     if (picked.length === 0) {
       return;
     }
@@ -529,9 +584,15 @@ export struct ComicDetailPage {
       .onClick(() => { NavUtil.back(); })
       Blank().layoutWeight(1)
       Button({ type: ButtonType.Normal, stateEffect: true }) {
-        SymbolGlyph($r('sys.symbol.star'))
-          .fontSize(20)
-          .fontColor([this.isFavorite ? this.themeColor : $r('app.color.content_on_media')])
+        if (this.favOperating) {
+          LoadingProgress()
+            .width(20).height(20)
+            .color($r('app.color.content_on_media'))
+        } else {
+          SymbolGlyph($r('sys.symbol.star'))
+            .fontSize(20)
+            .fontColor([this.isFavorite ? this.themeColor : $r('app.color.content_on_media')])
+        }
       }
       .width(40).height(40)
       .borderRadius(24)
@@ -782,7 +843,7 @@ export struct ComicDetailPage {
   @Builder
   favSheetContent() {
     Column({ space: 0 }) {
-      if (this.loadingFolders) {
+      if (this.loadingFolders || this.favPicking) {
         Column({ space: 8 }) {
           LoadingProgress().width(36).height(36)
         }
@@ -803,7 +864,7 @@ export struct ComicDetailPage {
               .width('100%').height(50)
               .padding({ left: 16, right: 16 })
               .onClick(() => {
-                this.showFavSheet = false;
+                this.showSheet = false;
                 this.toggleFavorite();
               })
             }
@@ -1055,34 +1116,25 @@ export struct ComicDetailPage {
         }
         .width('100%').height('100%')
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-        .bindSheet($$this.showFavSheet, this.favSheetContent(), {
-          detents: [SheetSize.MEDIUM, SheetSize.LARGE],
-          blurStyle: BlurStyle.COMPONENT_THICK,
-          showClose: true,
-          title: { title: Translations.t('favorite_select_folder') },
-          dragBar: true,
-          scrollSizeMode: ScrollSizeMode.CONTINUOUS,
-          shouldDismiss: () => {
-            this.showFavSheet = false;
-          },
-          systemMaterial: new uiMaterial.ImmersiveMaterial({
-            style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+        // 单 bindSheet 复用：同一节点仅允许一个 bindSheet，双绑会互相覆盖（收藏 sheet 弹不出的根因）
+        .bindSheet($$this.showSheet,
+          this.sheetKind === 'fav' ? this.favSheetContent() : this.dlSheetContent(), {
+            detents: [SheetSize.MEDIUM, SheetSize.LARGE],
+            blurStyle: BlurStyle.COMPONENT_THICK,
+            showClose: true,
+            title: {
+              title: this.sheetKind === 'fav'
+                ? Translations.t('favorite_select_folder') : Translations.t('select_chapters')
+            },
+            dragBar: true,
+            scrollSizeMode: ScrollSizeMode.CONTINUOUS,
+            shouldDismiss: () => {
+              this.showSheet = false;
+            },
+            systemMaterial: new uiMaterial.ImmersiveMaterial({
+              style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+            })
           })
-        })
-        .bindSheet($$this.showDlSheet, this.dlSheetContent(), {
-          detents: [SheetSize.MEDIUM, SheetSize.LARGE],
-          blurStyle: BlurStyle.COMPONENT_THICK,
-          showClose: true,
-          title: { title: Translations.t('select_chapters') },
-          dragBar: true,
-          scrollSizeMode: ScrollSizeMode.CONTINUOUS,
-          shouldDismiss: () => {
-            this.showDlSheet = false;
-          },
-          systemMaterial: new uiMaterial.ImmersiveMaterial({
-            style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-          })
-        })
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])

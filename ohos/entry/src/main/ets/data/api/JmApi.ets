@@ -26,6 +26,12 @@ export class JmFolder {
   name: string = '';
 }
 
+/** 点赞结果：liked=服务器确认后的点赞状态；raw=原始响应 JSON（调试/提示用） */
+export class LikeResp {
+  liked: boolean = false;
+  raw: string = '';
+}
+
 export class JmComment {
   id: string = '';
   avatar: string = '';
@@ -674,7 +680,8 @@ export class JmApi {
 
     comic.likes = JmApi.toInt(data['likes'], 0);
     comic.comments = JmApi.toInt(data['comment_total'], 0);
-    comic.isLiked = JmApi.isTruthy(data['liked']);
+    // /album 的 liked 字段不可靠（实测已赞仍返回 false），与本地点赞记录合并
+    comic.isLiked = JmApi.isTruthy(data['liked']) || await JmApi.isLikedLocal(id);
     comic.isFavorite = JmApi.isTruthy(data['is_favorite']);
     comic.coverUrl = `${JmApi.imgHost}/media/albums/${id}_3x4.jpg`;
 
@@ -917,24 +924,23 @@ export class JmApi {
     return result;
   }
 
-  /** 收藏/取消收藏；folder=null 取消，'0'=未分类，其他=指定收藏夹 */
+  /** 收藏/取消收藏；folder=null 取消，'0'=未分类，其他=指定收藏夹。
+   *  /favorite 为开关接口（POST 一次翻转一次，响应 type='add' 表示本次操作为加入），
+   *  最多 POST 两次并对齐最终状态；两次后仍不符则抛错（防止 UI 与实际状态不一致） */
   static async favoriteComic(id: string, folder: string | null): Promise<void> {
-    if (folder !== null) {
-      let res: Record<string, Object> =
-        await JmApi.apiPost('/favorite', `aid=${id}&`) as Record<string, Object>;
-      if (JmApi.safeStr(res, 'type') !== 'add') {
-        res = await JmApi.apiPost('/favorite', `aid=${id}&`) as Record<string, Object>;
-      }
-      if (folder !== '0') {
-        await JmApi.moveToFolder(id, folder);
-      }
-    } else {
+    const wantAdd: boolean = folder !== null;
+    for (let attempt: number = 0; attempt < 2; attempt++) {
       const res: Record<string, Object> =
         await JmApi.apiPost('/favorite', `aid=${id}&`) as Record<string, Object>;
-      if (JmApi.safeStr(res, 'type') === 'add') {
-        await JmApi.apiPost('/favorite', `aid=${id}&`);
+      const didAdd: boolean = JmApi.safeStr(res, 'type') === 'add';
+      if (didAdd === wantAdd) {
+        if (folder !== null && folder !== '0') {
+          await JmApi.moveToFolder(id, folder);
+        }
+        return;
       }
     }
+    throw new Error(wantAdd ? 'favorite add failed' : 'favorite remove failed');
   }
 
   static async createFolder(name: string): Promise<void> {
@@ -953,8 +959,43 @@ export class JmApi {
     await JmApi.apiPost('/favorite_folder', `type=move&folder_id=${folderId}&aid=${comicId}&`);
   }
 
-  static async likeComic(id: string): Promise<void> {
-    await JmApi.apiPost('/like', `id=${id}&`);
+  /** 点赞（POST /like）。已赞过的漫画服务器返回 status=error + msg=已经评价!（接口单向，无法取消），
+   *  此时仍视为已赞；返回服务器确认后的点赞状态与原始响应用于 UI 同步/提示 */
+  static async likeComic(id: string): Promise<LikeResp> {
+    const res: Record<string, Object> =
+      await JmApi.apiPost('/like', `id=${id}&`) as Record<string, Object>;
+    const status: string = JmApi.safeStr(res, 'status');
+    const msg: string = JmApi.safeStr(res, 'msg');
+    const code: number = JmApi.toInt(res['code'], 200);
+    Logger.debug(TAG, `like resp: status=${status} msg=${msg} code=${code} raw=${JSON.stringify(res)}`);
+    const result: LikeResp = new LikeResp();
+    result.raw = JSON.stringify(res);
+    if (status === 'error') {
+      if (msg.indexOf('已经评价') !== -1) {
+        result.liked = true;
+        return result;
+      }
+      throw new Error(msg !== '' ? msg : `like failed: code=${code}`);
+    }
+    if (code !== 200) {
+      throw new Error(`like failed: code=${code}`);
+    }
+    result.liked = true;
+    return result;
+  }
+
+  /** 本地点赞记录：服务器无可靠的点赞状态查询接口（/album 的 liked 不可信），点赞成功后持久化，详情页合并显示 */
+  static async addLikedLocal(id: string): Promise<void> {
+    const ids: string[] = await Settings.getStringList(SettingsKeys.JM_LIKED_IDS);
+    if (!ids.includes(id)) {
+      ids.push(id);
+      await Settings.putStringList(SettingsKeys.JM_LIKED_IDS, ids);
+    }
+  }
+
+  static async isLikedLocal(id: string): Promise<boolean> {
+    const ids: string[] = await Settings.getStringList(SettingsKeys.JM_LIKED_IDS);
+    return ids.includes(id);
   }
 
   /** 每日签到，成功返回 msg */
