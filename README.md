@@ -39,7 +39,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 | 项目 | 说明 |
 |------|------|
 | 包名 | `com.jmcomic.harmony` |
-| 当前版本 | 1.0.11（versionCode 12） |
+| 当前版本 | 1.0.12（versionCode 13） |
 | 目标 API | 26（HarmonyOS NEXT） |
 | 开发语言 / UI 框架 | ArkTS / ArkUI 声明式（Stage 模型，单 `entry` HAP 模块） |
 | 设备类型 | phone / tablet / 2in1 |
@@ -54,12 +54,13 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 
 **账号与收藏**
 - JM 账号登录、自动签到、多文件夹收藏夹（含收藏夹选择面板）、关注 / 追更
-- 历史记录、下载记录、追更列表、账号管理，均由 SQLite 持久化
+- 历史记录、下载记录、追更列表、账号管理，均由 SQLite 持久化；首页历史缩略图即时刷新
 
 **下载与离线**
 - 章节真实下载：选章下载、暂停 / 继续 / 重试与页级进度，后台长时任务，删除记录自动清理文件
 - 离线阅读：图片列表随下载持久化，断网可读已下载章节；图片本地优先、网络回退
 - 详情本地秒开：下载时自动缓存详情 / 封面 / 首页评论（可关），支持「离线优先」跳过联网刷新
+- 缓存管理：缓存 / 下载占用展示，缓存上限挡位（不限 / 500 MB / 200 MB / 100 MB / 50 MB）超限按最近使用自动淘汰，清理缓存带确认与释放量提示
 
 **在线阅读**
 - 六种阅读模式：从左至右 / 从右至左 / 从上至下 / 连续滚动 / 双页 / 双页反向
@@ -77,6 +78,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 - 图片反打乱：内置 JM 分段打乱逆向重组（scramble 解码），按 `jm_toolkit.py` 的 `get_num` 计算分段数、`decode_and_save` 整段逆序重组像素
 - 双网络栈图片下载：http 栈失败或返回反爬页时自动切换系统下载服务栈重试
 - 动态域名：内置列表 → 远端配置（密文下发，24h 更新）→ 备用列表多级回退，图床分流可切换
+- 图片线路测速与自动切换：启动自动测速（24h 保鲜）与阅读失败兜底，手动测速弹窗展示全部节点速度并切换最快图床，线路延迟实时显示
 
 **个性化与其它**
 - 深色模式：跟随系统 / 禁用 / 启用；多套预设主题色
@@ -338,8 +340,8 @@ NavUtil.push('comicDetail', { comicId, title, source })
 ```json5
 {
   bundleName: "com.jmcomic.harmony",
-  versionCode: 12,
-  versionName: "1.0.11",
+  versionCode: 13,
+  versionName: "1.0.12",
   targetAPIVersion: 26
 }
 ```
