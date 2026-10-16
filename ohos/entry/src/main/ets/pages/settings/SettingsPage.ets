@@ -3,11 +3,14 @@
 import { ThemeManager } from '../../common/ThemeManager';
 import { Translations } from '../../common/Translations';
 import { NavUtil } from '../../common/NavUtil';
+import { ToastUtil } from '../../common/ToastUtil';
 import { ApiConstants, DEFAULT_THEME_COLOR, SettingsKeys } from '../../common/Constants';
 import { Settings } from '../../data/preferences/Settings';
+import { CacheManager } from '../../data/cache/CacheManager';
 import { SettingItem } from '../../components/SettingItem';
 import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingSelect } from '../../components/SettingSelect';
+import { SettingInfoItem } from '../../components/SettingInfoItem';
 import { SettingCorner } from '../../components/SettingCommon';
 import { uiMaterial } from '@kit.ArkUI';
 
@@ -25,6 +28,9 @@ export struct SettingsPage {
   @State showHistoryImages: boolean = true
   @State saveDetail: boolean = true
   @State offlineFirst: boolean = false
+  @State cacheSize: string = '-'
+  @State downloadSize: string = '-'
+  @State cacheGear: number = 0
   @State title: string = '设置'
 
   aboutToAppear(): void {
@@ -38,6 +44,59 @@ export struct SettingsPage {
     Settings.getBool(SettingsKeys.OFFLINE_FIRST, false).then((v: boolean) => {
       this.offlineFirst = v;
     });
+    this.refreshCacheState();
+  }
+
+  private async refreshCacheState(): Promise<void> {
+    this.cacheGear = await CacheManager.getGear();
+    this.cacheSize = CacheManager.formatBytes(await CacheManager.statCache());
+    this.downloadSize = CacheManager.formatBytes(CacheManager.statDownloads());
+  }
+
+  private async setCacheGear(gear: number): Promise<void> {
+    this.cacheGear = gear;
+    await CacheManager.setGear(gear);
+    // 立即按新挡位淘汰（不等下次启动），随后刷新占用展示
+    await CacheManager.evictToGear();
+    this.cacheSize = CacheManager.formatBytes(await CacheManager.statCache());
+  }
+
+  private doClearCache(): void {
+    this.getUIContext().showAlertDialog({
+      title: Translations.t('clear_cache'),
+      message: Translations.t('clear_cache_confirm'),
+      primaryButton: {
+        value: Translations.t('cancel'),
+        action: () => {
+        }
+      },
+      secondaryButton: {
+        value: Translations.t('confirm'),
+        fontColor: this.themeColor,
+        action: () => {
+          this.runClearCache();
+        }
+      }
+    });
+  }
+
+  private async runClearCache(): Promise<void> {
+    const before: number = await CacheManager.statCache();
+    await CacheManager.clearAll();
+    const after: number = await CacheManager.statCache();
+    this.cacheSize = CacheManager.formatBytes(after);
+    ToastUtil.show(`${Translations.t('cache_cleared')}` +
+      ` · ${CacheManager.formatBytes(Math.max(0, before - after))}`, 2500);
+  }
+
+  private cacheGearLabels(): string[] {
+    return [
+      Translations.t('cache_unlimited'),
+      '500 MB',
+      '200 MB',
+      '100 MB',
+      '50 MB'
+    ];
   }
 
   private darkModeIndex(): number {
@@ -218,6 +277,44 @@ export struct SettingsPage {
             isOn: this.offlineFirst,
             onToggle: (value: boolean) => {
               this.setOfflineFirst(value);
+            }
+          })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+        }
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('cache')) }) {
+          SettingInfoItem({
+            label: Translations.t('cache_size'),
+            value: this.cacheSize,
+            corner: SettingCorner.FIRST,
+            itemId: 'infoRow' + Translations.t('cache_size')
+          })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          SettingInfoItem({
+            label: Translations.t('download_size'),
+            value: this.downloadSize,
+            itemId: 'infoRow' + Translations.t('download_size')
+          })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          SettingSelect({
+            corner: SettingCorner.MIDDLE,
+            icon: $r('sys.symbol.externaldrive'),
+            title: Translations.t('cache_limit'),
+            options: this.cacheGearLabels(),
+            selectedIndex: this.cacheGear,
+            onSelect: (index: number) => {
+              this.setCacheGear(index);
+            }
+          })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          SettingItem({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.trash'),
+            title: Translations.t('clear_cache'),
+            onTap: () => {
+              this.doClearCache();
             }
           })
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])

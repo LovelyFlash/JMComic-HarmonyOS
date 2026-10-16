@@ -2,6 +2,7 @@
 import relationalStore from '@ohos.data.relationalStore';
 import { Logger } from '../../common/Logger';
 import { common } from '@kit.AbilityKit';
+import { JmApi } from '../api/JmApi';
 
 const TAG = 'Database';
 const SQL_CREATE_HISTORY = `CREATE TABLE IF NOT EXISTS history (
@@ -64,6 +65,16 @@ export class Database {
   }
 
   // --- History ---
+  /** 历史变更广播：bump AppStorage historyChanged，驱动 MePage/HistoryPage @Watch 重查 */
+  private static notifyHistoryChanged(): void {
+    try {
+      const prev: number | undefined = AppStorage.get<number>('historyChanged');
+      AppStorage.setOrCreate('historyChanged', prev === undefined ? 1 : prev + 1);
+    } catch (e) {
+      Logger.warn(TAG, `notifyHistoryChanged failed: ${Logger.describe(e)}`);
+    }
+  }
+
   static async insertHistory(id: string, title: string, coverUrl: string, source: string, lastChapter: string = '', lastPage: number = 0): Promise<void> {
     if (!Database.store) return;
     try {
@@ -72,7 +83,10 @@ export class Database {
         'readTime': Date.now(), 'lastChapter': lastChapter,
         'lastPage': lastPage, 'source': source
       };
-      await Database.store.insert('history', bucket);
+      // 主键冲突静默吞错会导致二次进入同一漫画 readTime/封面永不刷新、排序不更新
+      await Database.store.insert('history', bucket,
+        relationalStore.ConflictResolution.ON_CONFLICT_REPLACE);
+      Database.notifyHistoryChanged();
     } catch (e) {
       Logger.error(TAG, `insertHistory failed: ${Logger.describe(e)}`);
     }
@@ -87,6 +101,7 @@ export class Database {
         'lastChapter': lastChapter, 'lastPage': lastPage, 'readTime': Date.now()
       };
       await Database.store.update(bucket, predicates);
+      Database.notifyHistoryChanged();
     } catch (e) {
       Logger.error(TAG, `updateReadingProgress failed: ${Logger.describe(e)}`);
     }
@@ -105,7 +120,7 @@ export class Database {
         const item = new HistoryItem();
         item.id = resultSet.getString(resultSet.getColumnIndex('id'));
         item.title = resultSet.getString(resultSet.getColumnIndex('title'));
-        item.coverUrl = resultSet.getString(resultSet.getColumnIndex('coverUrl'));
+        item.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
         item.readTime = resultSet.getLong(resultSet.getColumnIndex('readTime'));
         item.lastChapter = resultSet.getString(resultSet.getColumnIndex('lastChapter'));
         item.lastPage = resultSet.getLong(resultSet.getColumnIndex('lastPage'));
@@ -126,6 +141,7 @@ export class Database {
       const predicates = new relationalStore.RdbPredicates('history');
       predicates.equalTo('id', id).equalTo('source', source);
       await Database.store.delete(predicates);
+      Database.notifyHistoryChanged();
     } catch (e) {
       Logger.error(TAG, `removeHistory failed: ${Logger.describe(e)}`);
     }
@@ -135,6 +151,7 @@ export class Database {
     if (!Database.store) return;
     try {
       await Database.store.executeSql('DELETE FROM history');
+      Database.notifyHistoryChanged();
     } catch (e) {
       Logger.error(TAG, `clearHistory failed: ${Logger.describe(e)}`);
     }
@@ -197,7 +214,7 @@ export class Database {
         const item = new DownloadItem();
         item.id = resultSet.getString(resultSet.getColumnIndex('id'));
         item.title = resultSet.getString(resultSet.getColumnIndex('title'));
-        item.coverUrl = resultSet.getString(resultSet.getColumnIndex('coverUrl'));
+        item.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
         item.source = resultSet.getString(resultSet.getColumnIndex('source'));
         item.downloadPath = resultSet.getString(resultSet.getColumnIndex('downloadPath'));
         item.downloadTime = resultSet.getLong(resultSet.getColumnIndex('downloadTime'));
@@ -370,7 +387,7 @@ export class Database {
         row.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
         row.source = resultSet.getString(resultSet.getColumnIndex('source'));
         row.title = resultSet.getString(resultSet.getColumnIndex('title'));
-        row.coverUrl = resultSet.getString(resultSet.getColumnIndex('coverUrl'));
+        row.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
         row.description = resultSet.getString(resultSet.getColumnIndex('description'));
         row.author = resultSet.getString(resultSet.getColumnIndex('author'));
         row.categoriesJson = resultSet.getString(resultSet.getColumnIndex('categoriesJson'));
@@ -397,6 +414,60 @@ export class Database {
       await Database.store.delete(predicates);
     } catch (e) {
       Logger.error(TAG, `removeComicCache failed: ${Logger.describe(e)}`);
+    }
+  }
+
+  /** comic_cache 内容总字节（SQL 聚合，不整表拉入内存；不含 SQLite 页开销） */
+  static async comicCacheBytes(): Promise<number> {
+    if (!Database.store) return 0;
+    try {
+      const sql = `SELECT IFNULL(SUM(LENGTH(title)+LENGTH(coverUrl)+LENGTH(description)` +
+        `+LENGTH(author)+LENGTH(categoriesJson)+LENGTH(chaptersJson)+LENGTH(commentsJson)),0) AS bytes` +
+        ` FROM comic_cache`;
+      const resultSet = await Database.store.querySql(sql);
+      let bytes: number = 0;
+      if (resultSet.goToNextRow()) {
+        bytes = resultSet.getLong(resultSet.getColumnIndex('bytes'));
+      }
+      resultSet.close();
+      return bytes;
+    } catch (e) {
+      Logger.error(TAG, `comicCacheBytes failed: ${Logger.describe(e)}`);
+      return 0;
+    }
+  }
+
+  /** 按 updateTime 从旧到新返回缓存行（comicId+source+内容字节），容量挡位淘汰用 */
+  static async queryComicCacheLru(): Promise<ComicCacheLruRow[]> {
+    if (!Database.store) return [];
+    try {
+      const sql = `SELECT comicId, source, LENGTH(title)+LENGTH(coverUrl)+LENGTH(description)` +
+        `+LENGTH(author)+LENGTH(categoriesJson)+LENGTH(chaptersJson)+LENGTH(commentsJson) AS bytes` +
+        ` FROM comic_cache ORDER BY updateTime ASC`;
+      const resultSet = await Database.store.querySql(sql);
+      const results: ComicCacheLruRow[] = [];
+      while (resultSet.goToNextRow()) {
+        const row = new ComicCacheLruRow();
+        row.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
+        row.source = resultSet.getString(resultSet.getColumnIndex('source'));
+        row.bytes = resultSet.getLong(resultSet.getColumnIndex('bytes'));
+        results.push(row);
+      }
+      resultSet.close();
+      return results;
+    } catch (e) {
+      Logger.error(TAG, `queryComicCacheLru failed: ${Logger.describe(e)}`);
+      return [];
+    }
+  }
+
+  /** 清空详情缓存表（下载章节/历史/追更/本地评论不受影响） */
+  static async clearComicCache(): Promise<void> {
+    if (!Database.store) return;
+    try {
+      await Database.store.executeSql('DELETE FROM comic_cache');
+    } catch (e) {
+      Logger.error(TAG, `clearComicCache failed: ${Logger.describe(e)}`);
     }
   }
 
@@ -452,7 +523,7 @@ export class Database {
         const item = new FollowItem();
         item.id = resultSet.getString(resultSet.getColumnIndex('id'));
         item.title = resultSet.getString(resultSet.getColumnIndex('title'));
-        item.coverUrl = resultSet.getString(resultSet.getColumnIndex('coverUrl'));
+        item.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
         item.source = resultSet.getString(resultSet.getColumnIndex('source'));
         item.followTime = resultSet.getLong(resultSet.getColumnIndex('followTime'));
         item.hasUpdate = resultSet.getLong(resultSet.getColumnIndex('hasUpdate')) === 1;
@@ -565,6 +636,13 @@ export class ComicCacheRow {
   commentsJson: string = '';
   commentMaxPage: number = 1;
   updateTime: number = 0;
+}
+
+/** 容量挡位淘汰用：comic_cache 行的 LRU 摘要（按 updateTime 升序） */
+export class ComicCacheLruRow {
+  comicId: string = '';
+  source: string = 'jm';
+  bytes: number = 0;
 }
 
 export class FollowItem {

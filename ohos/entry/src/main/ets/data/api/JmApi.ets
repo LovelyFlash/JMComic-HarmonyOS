@@ -401,6 +401,7 @@ export class JmApi {
       if (host !== '') {
         JmApi.imgHost = JmApi.normalizeDomain(host);
         await Settings.putString(SettingsKeys.JM_IMG_HOST, JmApi.imgHost);
+        JmApi.notifyImgHostChanged();
         Logger.info(TAG, `Updated JM image URL: ${JmApi.imgHost}`);
         return true;
       }
@@ -415,6 +416,47 @@ export class JmApi {
     const clamped: number = Math.min(Math.max(lineIndex, 0), ApiConstants.JM_IMG_URLS.length - 1);
     JmApi.imgLineIndex = clamped;
     await Settings.putNumber(SettingsKeys.JM_IMG_LINE_INDEX, clamped);
+  }
+
+  /** 图片 host 变更广播：bump AppStorage imgHostChanged，设置页等 @Watch 刷新 */
+  private static notifyImgHostChanged(): void {
+    try {
+      const prev: number | undefined = AppStorage.get<number>('imgHostChanged');
+      AppStorage.setOrCreate('imgHostChanged', prev === undefined ? 1 : prev + 1);
+    } catch (e) {
+      Logger.warn(TAG, `notifyImgHostChanged failed: ${Logger.describe(e)}`);
+    }
+  }
+
+  /** 应用图片 host（规范化 + 持久化 + 广播）；测速自动切换/手动切换共用入口，空串返回 false */
+  static async applyImgHost(host: string): Promise<boolean> {
+    const normalized: string = JmApi.normalizeDomain(host);
+    if (normalized.length === 0) {
+      return false;
+    }
+    JmApi.imgHost = normalized;
+    await Settings.putString(SettingsKeys.JM_IMG_HOST, normalized);
+    JmApi.notifyImgHostChanged();
+    Logger.info(TAG, `applyImgHost: ${normalized}`);
+    return true;
+  }
+
+  /**
+   * 旧图床 URL 自愈：把 /media/ 起的相对路径重写到当前 imgHost。
+   * 切换图片线路后 DB 落库的 coverUrl/avatar（历史/追更/下载/详情缓存）才仍能加载。
+   */
+  static rehostUrl(url: string): string {
+    if (url.length === 0) {
+      return url;
+    }
+    const idx: number = url.indexOf('/media/');
+    if (idx < 0) {
+      return url;
+    }
+    if (url.substring(0, idx) === JmApi.imgHost) {
+      return url;
+    }
+    return JmApi.imgHost + url.substring(idx);
   }
 
   /** 获取远端 APP 版本号（明文 JSON），成功则持久化 */

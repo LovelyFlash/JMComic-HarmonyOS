@@ -27,6 +27,7 @@ export struct MePage {
   @State userName: string = ''
   @State accountName: string = ''
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
+  @StorageProp('historyChanged') @Watch('onHistoryChanged') historyChanged: number = 0
   @StorageProp('showHistoryImages') showHistoryImages: boolean = true
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
@@ -43,6 +44,11 @@ export struct MePage {
 
   private onAccountChanged(): void {
     this.refreshLoginState();
+  }
+
+  /** 历史写入广播（详情/阅读页）→ 首页卡片即时重查，无需重启 */
+  private onHistoryChanged(): void {
+    this.loadHistory();
   }
 
   private refreshLoginState(): void {

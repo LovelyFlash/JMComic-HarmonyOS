@@ -4,6 +4,7 @@ import { Translations } from '../../common/Translations';
 import { ApiConstants, DEFAULT_THEME_COLOR, SettingsKeys } from '../../common/Constants';
 import { ToastUtil } from '../../common/ToastUtil';
 import { JmApi } from '../../data/api/JmApi';
+import { ImgLineSpeed, ImgLineSpeedReport, ImgLineSpeedTest } from '../../data/api/ImgLineSpeedTest';
 import { Settings } from '../../data/preferences/Settings';
 import { Logger } from '../../common/Logger';
 import { SettingSwitch } from '../../components/SettingSwitch';
@@ -29,6 +30,9 @@ export struct JmSettings {
   @State domains: string[] = []
   @State isUpdating: boolean = false
   @State imgLineIndex: number = 1
+  @State autoImgLine: boolean = true
+  @State imgLatency: number = -1
+  @State testingImg: boolean = false
   @State appVersion: string = ''
   @State autoSelectDomain: boolean = true
   @State autoCheckin: boolean = false
@@ -36,9 +40,18 @@ export struct JmSettings {
   @State checkingIn: boolean = false
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
+  @StorageProp('imgSpeedChanged') @Watch('onImgSpeedChanged') imgSpeedChanged: number = 0
 
   aboutToAppear(): void {
     this.refreshState();
+  }
+
+  private onImgSpeedChanged(): void {
+    this.loadImgLatency();
+  }
+
+  private async loadImgLatency(): Promise<void> {
+    this.imgLatency = await Settings.getNumber(SettingsKeys.JM_IMG_SPEED_LATENCY, -1);
   }
 
   private async refreshState(): Promise<void> {
@@ -49,6 +62,57 @@ export struct JmSettings {
     this.autoSelectDomain = await Settings.getBool(SettingsKeys.JM_AUTO_SELECT_DOMAIN, true);
     this.autoCheckin = await Settings.getBool(SettingsKeys.JM_AUTO_CHECKIN, false);
     this.favoriteOrder = await Settings.getNumber(SettingsKeys.JM_FAVORITE_ORDER, 0);
+    this.autoImgLine = await ImgLineSpeedTest.autoSelectEnabled();
+    await this.loadImgLatency();
+  }
+
+  private imgLatencyLabel(): string {
+    return this.imgLatency >= 0 ? `${this.imgLatency} ms` : Translations.t('no_speed_test');
+  }
+
+  /** 手动测速并切换：loading 防重入，完成后弹窗展示结果 + 全部节点速度（启动自动测速保持后台静默） */
+  private async runSpeedTest(): Promise<void> {
+    if (this.testingImg) {
+      return;
+    }
+    this.testingImg = true;
+    let message: string = Translations.t('speed_test_failed');
+    try {
+      const report: ImgLineSpeedReport = await ImgLineSpeedTest.run();
+      const best: ImgLineSpeed = report.best;
+      if (best.isImage && best.latency >= 0) {
+        message = `${Translations.t('speed_test_best')}: ${this.stripProtocol(best.host)}` +
+          ` (${best.latency} ms)`;
+      }
+      if (report.all.length > 0) {
+        const lines: string[] = [];
+        for (let i = 0; i < report.all.length; i++) {
+          const r: ImgLineSpeed = report.all[i];
+          const speed: string = (r.isImage && r.latency >= 0)
+            ? `${r.latency} ms` : Translations.t('speed_line_unavailable');
+          lines.push(`${this.stripProtocol(r.host)} · ${speed}`);
+        }
+        message += `\n\n${lines.join('\n')}`;
+      }
+      await this.loadImgLatency();
+      this.imgLineIndex = JmApi.getImgLineIndex();
+    } finally {
+      this.testingImg = false;
+    }
+    this.getUIContext().showAlertDialog({
+      title: Translations.t('speed_test_result'),
+      message: message,
+      confirm: {
+        value: Translations.t('confirm'),
+        action: () => {
+        }
+      }
+    });
+  }
+
+  private async setAutoImgLine(value: boolean): Promise<void> {
+    this.autoImgLine = value;
+    await Settings.setBool(SettingsKeys.JM_AUTO_SELECT_IMG_LINE, value);
   }
 
   private async selectDomainAt(index: number): Promise<void> {
@@ -114,7 +178,7 @@ export struct JmSettings {
   }
 
   private async selectImgLine(index: number): Promise<void> {
-    if (this.imgLineIndex === index) {
+    if (this.imgLineIndex === index || this.autoImgLine) {
       return;
     }
     if (JmApi.isLoggedIn()) {
@@ -269,19 +333,47 @@ export struct JmSettings {
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('image_line')) }) {
+          SettingSwitch({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.arrow_clockwise'),
+            title: Translations.t('auto_select_img_line'),
+            isOn: this.autoImgLine,
+            onToggle: (value: boolean) => {
+              this.setAutoImgLine(value);
+            }
+          })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSelect({
-            corner: SettingCorner.ALL,
+            corner: SettingCorner.MIDDLE,
             icon: $r('sys.symbol.camera'),
             title: Translations.t('image_line'),
             options: this.imgLineLabels(),
             selectedIndex: this.imgLineIndex,
+            interactive: !this.autoImgLine,
             onSelect: (index: number) => {
               this.selectImgLine(index);
             }
           })
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          SettingInfoItem({
+            label: Translations.t('img_latency'),
+            value: this.imgLatencyLabel(),
+            itemId: 'infoRow' + Translations.t('img_latency')
+          })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          SettingItem({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.timer'),
+            title: Translations.t('speed_test_line'),
+            value: this.testingImg ? Translations.t('speed_testing') : '',
+            onTap: () => {
+              this.runSpeedTest();
+            }
+          })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
 
         ListItemGroup({ header: this.groupHeader(Translations.t('app_version')) }) {
           SettingInfoItem({

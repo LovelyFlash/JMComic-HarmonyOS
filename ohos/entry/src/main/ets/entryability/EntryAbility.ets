@@ -10,6 +10,8 @@ import { ThemeManager } from '../common/ThemeManager';
 import { ReadingConfig } from '../common/ReadingConfig';
 import { JmApi } from '../data/api/JmApi';
 import { DetailCache } from '../data/cache/DetailCache';
+import { CacheManager } from '../data/cache/CacheManager';
+import { ImgLineSpeedTest } from '../data/api/ImgLineSpeedTest';
 import { DownloadManager } from '../data/download/DownloadManager';
 import { Logger } from '../common/Logger';
 import { ToastUtil } from '../common/ToastUtil';
@@ -63,7 +65,16 @@ export default class EntryAbility extends UIAbility {
     await JmApi.init();
     // 下载队列恢复：须在 JmApi.init 之后（恢复的任务立即拉起网络请求）
     DetailCache.init(this.context);
+    CacheManager.init(this.context);
     await DownloadManager.init(this.context);
+    // 后台维护：缓存超挡位淘汰（不阻塞启动）
+    CacheManager.evictToGear().catch((e: Object) => {
+      Logger.warn(TAG, `evictToGear on init failed: ${Logger.describe(e)}`);
+    });
+    // 后台维护：图片线路自动测速（默认开 + 24h 保鲜，不阻塞启动）
+    ImgLineSpeedTest.autoTestOnStartup().catch((e: Object) => {
+      Logger.warn(TAG, `autoTestOnStartup failed: ${Logger.describe(e)}`);
+    });
   }
 
   onDestroy(): void {

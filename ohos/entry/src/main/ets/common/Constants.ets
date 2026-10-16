@@ -75,6 +75,9 @@ export class SettingsKeys {
   static readonly JM_AUTO_SELECT_DOMAIN = 'jm_auto_select_domain';
   static readonly JM_IMG_LINE_INDEX = 'jm_img_line_index';
   static readonly JM_IMG_HOST = 'jm_img_host';
+  static readonly JM_AUTO_SELECT_IMG_LINE = 'jm_auto_select_img_line';
+  static readonly JM_IMG_SPEED_TEST_TIME = 'jm_img_speed_test_time';
+  static readonly JM_IMG_SPEED_LATENCY = 'jm_img_speed_latency';
   static readonly JM_APP_VERSION = 'jm_app_version';
   static readonly JM_AUTO_CHECKIN = 'jm_auto_checkin';
   static readonly JM_FAVORITE_ORDER = 'jm_favorite_order';
@@ -95,6 +98,8 @@ export class SettingsKeys {
   // Download settings
   static readonly SAVE_DETAIL_ON_DOWNLOAD = 'saveDetailOnDownload';
   static readonly OFFLINE_FIRST = 'offlineFirst';
+  // Cache settings（0=不限，1=200MB，2=100MB，3=50MB，见 CacheManager.GEAR_CAPS）
+  static readonly CACHE_GEAR = 'cacheGear';
 }
 
 /** 标签 Chip 统一规格（详情信息行 label/值、分类入口、搜索历史/热门标签共用） */

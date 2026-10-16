@@ -3,6 +3,7 @@ import { image } from '@kit.ImageKit';
 import { fileUri } from '@kit.CoreFileKit';
 import { Network } from '../common/Network';
 import { JmImage } from '../common/JmImage';
+import { ImgLineSpeedTest } from '../data/api/ImgLineSpeedTest';
 import { DownloadManager } from '../data/download/DownloadManager';
 import { Logger } from '../common/Logger';
 
@@ -86,6 +87,12 @@ export class ReaderImageCache {
       ReaderImageCache.maps.clear();
       ReaderImageCache.order = [];
     }
+  }
+
+  /** 手动清理阅读器缓存：仅清缓存引用，不 release 仍在显示的 PixelMap（由 GC 回收）；比例与在途加载保留 */
+  static clearAll(): void {
+    ReaderImageCache.maps.clear();
+    ReaderImageCache.order = [];
   }
 
   /** 先按质量失效像素缓存，再取缓存像素（质量变化时旧像素整体清空） */
@@ -203,6 +210,10 @@ export class ReaderImageCache {
     }
     if (bytes === null || bytes.length === 0) {
       Logger.warn(TAG, `download failed (both stacks): ${url}`);
+      // 图片源兜底：双栈失败且开关开 + 1h 冷却时后台测速切最快线路（内部容错，不阻断加载）
+      ImgLineSpeedTest.respeedIfNeeded().catch((e: Object) => {
+        Logger.warn(TAG, `respeedIfNeeded failed: ${Logger.describe(e)}`);
+      });
       return null;
     }
     const pm: image.PixelMap = await JmImage.decode(bytes, JmImage.maxEdgeForQuality(quality));

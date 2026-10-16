@@ -16,10 +16,15 @@ export struct HistoryPage {
   
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
+  @StorageProp('historyChanged') @Watch('onHistoryChanged') historyChanged: number = 0
   @State dataSource: ArrayDataSource<HistoryItem> = new ArrayDataSource<HistoryItem>()
   @State loading: boolean = true
 
   aboutToAppear(): void {
+    this.loadData();
+  }
+
+  private onHistoryChanged(): void {
     this.loadData();
   }
 

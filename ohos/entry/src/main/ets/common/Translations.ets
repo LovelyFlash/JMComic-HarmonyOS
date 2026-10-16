@@ -235,6 +235,22 @@ class TranslationData {
   favorite_select_folder: string = '';
   uncategorized: string = '';
   cancel_favorite: string = '';
+  cache_size: string = '';
+  download_size: string = '';
+  cache_limit: string = '';
+  cache_unlimited: string = '';
+  clear_cache: string = '';
+  clear_cache_confirm: string = '';
+  cache_cleared: string = '';
+  auto_select_img_line: string = '';
+  img_latency: string = '';
+  no_speed_test: string = '';
+  speed_test_line: string = '';
+  speed_testing: string = '';
+  speed_test_best: string = '';
+  speed_test_failed: string = '';
+  speed_test_result: string = '';
+  speed_line_unavailable: string = '';
 }
 
 const zhData: TranslationData = new TranslationData();
@@ -472,6 +488,22 @@ zhData.related_comics = '相关推荐';
 zhData.favorite_select_folder = '选择收藏夹';
 zhData.uncategorized = '未分类';
 zhData.cancel_favorite = '取消收藏';
+zhData.cache_size = '缓存占用';
+zhData.download_size = '下载占用';
+zhData.cache_limit = '缓存上限';
+zhData.cache_unlimited = '不限';
+zhData.clear_cache = '清理缓存';
+zhData.clear_cache_confirm = '将清理详情缓存与图片缓存；下载内容、历史记录与收藏不受影响。';
+zhData.cache_cleared = '清理完成';
+zhData.auto_select_img_line = '自动选择最快图片线路';
+zhData.img_latency = '当前线路延迟';
+zhData.no_speed_test = '未测速';
+zhData.speed_test_line = '测速并切换';
+zhData.speed_testing = '测速中...';
+zhData.speed_test_best = '最快线路';
+zhData.speed_test_failed = '测速失败，保留当前线路';
+zhData.speed_test_result = '测速结果';
+zhData.speed_line_unavailable = '不可用';
 
 const enData: TranslationData = new TranslationData();
 enData.app_name = 'JMComic';
@@ -708,6 +740,22 @@ enData.related_comics = 'Related Comics';
 enData.favorite_select_folder = 'Select Folder';
 enData.uncategorized = 'Uncategorized';
 enData.cancel_favorite = 'Unfavorite';
+enData.cache_size = 'Cache Usage';
+enData.download_size = 'Downloads';
+enData.cache_limit = 'Cache Limit';
+enData.cache_unlimited = 'Unlimited';
+enData.clear_cache = 'Clear Cache';
+enData.clear_cache_confirm = 'Clears detail and image caches. Downloads, history and favorites are kept.';
+enData.cache_cleared = 'Cache cleared';
+enData.auto_select_img_line = 'Auto-select Fastest Image Line';
+enData.img_latency = 'Image Line Latency';
+enData.no_speed_test = 'Not tested';
+enData.speed_test_line = 'Speed Test & Switch';
+enData.speed_testing = 'Testing...';
+enData.speed_test_best = 'Fastest line';
+enData.speed_test_failed = 'Test failed, keeping current line';
+enData.speed_test_result = 'Speed Test Result';
+enData.speed_line_unavailable = 'Unavailable';
 
 export class Translations {
   private static currentLocale: string = 'zh_CN';
@@ -958,6 +1006,22 @@ export class Translations {
       case 'favorite_select_folder': return d.favorite_select_folder;
       case 'uncategorized': return d.uncategorized;
       case 'cancel_favorite': return d.cancel_favorite;
+      case 'cache_size': return d.cache_size;
+      case 'download_size': return d.download_size;
+      case 'cache_limit': return d.cache_limit;
+      case 'cache_unlimited': return d.cache_unlimited;
+      case 'clear_cache': return d.clear_cache;
+      case 'clear_cache_confirm': return d.clear_cache_confirm;
+      case 'cache_cleared': return d.cache_cleared;
+      case 'auto_select_img_line': return d.auto_select_img_line;
+      case 'img_latency': return d.img_latency;
+      case 'no_speed_test': return d.no_speed_test;
+      case 'speed_test_line': return d.speed_test_line;
+      case 'speed_testing': return d.speed_testing;
+      case 'speed_test_best': return d.speed_test_best;
+      case 'speed_test_failed': return d.speed_test_failed;
+      case 'speed_test_result': return d.speed_test_result;
+      case 'speed_line_unavailable': return d.speed_line_unavailable;
       default: return key;
     }
   }
