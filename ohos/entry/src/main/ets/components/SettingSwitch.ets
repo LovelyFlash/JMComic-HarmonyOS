@@ -16,6 +16,8 @@ export struct SettingSwitch {
       Row({ space: 12 }) {
         SymbolGlyph(this.icon)
           .fontSize(24)
+          .width(24)
+          .height(24)
           .fontColor([this.themeColor])
         Text(this.title)
           .fontSize(17)
@@ -31,7 +33,7 @@ export struct SettingSwitch {
       }
       .width('100%')
       .height(52)
-      .padding({ left: 20, right: 20 })
+      .padding({ left: 16, right: 16 })
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .backgroundColor($r('app.color.bg_surface'))

@@ -28,7 +28,7 @@ export struct SettingInfoItem {
       }
       .width('100%')
       .height(52)
-      .padding({ left: 20, right: 20 })
+      .padding({ left: 52, right: 16 })
     }
     .backgroundColor($r('app.color.bg_surface'))
     .borderRadius(settingCornerRadius(this.corner))

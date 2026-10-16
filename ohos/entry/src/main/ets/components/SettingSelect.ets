@@ -9,6 +9,8 @@ export struct SettingSelect {
   @Prop options: string[] = []
   @Prop selectedIndex: number = 0
   @Prop corner: SettingCorner = SettingCorner.ALL
+  /** false = 置灰不可选（如自动切换开启时手动分流禁用，与 SettingCheckItem.interactive 语义一致） */
+  @Prop interactive: boolean = true
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   onSelect: (index: number) => void = () => {}
 
@@ -29,9 +31,11 @@ export struct SettingSelect {
 
   build() {
     ListItem() {
-      Row({ space: 8 }) {
+      Row({ space: 12 }) {
         SymbolGlyph(this.icon)
           .fontSize(24)
+          .width(24)
+          .height(24)
           .fontColor([this.themeColor])
         Text(this.title)
           .fontSize(17)
@@ -41,6 +45,7 @@ export struct SettingSelect {
         Select(this.toSelectOptions())
           .selected(this.selectedIndex)
           .value(this.selectedValue())
+          .enabled(this.interactive)
           .font({ size: 14 })
           .fontColor($r('app.color.text_secondary'))
           .selectedOptionFontColor(this.themeColor)
@@ -48,12 +53,14 @@ export struct SettingSelect {
           .menuBackgroundColor($r('app.color.bg_elevated'))
           .menuAlign(MenuAlignType.END)
           .onSelect((index: number) => {
-            this.onSelect(index);
+            if (this.interactive) {
+              this.onSelect(index);
+            }
           })
       }
       .width('100%')
       .height(52)
-      .padding({ left: 14, right: 14 })
+      .padding({ left: 16, right: 16 })
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .backgroundColor($r('app.color.bg_surface'))

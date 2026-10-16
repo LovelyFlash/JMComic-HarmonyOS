@@ -14,9 +14,11 @@ export struct SettingItem {
 
   build() {
     ListItem() {
-      Row({ space: 8 }) {
+      Row({ space: 12 }) {
         SymbolGlyph(this.icon)
           .fontSize(24)
+          .width(24)
+          .height(24)
           .fontColor([this.themeColor])
         Text(this.title)
           .fontSize(17)
@@ -37,7 +39,7 @@ export struct SettingItem {
       }
       .width('100%')
       .height(52)
-      .padding({ left: 14, right: 14 })
+      .padding({ left: 16, right: 16 })
       .onClick(() => { this.onTap(); })
     }
     .backgroundColor($r('app.color.bg_surface'))

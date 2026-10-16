@@ -16,7 +16,8 @@ export struct SettingCheckItem {
     ListItem() {
       Row({ space: 12 }) {
         Text(this.title)
-          .fontSize(16)
+          .fontSize(17)
+          .fontWeight(FontWeight.Medium)
           .fontColor(this.selected ? this.themeColor : $r('app.color.text_primary'))
           .layoutWeight(1)
           .maxLines(1)
@@ -29,7 +30,7 @@ export struct SettingCheckItem {
       }
       .width('100%')
       .height(52)
-      .padding({ left: 20, right: 20 })
+      .padding({ left: 52, right: 16 })
       .opacity(this.interactive ? 1 : 0.4)
       .onClick(() => { this.onTap(); })
     }
