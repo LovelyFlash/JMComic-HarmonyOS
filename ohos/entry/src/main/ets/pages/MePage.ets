@@ -1,6 +1,7 @@
 // pages/MePage.ets - 我的页（资料卡 + 历史 + 功能入口）
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
+import { NetworkImage } from '../components/NetworkImage';
 import { DEFAULT_THEME_COLOR, SettingsKeys } from '../common/Constants';
 import { Settings } from '../data/preferences/Settings';
 import { JmApi } from '../data/api/JmApi';
@@ -190,11 +191,7 @@ export struct MePage {
           ForEach(this.historyItems.slice(0, 10), (item: HistoryItem) => {
             ListItem() {
               Column({ space: 4 }) {
-                Image(item.coverUrl)
-                  .width(80).height(110)
-                  .objectFit(ImageFit.Cover)
-                  .borderRadius(6)
-                  .backgroundColor($r('app.color.bg_fill'))
+                NetworkImage({ url: item.coverUrl, comicId: item.id, imgWidth: 80, imgHeight: 110, imgBorderRadius: 6 })
                 Text(item.title)
                   .fontSize(11)
                   .fontColor($r('app.color.text_primary'))

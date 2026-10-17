@@ -1,10 +1,11 @@
-// components/ReaderImage.ets - 阅读器图片（本地优先 + JM 分片重组 + LRU 像素缓存 + 宽高比缓存 + 三态布局）
+// components/ReaderImage.ets - 阅读器图片（本地优先 + 持久缓存 + JM 分片重组 + LRU 像素缓存 + 宽高比缓存 + 三态布局）
 import { image } from '@kit.ImageKit';
 import { fileUri } from '@kit.CoreFileKit';
 import { Network } from '../common/Network';
 import { JmImage } from '../common/JmImage';
 import { ImgLineSpeedTest } from '../data/api/ImgLineSpeedTest';
 import { DownloadManager } from '../data/download/DownloadManager';
+import { ImageCache, ImageCacheKind } from '../data/cache/ImageCache';
 import { Logger } from '../common/Logger';
 
 const TAG = 'ReaderImage';
@@ -188,6 +189,17 @@ export class ReaderImageCache {
         }
       }
     }
+    // 持久缓存：上次读过的原图字节（仍为打乱态），解码+重组后复用，省一次网络往返
+    const diskBytes: Uint8Array | null = await ImageCache.get(url);
+    if (diskBytes !== null && diskBytes.length > 0 && JmImage.looksLikeImage(diskBytes)) {
+      try {
+        const dpm: image.PixelMap = await JmImage.decode(diskBytes, JmImage.maxEdgeForQuality(quality));
+        const dcombined: image.PixelMap = await JmImage.recombine(dpm, url);
+        return await ReaderImageCache.settle(url, quality, dcombined);
+      } catch (e) {
+        Logger.warn(TAG, `disk cache decode failed, fallback to network: ${Logger.describe(e)}`);
+      }
+    }
     const headers: Record<string, string> = JmImage.imgHeaders();
     let bytes: Uint8Array | null = await Network.getBytes(url, headers);
     if (bytes !== null && bytes.length > 0 && !JmImage.looksLikeImage(bytes)) {
@@ -216,6 +228,10 @@ export class ReaderImageCache {
       });
       return null;
     }
+    // 写穿持久缓存（打乱态原图字节 + 阅读中漫画归因，淘汰时受 pin 保护）
+    ImageCache.put(url, bytes, ImageCacheKind.PAGE, ImageCache.readingComicId).catch((e: Object) => {
+      Logger.warn(TAG, `ImageCache.put failed: ${Logger.describe(e)}`);
+    });
     const pm: image.PixelMap = await JmImage.decode(bytes, JmImage.maxEdgeForQuality(quality));
     const combined: image.PixelMap = await JmImage.recombine(pm, url);
     return await ReaderImageCache.settle(url, quality, combined);

@@ -1,6 +1,7 @@
 // pages/HistoryPage.ets - 阅读历史（可点击进入详情）- NavDestination
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
+import { NetworkImage } from '../components/NetworkImage';
 import { Database, HistoryItem } from '../data/database/Database';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
@@ -56,11 +57,7 @@ export struct HistoryPage {
               LazyForEach(this.dataSource, (item: HistoryItem) => {
                 ListItem() {
                   Row() {
-                    Image(item.coverUrl)
-                      .width(70).height(100)
-                      .objectFit(ImageFit.Cover)
-                      .borderRadius(6)
-                      .backgroundColor($r('app.color.bg_fill'))
+                    NetworkImage({ url: item.coverUrl, comicId: item.id, imgWidth: 70, imgHeight: 100, imgBorderRadius: 6 })
                     Column({ space: 8 }) {
                       Text(item.title)
                         .fontSize(15).fontWeight(FontWeight.Medium)

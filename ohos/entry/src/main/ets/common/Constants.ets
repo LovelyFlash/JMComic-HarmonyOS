@@ -46,7 +46,7 @@ export class ApiConstants {
   static readonly JM_PACKAGE_NAME = 'com.example.app';
 
   // App
-  static readonly APP_VERSION = '1.0.12';
+  static readonly APP_VERSION = '1.1.0';
   static readonly APP_NAME = 'JMComic';
 }
 
@@ -98,9 +98,12 @@ export class SettingsKeys {
   // Download settings
   static readonly SAVE_DETAIL_ON_DOWNLOAD = 'saveDetailOnDownload';
   static readonly OFFLINE_FIRST = 'offlineFirst';
-  // Cache settings（0=不限，1=200MB，2=100MB，3=50MB，见 CacheManager.GEAR_CAPS）
+  // Cache settings（0=不限，1=500MB，2=200MB，3=100MB，4=50MB，见 CACHE_GEAR_CAPS）
   static readonly CACHE_GEAR = 'cacheGear';
 }
+
+/** 缓存容量挡位上限（字节），索引 = 设置页 SettingSelect 选项：0=不限 1=500MB 2=200MB 3=100MB 4=50MB */
+export const CACHE_GEAR_CAPS: number[] = [0, 500 * 1024 * 1024, 200 * 1024 * 1024, 100 * 1024 * 1024, 50 * 1024 * 1024];
 
 /** 标签 Chip 统一规格（详情信息行 label/值、分类入口、搜索历史/热门标签共用） */
 export class ChipTokens {

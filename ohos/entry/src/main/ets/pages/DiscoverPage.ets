@@ -143,7 +143,7 @@ export struct DiscoverPage {
         Row({ space: 10 }) {
           ForEach(section.comics, (comic: Comic) => {
             Column({ space: 6 }) {
-              NetworkImage({ url: comic.coverUrl, imgWidth: 96, imgHeight: 128, imgBorderRadius: 8 })
+              NetworkImage({ url: comic.coverUrl, comicId: comic.id, imgWidth: 96, imgHeight: 128, imgBorderRadius: 8 })
                 .onClick(() => { this.gotoDetail(comic); })
               Text(comic.title)
                 .fontSize(12)
@@ -217,7 +217,7 @@ export struct DiscoverPage {
         LazyForEach(this.latestSource, (comic: Comic) => {
           ListItem() {
             Row({ space: 12 }) {
-              NetworkImage({ url: comic.coverUrl, imgWidth: 80, imgHeight: 110, imgBorderRadius: 6 })
+              NetworkImage({ url: comic.coverUrl, comicId: comic.id, imgWidth: 80, imgHeight: 110, imgBorderRadius: 6 })
               Column({ space: 6 }) {
                 Text(comic.title)
                   .fontSize(15).fontWeight(FontWeight.Medium)

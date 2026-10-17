@@ -1,6 +1,7 @@
 // pages/SearchPage.ets - 搜索页（禁漫 JM-only + 7 种排序 + maxPage 分页）- NavDestination
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
+import { NetworkImage } from '../components/NetworkImage';
 import { Comic } from '../data/model/Comic';
 import { JmApi } from '../data/api/JmApi';
 import { Settings } from '../data/preferences/Settings';
@@ -238,11 +239,7 @@ export struct SearchPage {
         LazyForEach(this.dataSource, (comic: Comic) => {
           ListItem() {
             Row({ space: 12 }) {
-              Image(comic.coverUrl)
-                .width(80).height(110)
-                .objectFit(ImageFit.Cover)
-                .borderRadius(6)
-                .backgroundColor($r('app.color.bg_fill'))
+              NetworkImage({ url: comic.coverUrl, comicId: comic.id, imgWidth: 80, imgHeight: 110, imgBorderRadius: 6 })
               Column({ space: 6 }) {
                 Text(comic.title)
                   .fontSize(15).fontWeight(FontWeight.Medium)

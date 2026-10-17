@@ -1,6 +1,7 @@
 // pages/FollowPage.ets - 追更页面 - NavDestination
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
+import { NetworkImage } from '../components/NetworkImage';
 import { ToastUtil } from '../common/ToastUtil';
 import { Database, FollowItem } from '../data/database/Database';
 import { ArrayDataSource } from '../common/ArrayDataSource';
@@ -78,10 +79,7 @@ export struct FollowPage {
             LazyForEach(this.dataSource, (item: FollowItem) => {
               ListItem() {
                 Row({ space: 12 }) {
-                  Image(item.coverUrl)
-                    .width(64).height(88).objectFit(ImageFit.Cover)
-                    .borderRadius(6)
-                    .backgroundColor($r('app.color.bg_fill'))
+                  NetworkImage({ url: item.coverUrl, comicId: item.id, imgWidth: 64, imgHeight: 88, imgBorderRadius: 6 })
                   Column({ space: 6 }) {
                     Row({ space: 6 }) {
                       Text(item.title)

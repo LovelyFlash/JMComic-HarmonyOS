@@ -36,6 +36,9 @@ const SQL_CREATE_COMIC_CACHE = `CREATE TABLE IF NOT EXISTS comic_cache (
   chaptersJson TEXT DEFAULT '', commentsJson TEXT DEFAULT '',
   commentMaxPage INTEGER DEFAULT 1, updateTime INTEGER DEFAULT 0,
   PRIMARY KEY(comicId, source))`;
+const SQL_CREATE_IMAGE_CACHE = `CREATE TABLE IF NOT EXISTS image_cache (
+  key TEXT PRIMARY KEY, url TEXT NOT NULL, comicId TEXT DEFAULT '',
+  kind INTEGER DEFAULT 0, bytes INTEGER DEFAULT 0, updateTime INTEGER DEFAULT 0)`;
 
 export enum ChapterDlStatus {
   QUEUED = 0, RUNNING = 1, PAUSED = 2, DONE = 3, FAILED = 4,
@@ -58,6 +61,7 @@ export class Database {
       await Database.store.executeSql(SQL_CREATE_COMMENTS);
       await Database.store.executeSql(SQL_CREATE_DOWNLOAD_CHAPTERS);
       await Database.store.executeSql(SQL_CREATE_COMIC_CACHE);
+      await Database.store.executeSql(SQL_CREATE_IMAGE_CACHE);
       Logger.info(TAG, 'Database initialized');
     } catch (e) {
       Logger.error(TAG, `Database init failed: ${Logger.describe(e)}`);
@@ -471,6 +475,125 @@ export class Database {
     }
   }
 
+  // --- Image Cache（图片持久缓存元数据，文件本体在 filesDir/img_cache/<key>.img） ---
+  static async upsertImageCache(row: ImageCacheRow): Promise<void> {
+    if (!Database.store) return;
+    try {
+      const bucket: relationalStore.ValuesBucket = {
+        'key': row.key, 'url': row.url, 'comicId': row.comicId,
+        'kind': row.kind, 'bytes': row.bytes, 'updateTime': row.updateTime
+      };
+      await Database.store.insert('image_cache', bucket,
+        relationalStore.ConflictResolution.ON_CONFLICT_REPLACE);
+    } catch (e) {
+      Logger.error(TAG, `upsertImageCache failed: ${Logger.describe(e)}`);
+    }
+  }
+
+  static async queryImageCache(key: string): Promise<ImageCacheRow | null> {
+    if (!Database.store) return null;
+    try {
+      const predicates = new relationalStore.RdbPredicates('image_cache');
+      predicates.equalTo('key', key);
+      const resultSet = await Database.store.query(predicates);
+      const row = new ImageCacheRow();
+      let found: boolean = false;
+      if (resultSet.goToNextRow()) {
+        row.key = resultSet.getString(resultSet.getColumnIndex('key'));
+        row.url = resultSet.getString(resultSet.getColumnIndex('url'));
+        row.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
+        row.kind = resultSet.getLong(resultSet.getColumnIndex('kind'));
+        row.bytes = resultSet.getLong(resultSet.getColumnIndex('bytes'));
+        row.updateTime = resultSet.getLong(resultSet.getColumnIndex('updateTime'));
+        found = true;
+      }
+      resultSet.close();
+      return found ? row : null;
+    } catch (e) {
+      Logger.error(TAG, `queryImageCache failed: ${Logger.describe(e)}`);
+      return null;
+    }
+  }
+
+  /** 命中后刷新最近使用时间（LRU 淘汰依据），调用方可 fire-and-forget */
+  static async touchImageCache(key: string): Promise<void> {
+    if (!Database.store) return;
+    try {
+      const predicates = new relationalStore.RdbPredicates('image_cache');
+      predicates.equalTo('key', key);
+      const bucket: relationalStore.ValuesBucket = { 'updateTime': Date.now() };
+      await Database.store.update(bucket, predicates);
+    } catch (e) {
+      Logger.error(TAG, `touchImageCache failed: ${Logger.describe(e)}`);
+    }
+  }
+
+  /** image_cache 内容总字节（SQL 聚合，不含磁盘文件系统开销） */
+  static async imageCacheBytes(): Promise<number> {
+    if (!Database.store) return 0;
+    try {
+      const sql = `SELECT IFNULL(SUM(bytes),0) AS bytes FROM image_cache`;
+      const resultSet = await Database.store.querySql(sql);
+      let bytes: number = 0;
+      if (resultSet.goToNextRow()) {
+        bytes = resultSet.getLong(resultSet.getColumnIndex('bytes'));
+      }
+      resultSet.close();
+      return bytes;
+    } catch (e) {
+      Logger.error(TAG, `imageCacheBytes failed: ${Logger.describe(e)}`);
+      return 0;
+    }
+  }
+
+  /** 按指定类型 updateTime 从旧到新返回缓存行，容量淘汰用 */
+  static async queryImageCacheLru(kind: number): Promise<ImageCacheRow[]> {
+    if (!Database.store) return [];
+    try {
+      const predicates = new relationalStore.RdbPredicates('image_cache');
+      predicates.equalTo('kind', kind);
+      predicates.orderByAsc('updateTime');
+      const resultSet = await Database.store.query(predicates);
+      const results: ImageCacheRow[] = [];
+      while (resultSet.goToNextRow()) {
+        const row = new ImageCacheRow();
+        row.key = resultSet.getString(resultSet.getColumnIndex('key'));
+        row.url = resultSet.getString(resultSet.getColumnIndex('url'));
+        row.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
+        row.kind = resultSet.getLong(resultSet.getColumnIndex('kind'));
+        row.bytes = resultSet.getLong(resultSet.getColumnIndex('bytes'));
+        row.updateTime = resultSet.getLong(resultSet.getColumnIndex('updateTime'));
+        results.push(row);
+      }
+      resultSet.close();
+      return results;
+    } catch (e) {
+      Logger.error(TAG, `queryImageCacheLru failed: ${Logger.describe(e)}`);
+      return [];
+    }
+  }
+
+  static async removeImageCache(key: string): Promise<void> {
+    if (!Database.store) return;
+    try {
+      const predicates = new relationalStore.RdbPredicates('image_cache');
+      predicates.equalTo('key', key);
+      await Database.store.delete(predicates);
+    } catch (e) {
+      Logger.error(TAG, `removeImageCache failed: ${Logger.describe(e)}`);
+    }
+  }
+
+  /** 清空图片缓存元数据（磁盘文件由 ImageCache.clear 一并删除） */
+  static async clearImageCache(): Promise<void> {
+    if (!Database.store) return;
+    try {
+      await Database.store.executeSql('DELETE FROM image_cache');
+    } catch (e) {
+      Logger.error(TAG, `clearImageCache failed: ${Logger.describe(e)}`);
+    }
+  }
+
   // --- Follows (追更) ---
   static async insertFollow(id: string, title: string, coverUrl: string, source: string): Promise<void> {
     if (!Database.store) return;
@@ -643,6 +766,16 @@ export class ComicCacheLruRow {
   comicId: string = '';
   source: string = 'jm';
   bytes: number = 0;
+}
+
+/** image_cache 行：URL→文件键（md5），kind 0=阅读页图 1=缩略图/预览 */
+export class ImageCacheRow {
+  key: string = '';
+  url: string = '';
+  comicId: string = '';
+  kind: number = 0;
+  bytes: number = 0;
+  updateTime: number = 0;
 }
 
 export class FollowItem {

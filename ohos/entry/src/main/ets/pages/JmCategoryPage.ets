@@ -1,6 +1,7 @@
 // pages/JmCategoryPage.ets - 禁漫分类漫画分页（/categories/filter + 排序）- NavDestination
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
+import { NetworkImage } from '../components/NetworkImage';
 import { Comic } from '../data/model/Comic';
 import { JmApi } from '../data/api/JmApi';
 import { ArrayDataSource } from '../common/ArrayDataSource';
@@ -135,11 +136,7 @@ export struct JmCategoryPage {
       LazyForEach(this.dataSource, (comic: Comic) => {
         ListItem() {
           Row({ space: 12 }) {
-            Image(comic.coverUrl)
-              .width(80).height(110)
-              .objectFit(ImageFit.Cover)
-              .borderRadius(6)
-              .backgroundColor($r('app.color.bg_fill'))
+            NetworkImage({ url: comic.coverUrl, comicId: comic.id, imgWidth: 80, imgHeight: 110, imgBorderRadius: 6 })
             Column({ space: 6 }) {
               Text(comic.title)
                 .fontSize(15).fontWeight(FontWeight.Medium)

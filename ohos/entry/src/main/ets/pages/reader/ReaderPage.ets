@@ -17,6 +17,7 @@ import { ReaderImage, ReaderImageCache } from '../../components/ReaderImage';
 import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingSelect } from '../../components/SettingSelect';
 import { SettingCorner } from '../../components/SettingCommon';
+import { ImageCache } from '../../data/cache/ImageCache';
 import { DEFAULT_THEME_COLOR } from '../../common/Constants';
 
 const MAX_ZOOM = 4.0;
@@ -136,6 +137,9 @@ export struct ReaderPage {
       this.chapters = p.chapters;
       this.currentChapterOrder = p.currentChapterOrder;
     }
+    // 阅读中漫画 pin：该漫画的缓存资源（页面图/封面/详情）超限淘汰时跳过
+    ImageCache.pinComic(this.comicId);
+    ImageCache.readingComicId = this.comicId;
     this.refreshDataSources();
     this.loadConfig().then(() => {
       // 等配置加载完再预取，保证按正确质量档解码
@@ -165,6 +169,11 @@ export struct ReaderPage {
 
   aboutToDisappear(): void {
     this.alive = false;
+    // 离开阅读器：解除 pin，恢复可淘汰
+    ImageCache.unpinComic(this.comicId);
+    if (ImageCache.readingComicId === this.comicId) {
+      ImageCache.readingComicId = '';
+    }
     this.flushStripSave();
     this.clearStripAnchorTimers();
     this.setKeepScreenOn(false);

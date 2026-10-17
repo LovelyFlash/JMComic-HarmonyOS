@@ -1,6 +1,7 @@
 // pages/FavoritesContent.ets - 收藏内容组件（禁漫云收藏）
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
+import { NetworkImage } from '../components/NetworkImage';
 import { ToastUtil } from '../common/ToastUtil';
 import { JmApi, JmFolder } from '../data/api/JmApi';
 import { Comic } from '../data/model/Comic';
@@ -225,11 +226,7 @@ export struct FavoritesContent {
       LazyForEach(this.cloudDataSource, (comic: Comic) => {
         ListItem() {
           Row({ space: 12 }) {
-            Image(comic.coverUrl)
-              .width(80).height(110)
-              .objectFit(ImageFit.Cover)
-              .borderRadius(6)
-              .backgroundColor($r('app.color.bg_fill'))
+            NetworkImage({ url: comic.coverUrl, comicId: comic.id, imgWidth: 80, imgHeight: 110, imgBorderRadius: 6 })
             Column({ space: 6 }) {
               Text(comic.title)
                 .fontSize(15).fontWeight(FontWeight.Medium)

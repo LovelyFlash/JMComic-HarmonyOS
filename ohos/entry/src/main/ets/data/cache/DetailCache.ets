@@ -220,7 +220,10 @@ export class DetailCache {
     const dir: string = `${DetailCache.ctx.filesDir}/${ROOT_DIR}/detail/${comicId}`;
     const path: string = `${dir}/cover`;
     try {
-      fs.mkdirSync(dir, true);
+      // mkdirSync 递归模式在目录已存在时也会抛 EEXIST，先探测再建
+      if (!fs.accessSync(dir)) {
+        fs.mkdirSync(dir, true);
+      }
       const file: fs.File = fs.openSync(path,
         fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
       try {

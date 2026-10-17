@@ -1,14 +1,16 @@
 // data/cache/CacheManager.ets - 缓存管理（占用统计 / 手动清理 / 按容量上限 LRU 淘汰）
-// 统计口径：详情缓存（comic_cache 表 + download/detail/* 封面）+ cacheDir 临时图；
-// 下载章节（download/ 下纯数字 photoId 目录）仅统计展示、永不清理；系统 Image 框架缓存不可控不计入。
+// 统计口径：图片持久缓存（image_cache 表 + img_cache/*）+ 详情缓存（comic_cache 表 + download/detail/* 封面）
+// + cacheDir 临时图；下载章节（download/ 下纯数字 photoId 目录）仅统计展示、永不清理。
+// 淘汰优先级：阅读页图 → 详情缓存 → 缩略图（缩略图最后淘汰）；阅读中漫画（pin）资源永不淘汰。
 import { common } from '@kit.AbilityKit';
 import fs from '@ohos.file.fs';
 import { ComicCacheLruRow, Database } from '../database/Database';
 import { DetailCache } from './DetailCache';
+import { ImageCache, ImageCacheKind } from './ImageCache';
 import { Network } from '../../common/Network';
 import { ReaderImageCache } from '../../components/ReaderImage';
 import { Settings } from '../preferences/Settings';
-import { SettingsKeys } from '../../common/Constants';
+import { CACHE_GEAR_CAPS, SettingsKeys } from '../../common/Constants';
 import { Logger } from '../../common/Logger';
 
 const TAG = 'CacheManager';
@@ -18,13 +20,14 @@ const DOWNLOAD_ROOT = 'download';
 const DETAIL_SUBDIR = 'detail';
 
 export class CacheManager {
-  /** 容量挡位上限（字节），索引 = 设置页 SettingSelect 选项：0=不限 1=200MB 2=100MB 3=50MB */
-  static readonly GEAR_CAPS: number[] = [0, 500 * 1024 * 1024, 200 * 1024 * 1024, 100 * 1024 * 1024, 50 * 1024 * 1024];
+  /** 容量挡位上限（字节），索引 = 设置页 SettingSelect 选项：0=不限 1=500MB 2=200MB 3=100MB 4=50MB */
+  static readonly GEAR_CAPS: number[] = CACHE_GEAR_CAPS;
 
   private static ctx: common.UIAbilityContext | null = null;
 
   static init(context: common.UIAbilityContext): void {
     CacheManager.ctx = context;
+    ImageCache.init(context);
   }
 
   static gearCapBytes(gear: number): number {
@@ -43,9 +46,10 @@ export class CacheManager {
     await Settings.putNumber(SettingsKeys.CACHE_GEAR, gear);
   }
 
-  /** 缓存占用：comic_cache 表 + download/detail/* 封面 + cacheDir 临时图 */
+  /** 缓存占用：图片持久缓存 + comic_cache 表 + download/detail/* 封面 + cacheDir 临时图 */
   static async statCache(): Promise<number> {
-    let bytes: number = await Database.comicCacheBytes();
+    let bytes: number = await ImageCache.totalBytes();
+    bytes += await Database.comicCacheBytes();
     bytes += CacheManager.walkBytes(CacheManager.pathOf(`${DOWNLOAD_ROOT}/${DETAIL_SUBDIR}`));
     bytes += CacheManager.statTempBytes();
     return bytes;
@@ -76,10 +80,11 @@ export class CacheManager {
   }
 
   /**
-   * 手动清理：详情缓存（DB 行 + 封面目录）+ 临时图 + 网络/阅读器内存缓存。
+   * 手动清理：图片持久缓存 + 详情缓存（DB 行 + 封面目录）+ 临时图 + 网络/阅读器内存缓存。
    * 不动：下载章节、历史、追更、本地评论、登录态等用户数据。
    */
   static async clearAll(): Promise<void> {
+    await ImageCache.clear();
     await Database.clearComicCache();
     const detailDir: string = CacheManager.pathOf(`${DOWNLOAD_ROOT}/${DETAIL_SUBDIR}`);
     try {
@@ -92,10 +97,10 @@ export class CacheManager {
     CacheManager.clearTemp();
     Network.clearCache();
     ReaderImageCache.clearAll();
-    Logger.info(TAG, 'cache cleared (db+cover+temp+memory)');
+    Logger.info(TAG, 'cache cleared (img+db+cover+temp+memory)');
   }
 
-  /** 超上限淘汰：按 updateTime 从旧到新删详情缓存（DB 行+封面目录），降到上限的 90%；挡位 0=不限 */
+  /** 超上限淘汰：阅读页图→详情缓存→缩略图 分阶段从旧到新删，降到上限的 90%；挡位 0=不限；阅读中漫画跳过 */
   static async evictToGear(): Promise<void> {
     try {
       const gear: number = await CacheManager.getGear();
@@ -108,15 +113,23 @@ export class CacheManager {
         return;
       }
       const target: number = Math.floor(cap * 0.9);
-      const rows: ComicCacheLruRow[] = await Database.queryComicCacheLru();
       let need: number = bytes - target;
+      // 阶段一：阅读页图最先淘汰（量大、可再生）
+      need -= await ImageCache.evictKind(ImageCacheKind.PAGE, need);
+      // 阶段二：详情缓存（按 updateTime 从旧到新，阅读中漫画跳过）
+      const rows: ComicCacheLruRow[] = await Database.queryComicCacheLru();
       let removed: number = 0;
       for (let i = 0; i < rows.length && need > 0; i++) {
+        if (ImageCache.isPinned(rows[i].comicId)) {
+          continue;
+        }
         await DetailCache.remove(rows[i].comicId, rows[i].source);
         need -= rows[i].bytes;
         removed++;
       }
-      Logger.info(TAG, `evict gear=${gear} size=${bytes}->cap=${cap} removed=${removed} rows`);
+      // 阶段三：缩略图/预览最后淘汰（保存优先级最高）
+      need -= await ImageCache.evictKind(ImageCacheKind.THUMB, need);
+      Logger.info(TAG, `evict gear=${gear} size=${bytes}->cap=${cap} detailRows=${removed} remainNeed=${need}`);
     } catch (e) {
       Logger.warn(TAG, `evictToGear failed: ${Logger.describe(e)}`);
     }

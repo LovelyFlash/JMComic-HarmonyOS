@@ -648,7 +648,7 @@ export struct ComicDetailPage {
         Row({ space: 10 }) {
           ForEach(this.comic.relatedComics, (c: Comic) => {
             Column({ space: 6 }) {
-              NetworkImage({ url: c.coverUrl, imgWidth: 104, imgHeight: 146, imgBorderRadius: 8 })
+              NetworkImage({ url: c.coverUrl, comicId: c.id, imgWidth: 104, imgHeight: 146, imgBorderRadius: 8 })
               Text(c.title)
                 .fontSize(12).fontColor($r('app.color.text_primary'))
                 .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })

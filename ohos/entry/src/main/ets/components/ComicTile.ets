@@ -11,7 +11,7 @@ export struct ComicTile {
 
   build() {
     Row() {
-      NetworkImage({ url: this.comic.coverUrl, imgWidth: 90, imgHeight: 120, imgBorderRadius: 6 })
+      NetworkImage({ url: this.comic.coverUrl, comicId: this.comic.id, imgWidth: 90, imgHeight: 120, imgBorderRadius: 6 })
       Column({ space: 8 }) {
         Text(this.comic.title)
           .fontSize(15).fontWeight(FontWeight.Medium).maxLines(2)

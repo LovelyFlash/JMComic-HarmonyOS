@@ -39,7 +39,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 | 项目 | 说明 |
 |------|------|
 | 包名 | `com.jmcomic.harmony` |
-| 当前版本 | 1.0.12（versionCode 13） |
+| 当前版本 | 1.1.0（versionCode 14） |
 | 目标 API | 26（HarmonyOS NEXT） |
 | 开发语言 / UI 框架 | ArkTS / ArkUI 声明式（Stage 模型，单 `entry` HAP 模块） |
 | 设备类型 | phone / tablet / 2in1 |
@@ -60,7 +60,8 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 - 章节真实下载：选章下载、暂停 / 继续 / 重试与页级进度，后台长时任务，删除记录自动清理文件
 - 离线阅读：图片列表随下载持久化，断网可读已下载章节；图片本地优先、网络回退
 - 详情本地秒开：下载时自动缓存详情 / 封面 / 首页评论（可关），支持「离线优先」跳过联网刷新
-- 缓存管理：缓存 / 下载占用展示，缓存上限挡位（不限 / 500 MB / 200 MB / 100 MB / 50 MB）超限按最近使用自动淘汰，清理缓存带确认与释放量提示
+- 图片持久缓存：封面/缩略图与阅读页图统一先走本地缓存再加载网络，缓存常驻，仅超容量挡位上限时按最近使用时间淘汰（阅读页图先淘汰、缩略图最后淘汰），阅读中漫画资源受保护不受淘汰影响
+- 缓存管理：缓存 / 下载占用展示，缓存上限挡位（不限 / 500 MB / 200 MB / 100 MB / 50 MB），清理缓存带确认与释放量提示
 
 **在线阅读**
 - 六种阅读模式：从左至右 / 从右至左 / 从上至下 / 连续滚动 / 双页 / 双页反向
@@ -168,7 +169,7 @@ JMComic-HarmonyOS/
                 │   ├── api/           -- JmApi.ets：禁漫 API 客户端
                 │   ├── database/      -- Database.ets：SQLite 封装
                 │   ├── download/      -- DownloadManager.ets：章节下载队列（后台任务/进度/离线页列表）
-                │   ├── cache/         -- DetailCache.ets：已下载详情/封面/评论本地缓存
+                │   ├── cache/         -- ImageCache.ets：图片持久缓存（先缓存后网络）；DetailCache.ets：已下载详情/封面/评论本地缓存；CacheManager.ets：占用统计/挡位淘汰/清理
                 │   ├── preferences/   -- Settings.ets：键值存储封装
                 │   └── model/         -- Chapter / Comic / ComicPageData / Comment / ReaderParam
                 ├── viewmodel/         -- AppData.ets：全局状态
@@ -263,7 +264,7 @@ URL → Network.getBytes(http 栈) → 魔数嗅探(looksLikeImage)
 
 ### 7. Database / Settings —— 持久化
 
-- SQLite `pica_comic.db`（S1）5 张表：`history`（阅读进度）、`favorites`（收藏）、`downloads`（下载记录）、`follows`（追更）、`comments`（评论缓存），`Database.init` 后 `CREATE TABLE IF NOT EXISTS`。
+- SQLite `pica_comic.db`（S1）7 张表：`history`（阅读进度）、`downloads`（下载记录）、`follows`（追更）、`comments`（评论缓存）、`download_chapters`（下载章节）、`comic_cache`（详情缓存）、`image_cache`（图片持久缓存元数据），`Database.init` 后 `CREATE TABLE IF NOT EXISTS`。
 - `Settings.ets` 封装 preferences：深色 / 主题色 / 语言 / 阅读相关 / JM 域名与账号等键值（`SettingsKeys` 统一定义）。
 
 ### 8. ThemeManager 与国际化
@@ -340,8 +341,8 @@ NavUtil.push('comicDetail', { comicId, title, source })
 ```json5
 {
   bundleName: "com.jmcomic.harmony",
-  versionCode: 13,
-  versionName: "1.0.12",
+  versionCode: 14,
+  versionName: "1.1.0",
   targetAPIVersion: 26
 }
 ```
