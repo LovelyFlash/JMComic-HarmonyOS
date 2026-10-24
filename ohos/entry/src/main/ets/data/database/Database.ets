@@ -35,6 +35,7 @@ const SQL_CREATE_COMIC_CACHE = `CREATE TABLE IF NOT EXISTS comic_cache (
   categoriesJson TEXT DEFAULT '', likes INTEGER DEFAULT 0, commentCount INTEGER DEFAULT 0,
   chaptersJson TEXT DEFAULT '', commentsJson TEXT DEFAULT '',
   commentMaxPage INTEGER DEFAULT 1, updateTime INTEGER DEFAULT 0,
+  relatedJson TEXT DEFAULT '',
   PRIMARY KEY(comicId, source))`;
 const SQL_CREATE_IMAGE_CACHE = `CREATE TABLE IF NOT EXISTS image_cache (
   key TEXT PRIMARY KEY, url TEXT NOT NULL, comicId TEXT DEFAULT '',
@@ -61,6 +62,7 @@ export class Database {
       await Database.store.executeSql(SQL_CREATE_COMMENTS);
       await Database.store.executeSql(SQL_CREATE_DOWNLOAD_CHAPTERS);
       await Database.store.executeSql(SQL_CREATE_COMIC_CACHE);
+      await Database.migrateComicCacheRelated();
       await Database.store.executeSql(SQL_CREATE_IMAGE_CACHE);
       Logger.info(TAG, 'Database initialized');
     } catch (e) {
@@ -215,14 +217,7 @@ export class Database {
         ['id', 'title', 'coverUrl', 'source', 'downloadPath', 'downloadTime']);
       const results: DownloadItem[] = [];
       while (resultSet.goToNextRow()) {
-        const item = new DownloadItem();
-        item.id = resultSet.getString(resultSet.getColumnIndex('id'));
-        item.title = resultSet.getString(resultSet.getColumnIndex('title'));
-        item.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
-        item.source = resultSet.getString(resultSet.getColumnIndex('source'));
-        item.downloadPath = resultSet.getString(resultSet.getColumnIndex('downloadPath'));
-        item.downloadTime = resultSet.getLong(resultSet.getColumnIndex('downloadTime'));
-        results.push(item);
+        results.push(Database.rowToDownloadItem(resultSet));
       }
       resultSet.close();
       return results;
@@ -230,6 +225,35 @@ export class Database {
       Logger.error(TAG, `queryDownloads failed: ${Logger.describe(e)}`);
       return [];
     }
+  }
+
+  /** 单个下载条目（详情页离线兜底用；不存在返回 null） */
+  static async queryDownload(id: string, source: string): Promise<DownloadItem | null> {
+    if (!Database.store) return null;
+    try {
+      const predicates = new relationalStore.RdbPredicates('downloads');
+      predicates.equalTo('id', id).equalTo('source', source);
+      const resultSet = await Database.store.query(predicates,
+        ['id', 'title', 'coverUrl', 'source', 'downloadPath', 'downloadTime']);
+      const item: DownloadItem | null = resultSet.goToNextRow() ?
+        Database.rowToDownloadItem(resultSet) : null;
+      resultSet.close();
+      return item;
+    } catch (e) {
+      Logger.error(TAG, `queryDownload failed: ${Logger.describe(e)}`);
+      return null;
+    }
+  }
+
+  private static rowToDownloadItem(resultSet: relationalStore.ResultSet): DownloadItem {
+    const item = new DownloadItem();
+    item.id = resultSet.getString(resultSet.getColumnIndex('id'));
+    item.title = resultSet.getString(resultSet.getColumnIndex('title'));
+    item.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
+    item.source = resultSet.getString(resultSet.getColumnIndex('source'));
+    item.downloadPath = resultSet.getString(resultSet.getColumnIndex('downloadPath'));
+    item.downloadTime = resultSet.getLong(resultSet.getColumnIndex('downloadTime'));
+    return item;
   }
 
   // --- Download chapters (章节下载任务) ---
@@ -358,56 +382,129 @@ export class Database {
   }
 
   // --- Comic detail cache (已下载漫画的详情/评论缓存) ---
+
+  /** comic_cache 增列迁移（幂等）：ALTER 补列 → 探测列真实存在 → 缺失则重建表兜底（详情缓存可再生） */
+  private static async migrateComicCacheRelated(): Promise<void> {
+    if (!Database.store) return;
+    try {
+      await Database.store.executeSql(
+        `ALTER TABLE comic_cache ADD COLUMN relatedJson TEXT DEFAULT ''`);
+    } catch (e) {
+      // 列已存在（新库自带/重复迁移）或驱动不支持 ALTER，下方统一探测
+    }
+    try {
+      const rs = await Database.store.querySql(`SELECT relatedJson FROM comic_cache LIMIT 1`);
+      rs.close();
+      return;
+    } catch (e) {
+      Logger.warn(TAG, `relatedJson missing after alter, recreate table: ${Logger.describe(e)}`);
+    }
+    try {
+      await Database.store.executeSql(
+        `CREATE TABLE comic_cache_new (comicId TEXT NOT NULL, source TEXT NOT NULL, title TEXT DEFAULT '',` +
+        ` coverUrl TEXT DEFAULT '', description TEXT DEFAULT '', author TEXT DEFAULT '',` +
+        ` categoriesJson TEXT DEFAULT '', likes INTEGER DEFAULT 0, commentCount INTEGER DEFAULT 0,` +
+        ` chaptersJson TEXT DEFAULT '', commentsJson TEXT DEFAULT '',` +
+        ` commentMaxPage INTEGER DEFAULT 1, updateTime INTEGER DEFAULT 0, relatedJson TEXT DEFAULT '',` +
+        ` PRIMARY KEY(comicId, source))`);
+      await Database.store.executeSql(
+        `INSERT INTO comic_cache_new (comicId, source, title, coverUrl, description, author,` +
+        ` categoriesJson, likes, commentCount, chaptersJson, commentsJson, commentMaxPage, updateTime)` +
+        ` SELECT comicId, source, title, coverUrl, description, author, categoriesJson, likes,` +
+        ` commentCount, chaptersJson, commentsJson, commentMaxPage, updateTime FROM comic_cache`);
+      await Database.store.executeSql(`DROP TABLE comic_cache`);
+      await Database.store.executeSql(`ALTER TABLE comic_cache_new RENAME TO comic_cache`);
+      Logger.info(TAG, 'comic_cache recreated with relatedJson');
+    } catch (e) {
+      Logger.error(TAG, `comic_cache recreate failed: ${Logger.describe(e)}`);
+    }
+  }
+
   static async upsertComicCache(row: ComicCacheRow): Promise<void> {
     if (!Database.store) return;
     try {
-      const bucket: relationalStore.ValuesBucket = {
-        'comicId': row.comicId, 'source': row.source, 'title': row.title,
-        'coverUrl': row.coverUrl, 'description': row.description, 'author': row.author,
-        'categoriesJson': row.categoriesJson, 'likes': row.likes,
-        'commentCount': row.commentCount, 'chaptersJson': row.chaptersJson,
-        'commentsJson': row.commentsJson, 'commentMaxPage': row.commentMaxPage,
-        'updateTime': Date.now()
-      };
+      const bucket: relationalStore.ValuesBucket = Database.comicCacheBucket(row, true);
       await Database.store.insert('comic_cache', bucket,
         relationalStore.ConflictResolution.ON_CONFLICT_REPLACE);
     } catch (e) {
-      Logger.error(TAG, `upsertComicCache failed: ${Logger.describe(e)}`);
+      // relatedJson 列缺失（ALTER 迁移未生效）时降级写旧列，保住详情缓存主功能
+      try {
+        const legacy: relationalStore.ValuesBucket = Database.comicCacheBucket(row, false);
+        await Database.store.insert('comic_cache', legacy,
+          relationalStore.ConflictResolution.ON_CONFLICT_REPLACE);
+        Logger.warn(TAG, `upsertComicCache legacy path (relatedJson column missing)`);
+      } catch (e2) {
+        Logger.error(TAG, `upsertComicCache failed: ${Logger.describe(e2)}`);
+      }
     }
+  }
+
+  private static comicCacheBucket(row: ComicCacheRow, withRelated: boolean):
+    relationalStore.ValuesBucket {
+    const bucket: relationalStore.ValuesBucket = {
+      'comicId': row.comicId, 'source': row.source, 'title': row.title,
+      'coverUrl': row.coverUrl, 'description': row.description, 'author': row.author,
+      'categoriesJson': row.categoriesJson, 'likes': row.likes,
+      'commentCount': row.commentCount, 'chaptersJson': row.chaptersJson,
+      'commentsJson': row.commentsJson, 'commentMaxPage': row.commentMaxPage,
+      'updateTime': Date.now()
+    };
+    if (withRelated) {
+      bucket['relatedJson'] = row.relatedJson;
+    }
+    return bucket;
   }
 
   static async queryComicCache(comicId: string, source: string): Promise<ComicCacheRow | null> {
     if (!Database.store) return null;
     try {
-      const predicates = new relationalStore.RdbPredicates('comic_cache');
-      predicates.equalTo('comicId', comicId).equalTo('source', source);
-      const resultSet = await Database.store.query(predicates,
-        ['comicId', 'source', 'title', 'coverUrl', 'description', 'author',
-          'categoriesJson', 'likes', 'commentCount', 'chaptersJson', 'commentsJson',
-          'commentMaxPage', 'updateTime']);
-      let row: ComicCacheRow | null = null;
-      if (resultSet.goToNextRow()) {
-        row = new ComicCacheRow();
-        row.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
-        row.source = resultSet.getString(resultSet.getColumnIndex('source'));
-        row.title = resultSet.getString(resultSet.getColumnIndex('title'));
-        row.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
-        row.description = resultSet.getString(resultSet.getColumnIndex('description'));
-        row.author = resultSet.getString(resultSet.getColumnIndex('author'));
-        row.categoriesJson = resultSet.getString(resultSet.getColumnIndex('categoriesJson'));
-        row.likes = resultSet.getLong(resultSet.getColumnIndex('likes'));
-        row.commentCount = resultSet.getLong(resultSet.getColumnIndex('commentCount'));
-        row.chaptersJson = resultSet.getString(resultSet.getColumnIndex('chaptersJson'));
-        row.commentsJson = resultSet.getString(resultSet.getColumnIndex('commentsJson'));
-        row.commentMaxPage = resultSet.getLong(resultSet.getColumnIndex('commentMaxPage'));
-        row.updateTime = resultSet.getLong(resultSet.getColumnIndex('updateTime'));
-      }
-      resultSet.close();
-      return row;
+      return await Database.queryComicCacheCols(comicId, source, true);
     } catch (e) {
-      Logger.error(TAG, `queryComicCache failed: ${Logger.describe(e)}`);
-      return null;
+      // relatedJson 列缺失（ALTER 迁移未生效）时降级按旧列查，保住离线详情入口
+      Logger.error(TAG, `queryComicCache retry legacy: ${Logger.describe(e)}`);
+      try {
+        return await Database.queryComicCacheCols(comicId, source, false);
+      } catch (e2) {
+        Logger.error(TAG, `queryComicCache failed: ${Logger.describe(e2)}`);
+        return null;
+      }
     }
+  }
+
+  private static async queryComicCacheCols(comicId: string, source: string,
+    withRelated: boolean): Promise<ComicCacheRow | null> {
+    if (!Database.store) return null;
+    const predicates = new relationalStore.RdbPredicates('comic_cache');
+    predicates.equalTo('comicId', comicId).equalTo('source', source);
+    const columns: string[] = ['comicId', 'source', 'title', 'coverUrl', 'description',
+      'author', 'categoriesJson', 'likes', 'commentCount', 'chaptersJson', 'commentsJson',
+      'commentMaxPage', 'updateTime'];
+    if (withRelated) {
+      columns.push('relatedJson');
+    }
+    const resultSet = await Database.store.query(predicates, columns);
+    let row: ComicCacheRow | null = null;
+    if (resultSet.goToNextRow()) {
+      row = new ComicCacheRow();
+      row.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
+      row.source = resultSet.getString(resultSet.getColumnIndex('source'));
+      row.title = resultSet.getString(resultSet.getColumnIndex('title'));
+      row.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
+      row.description = resultSet.getString(resultSet.getColumnIndex('description'));
+      row.author = resultSet.getString(resultSet.getColumnIndex('author'));
+      row.categoriesJson = resultSet.getString(resultSet.getColumnIndex('categoriesJson'));
+      row.likes = resultSet.getLong(resultSet.getColumnIndex('likes'));
+      row.commentCount = resultSet.getLong(resultSet.getColumnIndex('commentCount'));
+      row.chaptersJson = resultSet.getString(resultSet.getColumnIndex('chaptersJson'));
+      row.commentsJson = resultSet.getString(resultSet.getColumnIndex('commentsJson'));
+      row.commentMaxPage = resultSet.getLong(resultSet.getColumnIndex('commentMaxPage'));
+      if (withRelated) {
+        row.relatedJson = resultSet.getString(resultSet.getColumnIndex('relatedJson'));
+      }
+      row.updateTime = resultSet.getLong(resultSet.getColumnIndex('updateTime'));
+    }
+    resultSet.close();
+    return row;
   }
 
   static async removeComicCache(comicId: string, source: string): Promise<void> {
@@ -426,7 +523,8 @@ export class Database {
     if (!Database.store) return 0;
     try {
       const sql = `SELECT IFNULL(SUM(LENGTH(title)+LENGTH(coverUrl)+LENGTH(description)` +
-        `+LENGTH(author)+LENGTH(categoriesJson)+LENGTH(chaptersJson)+LENGTH(commentsJson)),0) AS bytes` +
+        `+LENGTH(author)+LENGTH(categoriesJson)+LENGTH(chaptersJson)+LENGTH(commentsJson)` +
+        `+LENGTH(relatedJson)),0) AS bytes` +
         ` FROM comic_cache`;
       const resultSet = await Database.store.querySql(sql);
       let bytes: number = 0;
@@ -446,7 +544,8 @@ export class Database {
     if (!Database.store) return [];
     try {
       const sql = `SELECT comicId, source, LENGTH(title)+LENGTH(coverUrl)+LENGTH(description)` +
-        `+LENGTH(author)+LENGTH(categoriesJson)+LENGTH(chaptersJson)+LENGTH(commentsJson) AS bytes` +
+        `+LENGTH(author)+LENGTH(categoriesJson)+LENGTH(chaptersJson)+LENGTH(commentsJson)` +
+        `+LENGTH(relatedJson) AS bytes` +
         ` FROM comic_cache ORDER BY updateTime ASC`;
       const resultSet = await Database.store.querySql(sql);
       const results: ComicCacheLruRow[] = [];
@@ -758,6 +857,7 @@ export class ComicCacheRow {
   chaptersJson: string = '';
   commentsJson: string = '';
   commentMaxPage: number = 1;
+  relatedJson: string = '';
   updateTime: number = 0;
 }
 

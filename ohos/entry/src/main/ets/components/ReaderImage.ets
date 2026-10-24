@@ -22,10 +22,17 @@ export class ReaderImageCache {
   private static readonly RATIO_CAP: number = 1200;
   /** 进行中的加载（同一 URL 同一质量只下载解码一次） */
   private static inflight: Map<string, Promise<image.PixelMap | null>> = new Map();
-  /** 并发限流：全章同时加载会拖垮主线程与带宽，队列 FIFO 最多同时跑 MAX_CONCURRENT 个 */
+  /** 并发限流：最多同时跑 MAX_CONCURRENT 个；后台预取最多占 MAX_BG_CONCURRENT 个，始终留 ≥1 槽给可见页 */
   private static readonly MAX_CONCURRENT: number = 3;
+  private static readonly MAX_BG_CONCURRENT: number = 2;
+  /** 单任务看门狗（兜底）：超时按失败收尾，保证槽位与 inflight 必被释放，队列永不永久卡死 */
+  private static readonly TASK_TIMEOUT: number = 120 * 1000;
   private static running: number = 0;
+  private static runningBg: number = 0;
+  /** 后台预取队列（FIFO，仅在可见页队列为空时消费） */
   private static pending: Array<() => void> = [];
+  /** 可见页队列（优先消费，防止预取/网络挂起堵死当前页） */
+  private static pendingPriority: Array<() => void> = [];
   /** 像素缓存对应的质量档位，切换质量后整体失效 */
   private static pixelQuality: number = -1;
 
@@ -104,7 +111,8 @@ export class ReaderImageCache {
 
   /**
    * 共享加载：下载 + 按质量降采样解码 + 反打乱重组 + 写缓存；失败返回 null（永不 reject）。
-   * 队列限流 MAX_CONCURRENT 个并发；priority=true 插到队首（可见页），预取入队尾顺序消化。
+   * 双队列限流：可见页（priority）优先消费，预取最多占 MAX_BG_CONCURRENT 槽（留 ≥1 槽给可见页）；
+   * 每任务带看门狗超时，任何挂起都以失败收尾 → 槽位/inflight 必被释放，队列永不永久卡死。
    */
   static loadPixelMap(url: string, quality: number, ui: UIContext, priority: boolean = false):
     Promise<image.PixelMap | null> {
@@ -119,14 +127,34 @@ export class ReaderImageCache {
       settle = resolve;
     });
     ReaderImageCache.inflight.set(key, task);
+    const isBg: boolean = !priority;
     const start = (): void => {
       ReaderImageCache.running++;
+      if (isBg) {
+        ReaderImageCache.runningBg++;
+      }
+      let finished: boolean = false;
+      let timer: number = -1;
       const done = (pm: image.PixelMap | null): void => {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        if (timer >= 0) {
+          clearTimeout(timer);
+        }
         ReaderImageCache.running--;
+        if (isBg) {
+          ReaderImageCache.runningBg--;
+        }
         ReaderImageCache.inflight.delete(key);
         ReaderImageCache.runNext();
         settle(pm);
       };
+      timer = setTimeout(() => {
+        Logger.warn(TAG, `load watchdog timeout (${ReaderImageCache.TASK_TIMEOUT}ms): ${url}`);
+        done(null);
+      }, ReaderImageCache.TASK_TIMEOUT);
       ReaderImageCache.doLoad(url, quality, ui).then(
         (pm: image.PixelMap | null) => {
           done(pm);
@@ -138,7 +166,7 @@ export class ReaderImageCache {
       );
     };
     if (priority) {
-      ReaderImageCache.pending.unshift(start);
+      ReaderImageCache.pendingPriority.unshift(start);
     } else {
       ReaderImageCache.pending.push(start);
     }
@@ -146,13 +174,26 @@ export class ReaderImageCache {
     return task;
   }
 
-  /** 队列调度：并发未满时按 FIFO 启动下一个任务 */
+  /** 队列调度：可见页队列优先；预取仅在可见页排队为空且其并发未超限时消费 */
   private static runNext(): void {
-    while (ReaderImageCache.running < ReaderImageCache.MAX_CONCURRENT && ReaderImageCache.pending.length > 0) {
-      const next: (() => void) | undefined = ReaderImageCache.pending.shift();
-      if (next !== undefined) {
-        next();
+    while (ReaderImageCache.running < ReaderImageCache.MAX_CONCURRENT) {
+      if (ReaderImageCache.pendingPriority.length > 0) {
+        const nextPriority: (() => void) | undefined = ReaderImageCache.pendingPriority.shift();
+        if (nextPriority !== undefined) {
+          nextPriority();
+          continue;
+        }
       }
+      if (ReaderImageCache.pendingPriority.length === 0 &&
+        ReaderImageCache.runningBg < ReaderImageCache.MAX_BG_CONCURRENT &&
+        ReaderImageCache.pending.length > 0) {
+        const nextBg: (() => void) | undefined = ReaderImageCache.pending.shift();
+        if (nextBg !== undefined) {
+          nextBg();
+          continue;
+        }
+      }
+      break;
     }
   }
 

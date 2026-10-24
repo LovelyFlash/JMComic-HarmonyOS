@@ -6,9 +6,10 @@
 单漫画源（JM），包名 `com.jmcomic.harmony`，无第三方依赖。
 
 **当前状态**：
-- master = **v1.1.0**（versionCode 14，2026-10-17，已提交待发版）；GitHub 最新 Release 仍为 `releases/tag/v1.0.12`
+- master = **v1.1.1**（versionCode 15，2026-10-24）；GitHub 最新 Release 为 `releases/tag/v1.1.1`
 - 版本三处需同步：`AppScope/app.json5`（versionCode/versionName）、`Constants.APP_VERSION`（关于页/设置页动态显示）、`Changelog.ets`（应用内更新日志，倒序新增条目）
 - `feature/compat-sdk20` 分支：`compatibleSdkVersion` 降至 `6.0.0(20)` + 新 API 版本守卫与低版本降级（0 编译兼容告警，真机冒烟通过），**已推送、暂未合并且暂不发版**
+- v1.1.1 落地的主线能力：阅读页图片永久转圈修复（getBytesViaDownload 30s 超时防重入 + ReaderImageCache 双队列可见页优先/看门狗/防重入）、离线详情页完整可用（comic_cache 增列 relatedJson 幂等迁移与查询降级、浏览即缓存 updateComic 无行建行、localDetail 用 downloads 表拼最小详情、离线优先缺相关推荐时后台静默补）、相关推荐离线过滤（applyRelated 本地渲染仅显示 hasCoverCache 命中条目、无命中整栏隐藏、联网时 refreshDetail 后台预取前 10 张封面）、封面链补已下载优先（doGetCover 先 readLocalCover）
 - v1.1.0 落地的主线能力：图片持久缓存机制重做（ImageCache：URL→磁盘 `img_cache/<md5>.img` + `image_cache` 表元数据；封面走内存像素 LRU→磁盘→双网络栈写穿，阅读页图下载即落盘、二次阅读免网络；缓存常驻仅超挡位上限时淘汰，页图→详情→缩略图分阶段、同类型按 updateTime 从旧到新、阅读中漫画 pin 保护；NetworkImage 缓存优先，历史/关注/搜索/收藏/分类/每周/推荐/我的 8 处直连 Image 封面全部接入；修复 mkdirSync 目录已存在抛 EEXIST 导致缓存写入失败）
 - v1.0.12 落地的主线能力：首页历史缩略图即时刷新（historyChanged 广播 + @Watch 重载，四写点 bump）、容量挡位缓存管理（CacheManager：SQL 聚合占用统计 / 上限挡位 LRU 淘汰至 90% / 清理弹窗与释放量提示）、图片线路测速与自动切换（ImgLineSpeedTest：启动 24h 保鲜 + 阅读失败 1h 冷却兜底 + 手动测速结果弹窗展示全部节点速度）、设置页图标与文字位置统一对齐（图标列 x16 / 标题列 x52 / 字号 17 Medium）
 - v1.0.11 落地的主线能力：详情页收藏星标修复（同节点双 bindSheet 冲突合并为单 sheet 复用）、收藏流程完善（防重入/请求验证/加载态/结果弹窗可重试）、点赞与服务器同步（/like 响应解析 + 本地点赞记录持久化，重启红心保持）、收藏页移除本地收藏仅留禁漫云收藏、云收藏下滑重复加载修复（maxPage 首页估算 + id 去重）

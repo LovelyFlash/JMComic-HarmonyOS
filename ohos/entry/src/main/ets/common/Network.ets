@@ -6,6 +6,8 @@ import { common } from '@kit.AbilityKit';
 import { Logger } from './Logger';
 
 const TAG = 'Network';
+/** 下载栈事件等待上限：complete/fail 事件丢失（注册竞态/服务挂起）时按失败收尾，避免调用方槽位被永久占死 */
+const DOWNLOAD_TIMEOUT_MS: number = 30 * 1000;
 
 class CacheEntry {
   data: string = '';
@@ -266,6 +268,28 @@ export class Network {
       return null;
     }
     return await new Promise<Uint8Array | null>((resolve: (value: Uint8Array | null) => void) => {
+      let settled: boolean = false;
+      let timer: number = -1;
+      const finish: (value: Uint8Array | null) => void = (value: Uint8Array | null) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        if (timer >= 0) {
+          clearTimeout(timer);
+        }
+        resolve(value);
+      };
+      timer = setTimeout(() => {
+        Logger.warn(TAG, `download event timeout (${DOWNLOAD_TIMEOUT_MS}ms): ${url}`);
+        try {
+          task!.delete().catch(() => {
+          });
+        } catch (e) {
+          Logger.debug(TAG, `delete timed-out task failed: ${Logger.describe(e)}`);
+        }
+        finish(null);
+      }, DOWNLOAD_TIMEOUT_MS);
       task!.on('complete', () => {
         try {
           const stat: fs.Stat = fs.statSync(filePath);
@@ -278,7 +302,7 @@ export class Network {
           } catch (e) {
             Logger.debug(TAG, `unlink temp file failed: ${Logger.describe(e)}`);
           }
-          resolve(new Uint8Array(buf));
+          finish(new Uint8Array(buf));
         } catch (e) {
           Logger.error(TAG, `read downloaded file failed: ${Logger.describe(e)}`);
           try {
@@ -286,7 +310,7 @@ export class Network {
           } catch (e2) {
             Logger.debug(TAG, `unlink temp file failed: ${String(e2)}`);
           }
-          resolve(null);
+          finish(null);
         }
       });
       task!.on('fail', (err: number) => {
@@ -298,7 +322,7 @@ export class Network {
         }
         task!.delete().catch(() => {
         });
-        resolve(null);
+        finish(null);
       });
     });
   }

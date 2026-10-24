@@ -4,7 +4,7 @@ import fs from '@ohos.file.fs';
 import { Chapter } from '../model/Chapter';
 import { Comic } from '../model/Comic';
 import { JmApi, JmComment, JmCommentPage } from '../api/JmApi';
-import { ComicCacheRow, Database } from '../database/Database';
+import { ChapterTask, ComicCacheRow, Database, DownloadItem } from '../database/Database';
 import { Settings } from '../preferences/Settings';
 import { SettingsKeys } from '../../common/Constants';
 import { Network } from '../../common/Network';
@@ -53,7 +53,7 @@ export class DetailCache {
 
   /**
    * 下载入队时触发（受「下载时保存详情数据」开关控制）：
-   * 保存详情字段 + 章节列表 + 首页评论 + 封面文件；相关推荐按需求不保存。
+   * 保存详情字段 + 章节列表 + 首页评论 + 相关推荐 + 封面文件（相关推荐离线展示用）。
    * 全程容错：任何一步失败只影响对应部分，不阻断下载。
    */
   static async capture(comicId: string, source: string, comic?: Comic): Promise<void> {
@@ -95,7 +95,7 @@ export class DetailCache {
     }
   }
 
-  /** 详情本地秒开入口：返回缓存 Comic（relatedComics 恒为空，按需求不保存） */
+  /** 详情本地秒开入口：返回缓存 Comic（含相关推荐，离线时详情页可展示） */
   static async loadComic(comicId: string, source: string): Promise<Comic | null> {
     const row: ComicCacheRow | null = await Database.queryComicCache(comicId, source);
     if (row === null) {
@@ -112,6 +112,45 @@ export class DetailCache {
     comic.likes = row.likes;
     comic.comments = row.commentCount;
     comic.chapters = DetailCache.parseChapters(row.chaptersJson);
+    comic.relatedComics = DetailCache.parseRelated(row.relatedJson);
+    return comic;
+  }
+
+  /**
+   * 详情缓存缺失时的离线兜底（老版本下载/关闭「下载时保存详情数据」的漫画）：
+   * 用 downloads + download_chapters 表拼最小详情（标题/封面/章节），
+   * 保证完全离线也能进入已下载漫画详情页并读本地章节；描述/标签等联网后由页面静默刷新补全。
+   * 无下载记录或无章节任务返回 null。
+   */
+  static async localDetail(comicId: string, source: string): Promise<Comic | null> {
+    if (comicId.length === 0 || source !== 'jm') {
+      return null;
+    }
+    const dl: DownloadItem | null = await Database.queryDownload(comicId, source);
+    if (dl === null) {
+      return null;
+    }
+    const tasks: ChapterTask[] = await Database.queryChapterTasks(comicId);
+    if (tasks.length === 0) {
+      return null;
+    }
+    const comic: Comic = new Comic();
+    comic.id = dl.id;
+    comic.source = dl.source.length > 0 ? dl.source : source;
+    comic.title = dl.title;
+    comic.coverUrl = dl.coverUrl;
+    const chapters: Chapter[] = [];
+    for (const t of tasks) {
+      const ch: Chapter = new Chapter();
+      ch.id = t.chapterId;
+      ch.comicId = comicId;
+      ch.title = t.title;
+      ch.order = t.sortOrder;
+      ch.pages = t.pageCount;
+      chapters.push(ch);
+    }
+    comic.chapters = chapters;
+    comic.chapterCount = chapters.length;
     return comic;
   }
 
@@ -127,16 +166,19 @@ export class DetailCache {
     return page;
   }
 
-  /** 联网刷新成功后同步更新详情字段（保留既有评论缓存，评论由 CommentsPage 刷新回写） */
+  /**
+   * 联网成功后同步更新详情字段（保留既有评论缓存，评论由 CommentsPage 刷新回写）。
+   * 浏览即缓存：无缓存行也直接建行（首开联网成功即落库，相关推荐供离线展示），
+   * 容量由 CacheManager 按 updateTime LRU 淘汰管理。
+   */
   static async updateComic(comic: Comic, source: string): Promise<void> {
     try {
       const old: ComicCacheRow | null = await Database.queryComicCache(comic.id, source);
-      if (old === null) {
-        return;
-      }
       const row: ComicCacheRow = DetailCache.comicToRow(comic, source);
-      row.commentsJson = old.commentsJson;
-      row.commentMaxPage = old.commentMaxPage;
+      if (old !== null) {
+        row.commentsJson = old.commentsJson;
+        row.commentMaxPage = old.commentMaxPage;
+      }
       await Database.upsertComicCache(row);
     } catch (e) {
       Logger.warn(TAG, `updateComic failed: ${comic.id} ${Logger.describe(e)}`);
@@ -210,6 +252,7 @@ export class DetailCache {
     row.commentCount = comic.comments;
     row.categoriesJson = JSON.stringify(comic.categories);
     row.chaptersJson = DetailCache.chaptersToJson(comic.chapters);
+    row.relatedJson = DetailCache.relatedToJson(comic.relatedComics);
     return row;
   }
 
@@ -281,6 +324,45 @@ export class DetailCache {
       }
     } catch (e) {
       Logger.warn(TAG, `parseChapters failed: ${Logger.describe(e)}`);
+    }
+    return out;
+  }
+
+  /** 相关推荐序列化（仅存展示/跳转所需字段 id/source/title/coverUrl，够 relatedSection 渲染与跳转用） */
+  private static relatedToJson(comics: Comic[]): string {
+    const arr: Record<string, Object>[] = [];
+    for (const c of comics) {
+      const rec: Record<string, Object> = {
+        'id': c.id, 'source': c.source, 'title': c.title, 'coverUrl': c.coverUrl
+      };
+      arr.push(rec);
+    }
+    return JSON.stringify(arr);
+  }
+
+  private static parseRelated(json: string): Comic[] {
+    const out: Comic[] = [];
+    if (json.length === 0) {
+      return out;
+    }
+    try {
+      const arr: Object[] = JSON.parse(json) as Object[];
+      for (const item of arr) {
+        const r: Record<string, Object> = item as Record<string, Object>;
+        const c: Comic = new Comic();
+        c.id = DetailCache.str(r, 'id');
+        c.source = DetailCache.str(r, 'source');
+        if (c.source.length === 0) {
+          c.source = 'jm';
+        }
+        c.title = DetailCache.str(r, 'title');
+        c.coverUrl = DetailCache.str(r, 'coverUrl');
+        if (c.id.length > 0) {
+          out.push(c);
+        }
+      }
+    } catch (e) {
+      Logger.warn(TAG, `parseRelated failed: ${Logger.describe(e)}`);
     }
     return out;
   }

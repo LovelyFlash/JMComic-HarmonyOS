@@ -39,7 +39,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 | 项目 | 说明 |
 |------|------|
 | 包名 | `com.jmcomic.harmony` |
-| 当前版本 | 1.1.0（versionCode 14） |
+| 当前版本 | 1.1.1（versionCode 15） |
 | 目标 API | 26（HarmonyOS NEXT） |
 | 开发语言 / UI 框架 | ArkTS / ArkUI 声明式（Stage 模型，单 `entry` HAP 模块） |
 | 设备类型 | phone / tablet / 2in1 |
@@ -61,6 +61,8 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 - 离线阅读：图片列表随下载持久化，断网可读已下载章节；图片本地优先、网络回退
 - 详情本地秒开：下载时自动缓存详情 / 封面 / 首页评论（可关），支持「离线优先」跳过联网刷新
 - 图片持久缓存：封面/缩略图与阅读页图统一先走本地缓存再加载网络，缓存常驻，仅超容量挡位上限时按最近使用时间淘汰（阅读页图先淘汰、缩略图最后淘汰），阅读中漫画资源受保护不受淘汰影响
+- 相关推荐离线可用：浏览即缓存相关推荐数据与封面，断网重进详情页可展示；封面未缓存的条目不显示，避免灰块占位
+- 阅读页图片加载稳定：下载 30 秒超时 + 可见页优先的后台并发调度，单张异常图不再导致整页永久转圈
 - 缓存管理：缓存 / 下载占用展示，缓存上限挡位（不限 / 500 MB / 200 MB / 100 MB / 50 MB），清理缓存带确认与释放量提示
 
 **在线阅读**
@@ -341,8 +343,8 @@ NavUtil.push('comicDetail', { comicId, title, source })
 ```json5
 {
   bundleName: "com.jmcomic.harmony",
-  versionCode: 14,
-  versionName: "1.1.0",
+  versionCode: 15,
+  versionName: "1.1.1",
   targetAPIVersion: 26
 }
 ```

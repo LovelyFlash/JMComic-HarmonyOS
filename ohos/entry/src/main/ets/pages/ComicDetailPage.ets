@@ -10,6 +10,7 @@ import { ReaderParam } from '../data/model/ReaderParam';
 import { Database, ReadingProgress, ChapterTask, ChapterDlStatus } from '../data/database/Database';
 import { DownloadManager } from '../data/download/DownloadManager';
 import { DetailCache } from '../data/cache/DetailCache';
+import { ImageCache } from '../data/cache/ImageCache';
 import { Settings } from '../data/preferences/Settings';
 import { JmApi, JmFolder, LikeResp } from '../data/api/JmApi';
 import { NetworkImage } from '../components/NetworkImage';
@@ -34,6 +35,8 @@ export struct ComicDetailPage {
   @State title: string = ''
   @State source: string = ''
   @State comic: Comic = new Comic()
+  /** 实际展示的相关推荐：联网=全量；本地渲染=仅封面有本地缓存的条目（无缓存整栏隐藏，避免灰块） */
+  @State relatedVisible: Comic[] = []
   @State loading: boolean = true
   @State error: string = ''
   @State isFavorite: boolean = false
@@ -87,24 +90,47 @@ export struct ComicDetailPage {
   /**
    * 本地秒开 + 后台刷新：
    * - 已下载（有详情缓存）→ 立即本地渲染（封面走本地文件），随后按「离线优先」设置决定是否静默联网刷新
-   * - 无缓存 → 走网络（原逻辑）
+   * - 无详情缓存但已下载 → 离线优先直接用下载表数据兜底；联网失败（完全离线）时同样兜底，
+   *   保证完全离线也能进入已下载漫画的详情页
+   * - 无缓存无下载 → 走网络（原逻辑）
    */
   async loadDetail(): Promise<void> {
     this.loading = true;
     this.error = '';
+    const offline: boolean = await Settings.getBool(SettingsKeys.OFFLINE_FIRST, false);
     const cached: Comic | null = await DetailCache.loadComic(this.comicId, this.source);
     if (cached !== null) {
       this.applyDetail(cached);
+      await this.applyRelated(cached, false);
       this.loading = false;
       await this.refreshDownloadState();
       this.maybeHealCover();
-      const offline: boolean = await Settings.getBool(SettingsKeys.OFFLINE_FIRST, false);
-      if (!offline) {
+      // 离线优先但缓存缺相关推荐（旧版本建的行）时也后台补一次：静默刷新不阻塞，离线时失败自动忽略
+      if (!offline || cached.relatedComics.length === 0) {
         this.refreshDetail();
       }
       return;
     }
+    if (offline) {
+      const local: Comic | null = await DetailCache.localDetail(this.comicId, this.source);
+      if (local !== null) {
+        this.applyDetail(local);
+        await this.applyRelated(local, false);
+        this.loading = false;
+        await this.refreshDownloadState();
+        this.maybeHealCover();
+        return;
+      }
+    }
     await this.fetchDetail();
+    if (this.error.length > 0) {
+      const local: Comic | null = await DetailCache.localDetail(this.comicId, this.source);
+      if (local !== null) {
+        this.error = '';
+        this.applyDetail(local);
+        await this.applyRelated(local, false);
+      }
+    }
     await this.refreshDownloadState();
     this.maybeHealCover();
   }
@@ -125,6 +151,9 @@ export struct ComicDetailPage {
       this.isFavorite = this.comic.isFavorite;
       this.isLiked = this.comic.isLiked;
       await Database.insertHistory(this.comicId, this.title, this.comic.coverUrl, this.source);
+      // 浏览即缓存：首开联网成功即落库（含相关推荐），断网重进可展示；旧设计仅下载时建行导致回填空转
+      await DetailCache.updateComic(this.comic, this.source);
+      await this.applyRelated(this.comic, true);
     } catch (e) {
       this.error = String(e);
     }
@@ -141,7 +170,7 @@ export struct ComicDetailPage {
     this.isLiked = comic.isLiked;
   }
 
-  /** 缓存秒开后的静默联网刷新：成功更新页面与缓存（相关推荐不入缓存），失败保留缓存内容 */
+  /** 缓存秒开后的静默联网刷新：成功更新页面与缓存（相关推荐入缓存，离线可展示），失败保留缓存内容 */
   private async refreshDetail(): Promise<void> {
     try {
       if (this.source !== 'jm') {
@@ -149,11 +178,43 @@ export struct ComicDetailPage {
       }
       const fresh: Comic = await JmApi.getComicInfo(this.comicId);
       this.applyDetail(fresh);
+      await this.applyRelated(fresh, true);
       await Database.insertHistory(this.comicId, this.title, fresh.coverUrl, this.source);
       await DetailCache.updateComic(fresh, this.source);
+      // 后台预取相关推荐封面（离线重进详情页时封面有图不灰块），不阻塞页面
+      ImageCache.prefetchCovers(this.relatedUrls(fresh), fresh.id).catch((e: Object) => {
+        Logger.debug(TAG, `related cover prefetch rejected: ${Logger.describe(e)}`);
+      });
     } catch (e) {
       Logger.debug(TAG, `background refresh failed (cache kept): ${Logger.describe(e)}`);
     }
+  }
+
+  private relatedUrls(comic: Comic): string[] {
+    const urls: string[] = [];
+    for (const c of comic.relatedComics) {
+      if (c.coverUrl.length > 0) {
+        urls.push(c.coverUrl);
+      }
+    }
+    return urls;
+  }
+
+  /** 相关推荐展示集：联网成功=全量；本地渲染=仅封面有本地缓存的条目（无缓存整栏隐藏，杜绝灰块占位） */
+  private async applyRelated(comic: Comic, online: boolean): Promise<void> {
+    if (online || comic.relatedComics.length === 0) {
+      this.relatedVisible = comic.relatedComics;
+      return;
+    }
+    const list: Comic[] = [];
+    const limit: number = Math.min(comic.relatedComics.length, 30);
+    for (let i = 0; i < limit; i++) {
+      const c: Comic = comic.relatedComics[i];
+      if (await ImageCache.hasCoverCache(c.coverUrl, c.id)) {
+        list.push(c);
+      }
+    }
+    this.relatedVisible = list;
   }
 
   /** 封面数据源：本地已下载封面优先（沙箱路径需转 file:// URI 才能渲染），回退网络 URL */
@@ -646,7 +707,7 @@ export struct ComicDetailPage {
         .width('100%')
       Scroll() {
         Row({ space: 10 }) {
-          ForEach(this.comic.relatedComics, (c: Comic) => {
+          ForEach(this.relatedVisible, (c: Comic) => {
             Column({ space: 6 }) {
               NetworkImage({ url: c.coverUrl, comicId: c.id, imgWidth: 104, imgHeight: 146, imgBorderRadius: 8 })
               Text(c.title)
@@ -1099,7 +1160,7 @@ export struct ComicDetailPage {
                   this.chapterGrid()
                 }
 
-                if (this.comic.relatedComics.length > 0) {
+                if (this.relatedVisible.length > 0) {
                   this.relatedSection()
                 }
 

@@ -10,6 +10,7 @@ import { ChapterTask, ChapterDlStatus, Database } from '../database/Database';
 import { Chapter } from '../model/Chapter';
 import { Comic } from '../model/Comic';
 import { DetailCache } from '../cache/DetailCache';
+import { ImageCache } from '../cache/ImageCache';
 import { JmApi } from '../api/JmApi';
 import { JmImage } from '../../common/JmImage';
 import { Network } from '../../common/Network';
@@ -118,6 +119,18 @@ export class DownloadManager {
       DetailCache.capture(comicId, source, detail).catch((e: Object) => {
         Logger.warn(TAG, `detail capture rejected: ${Logger.describe(e)}`);
       });
+      // 详情可用时顺带预取相关推荐封面（离线详情页相关推荐不灰块）
+      if (detail !== undefined) {
+        const relatedUrls: string[] = [];
+        for (const c of detail.relatedComics) {
+          if (c.coverUrl.length > 0) {
+            relatedUrls.push(c.coverUrl);
+          }
+        }
+        ImageCache.prefetchCovers(relatedUrls, comicId).catch((e: Object) => {
+          Logger.warn(TAG, `related cover prefetch rejected: ${Logger.describe(e)}`);
+        });
+      }
       DownloadManager.ensureBg();
       DownloadManager.pump();
       DownloadManager.notify();

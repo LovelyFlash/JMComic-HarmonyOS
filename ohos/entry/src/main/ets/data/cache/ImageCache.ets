@@ -1,7 +1,7 @@
 // data/cache/ImageCache.ets - 图片持久磁盘缓存（URL→字节，先缓存后网络；仅超容量上限时按时间淘汰）
 // 规则：缓存常驻，不主动销毁；淘汰只在总量超挡位上限时触发，顺序=阅读页图→缩略图（缩略图最后淘汰），
 // 同类型按最近使用时间从旧到新；阅读中漫画（pin）的资源永不淘汰。文件在 filesDir/img_cache/<md5(url)>.img，
-// 元数据在 image_cache 表。封面/缩略图走 getCoverPixelMap（内存像素→磁盘→网络写穿）。
+// 元数据在 image_cache 表。封面/缩略图走 getCoverPixelMap（内存像素→已下载封面文件→磁盘缓存→网络写穿）。
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import fs from '@ohos.file.fs';
@@ -12,6 +12,7 @@ import { JmImage } from '../../common/JmImage';
 import { JmApi } from '../api/JmApi';
 import { Settings } from '../preferences/Settings';
 import { CACHE_GEAR_CAPS, SettingsKeys } from '../../common/Constants';
+import { DetailCache } from './DetailCache';
 import { Logger } from '../../common/Logger';
 
 const TAG = 'ImageCache';
@@ -153,10 +154,12 @@ export class ImageCache {
     return await Database.imageCacheBytes();
   }
 
-  // ---- 封面/缩略图主入口（内存像素→磁盘→网络写穿） ----
+  // ---- 封面/缩略图主入口（内存像素→已下载封面→磁盘→网络写穿） ----
 
   /**
-   * 取封面/缩略图像素：内存 LRU → 磁盘字节缓存 → 双网络栈下载（成功即写穿）。
+   * 取封面/缩略图像素，优先级严格为：
+   * ① 内存 LRU 像素 → ② 已下载漫画的本地封面文件（下载时落盘，离线可用）→
+   * ③ 磁盘字节缓存 → ④ 双网络栈下载（成功即写穿缓存）。
    * 同 URL 并发去重；失败返回 null（永不 reject）。GIF 不走此路径（不重组不解码，系统路径直显）。
    */
   static getCoverPixelMap(url: string, comicId: string): Promise<image.PixelMap | null> {
@@ -186,6 +189,18 @@ export class ImageCache {
     if (mem !== undefined) {
       return mem;
     }
+    // ② 已下载优先：该漫画的本地封面文件命中即用（无需网络/磁盘缓存，离线可显示）
+    const localBytes: Uint8Array | null = ImageCache.readLocalCover(comicId);
+    if (localBytes !== null) {
+      try {
+        const lpm: image.PixelMap = await JmImage.decode(localBytes, ImageCache.COVER_MAX_EDGE);
+        ImageCache.memPut(url, lpm);
+        return lpm;
+      } catch (e) {
+        Logger.warn(TAG, `local cover decode failed, fallback: ${Logger.describe(e)}`);
+      }
+    }
+    // ③ 磁盘字节缓存 ④ 网络（失败则 null）
     let bytes: Uint8Array | null = await ImageCache.get(url);
     if (bytes !== null && !JmImage.looksLikeImage(bytes)) {
       bytes = null;
@@ -211,6 +226,29 @@ export class ImageCache {
     }
   }
 
+  /** 读已下载漫画的本地封面文件（路径由 DetailCache 确定性推导；不存在/读失败返回 null） */
+  private static readLocalCover(comicId: string): Uint8Array | null {
+    const path: string = DetailCache.localCoverPath(comicId);
+    if (path.length === 0) {
+      return null;
+    }
+    try {
+      const stat: fs.Stat = fs.statSync(path);
+      const buf: ArrayBuffer = new ArrayBuffer(stat.size);
+      const file: fs.File = fs.openSync(path, fs.OpenMode.READ_ONLY);
+      try {
+        fs.readSync(file.fd, buf);
+      } finally {
+        fs.closeSync(file);
+      }
+      const bytes: Uint8Array = new Uint8Array(buf);
+      return JmImage.looksLikeImage(bytes) ? bytes : null;
+    } catch (e) {
+      Logger.debug(TAG, `read local cover failed: ${Logger.describe(e)}`);
+      return null;
+    }
+  }
+
   /** 双网络栈取图（http 栈被拒走系统下载栈），魔数校验通过才返回 */
   private static async fetchRemote(url: string): Promise<Uint8Array | null> {
     let bytes: Uint8Array | null = await Network.getBytes(url, JmImage.imgHeaders());
@@ -225,6 +263,62 @@ export class ImageCache {
       return null;
     }
     return bytes;
+  }
+
+  /**
+   * 封面是否已有本地可用缓存（内存像素/已下载封面文件/磁盘字节缓存任一命中）。
+   * 详情页离线渲染相关推荐时过滤用：没有本地缓存的封面不展示，避免灰块占位。
+   */
+  static async hasCoverCache(url: string, comicId: string): Promise<boolean> {
+    if (url.length === 0 || JmImage.isGif(url)) {
+      return false;
+    }
+    if (ImageCache.memGet(url) !== undefined) {
+      return true;
+    }
+    if (comicId.length > 0 && DetailCache.localCoverPath(comicId).length > 0) {
+      return true;
+    }
+    const key: string = JmApi.md5Hex(url);
+    if (key.length === 0) {
+      return false;
+    }
+    const row: ImageCacheRow | null = await Database.queryImageCache(key);
+    if (row === null) {
+      return false;
+    }
+    const path: string = ImageCache.pathOf(key);
+    try {
+      return path.length > 0 && fs.accessSync(path);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * 封面预取（联网时后台调用）：把相关推荐封面写入缓存，离线重进详情页时整排封面有图不灰块。
+   * 已缓存的跳过；顺序拉取、单张失败不影响其余；最多前 10 张。
+   */
+  static async prefetchCovers(urls: string[], comicId: string): Promise<void> {
+    const limit: number = Math.min(urls.length, 10);
+    for (let i = 0; i < limit; i++) {
+      const u: string = urls[i];
+      if (u.length === 0 || JmImage.isGif(u)) {
+        continue;
+      }
+      try {
+        const hit: Uint8Array | null = await ImageCache.get(u);
+        if (hit !== null && JmImage.looksLikeImage(hit)) {
+          continue;
+        }
+        const bytes: Uint8Array | null = await ImageCache.fetchRemote(u);
+        if (bytes !== null) {
+          await ImageCache.put(u, bytes, ImageCacheKind.THUMB, comicId);
+        }
+      } catch (e) {
+        Logger.debug(TAG, `prefetch cover failed: ${Logger.describe(e)}`);
+      }
+    }
   }
 
   // ---- 淘汰（仅超上限时触发） ----
