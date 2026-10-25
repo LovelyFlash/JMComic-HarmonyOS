@@ -218,7 +218,8 @@ export class ReaderImageCache {
       return cached;
     }
     // 离线优先：已下载页面直读本地文件（下载时已反打乱并落盘，无需重组）；解码失败则回退网络
-    const localPath: string = DownloadManager.localPathFor(url);
+    // localHit 含旧沙箱根回退（公共目录迁移窗口期同名文件仍可读）
+    const localPath: string = DownloadManager.localHit(url);
     if (localPath.length > 0) {
       const localBytes: Uint8Array | null = DownloadManager.readLocal(localPath);
       if (localBytes !== null && localBytes.length > 0) {
@@ -240,6 +241,11 @@ export class ReaderImageCache {
       } catch (e) {
         Logger.warn(TAG, `disk cache decode failed, fallback to network: ${Logger.describe(e)}`);
       }
+    }
+    // 本地与缓存都未命中：离线快速失败（此前会走双网络栈各等一次超时+测速，弱网长时间转圈）
+    if (!await Network.isOnline()) {
+      Logger.info(TAG, `offline, skip network fetch: ${url}`);
+      return null;
     }
     const headers: Record<string, string> = JmImage.imgHeaders();
     let bytes: Uint8Array | null = await Network.getBytes(url, headers);
@@ -373,8 +379,8 @@ export struct ReaderImage {
       return;
     }
     if (JmImage.isGif(url)) {
-      const localPath: string = DownloadManager.localPathFor(url);
-      this.rawUrl = DownloadManager.localExists(localPath) ? fileUri.getUriFromPath(localPath) : url;
+      const hit: string = DownloadManager.localHit(url);
+      this.rawUrl = hit.length > 0 ? fileUri.getUriFromPath(hit) : url;
       this.useRaw = true;
       return;
     }

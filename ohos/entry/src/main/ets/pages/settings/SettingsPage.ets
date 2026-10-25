@@ -26,6 +26,7 @@ export struct SettingsPage {
   @StorageProp('darkModePolicy') darkModePolicy: string = 'system'
   @State showColorSheet: boolean = false
   @State showHistoryImages: boolean = true
+  @State showDownloadImages: boolean = true
   @State saveDetail: boolean = true
   @State offlineFirst: boolean = false
   @State cacheSize: string = '-'
@@ -37,6 +38,10 @@ export struct SettingsPage {
     Settings.getBool(SettingsKeys.SHOW_HISTORY_IMAGES, true).then((v: boolean) => {
       this.showHistoryImages = v;
       AppStorage.setOrCreate('showHistoryImages', v);
+    });
+    Settings.getBool(SettingsKeys.SHOW_DOWNLOAD_IMAGES, true).then((v: boolean) => {
+      this.showDownloadImages = v;
+      AppStorage.setOrCreate('showDownloadImages', v);
     });
     Settings.getBool(SettingsKeys.SAVE_DETAIL_ON_DOWNLOAD, true).then((v: boolean) => {
       this.saveDetail = v;
@@ -135,6 +140,12 @@ export struct SettingsPage {
     await Settings.setBool(SettingsKeys.SHOW_HISTORY_IMAGES, value);
   }
 
+  private async setShowDownloadImages(value: boolean): Promise<void> {
+    this.showDownloadImages = value;
+    AppStorage.setOrCreate('showDownloadImages', value);
+    await Settings.setBool(SettingsKeys.SHOW_DOWNLOAD_IMAGES, value);
+  }
+
   private async setSaveDetail(value: boolean): Promise<void> {
     this.saveDetail = value;
     await Settings.setBool(SettingsKeys.SAVE_DETAIL_ON_DOWNLOAD, value);
@@ -220,12 +231,22 @@ export struct SettingsPage {
           })
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           SettingSwitch({
-            corner: SettingCorner.LAST,
+            corner: SettingCorner.MIDDLE,
             icon: $r('sys.symbol.square_grid_2x2'),
             title: Translations.t('show_history_images'),
             isOn: this.showHistoryImages,
             onToggle: (value: boolean) => {
               this.setShowHistoryImages(value);
+            }
+          })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          SettingSwitch({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.arrow_down_circle'),
+            title: Translations.t('show_download_images'),
+            isOn: this.showDownloadImages,
+            onToggle: (value: boolean) => {
+              this.setShowDownloadImages(value);
             }
           })
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])

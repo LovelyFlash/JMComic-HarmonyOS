@@ -1,4 +1,7 @@
-// data/download/DownloadManager.ets - 章节下载队列（下载→反打乱→编码→沙箱落盘 + 后台长时任务）
+// data/download/DownloadManager.ets - 章节下载队列（下载→反打乱→编码→落盘 + 后台长时任务）
+// 存储位置：优先系统公共下载目录 Download/包名（DocumentViewPicker DOWNLOAD 模式无感授权，
+// 系统文件管理器可见）；未授权/失败回退沙箱 filesDir/download。旧沙箱章节目录启动后后台迁移到公共目录，
+// 迁移期间双根回读（localHit/chapterDir 均先主根后旧根），detail 封面子目录仍留沙箱。
 import { backgroundTaskManager } from '@kit.BackgroundTasksKit';
 import { notificationManager } from '@kit.NotificationKit';
 import { bundleManager, common, wantAgent, WantAgent } from '@kit.AbilityKit';
@@ -6,6 +9,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { image } from '@kit.ImageKit';
 import { util } from '@kit.ArkTS';
 import fs from '@ohos.file.fs';
+import { fileUri, picker } from '@kit.CoreFileKit';
 import { ChapterTask, ChapterDlStatus, Database } from '../database/Database';
 import { Chapter } from '../model/Chapter';
 import { Comic } from '../model/Comic';
@@ -16,10 +20,16 @@ import { JmImage } from '../../common/JmImage';
 import { Network } from '../../common/Network';
 import { Logger } from '../../common/Logger';
 import { Translations } from '../../common/Translations';
+import { Settings } from '../preferences/Settings';
+import { SettingsKeys } from '../../common/Constants';
 
 const TAG = 'Download';
-/** 沙箱根目录名（filesDir/download/{photoId}/{文件名}，路径由图片 URL 推导，与漫画 id 无关） */
+/** 旧沙箱根目录名（filesDir/download/{photoId}/{文件名}，路径由图片 URL 推导，与漫画 id 无关） */
 const ROOT_DIR = 'download';
+/** 公共下载目录授权等待上限（DOWNLOAD 模式应无 UI 即返回；超时按失败回退沙箱根） */
+const PUBLIC_ROOT_TIMEOUT = 6000;
+/** 旧沙箱根下的详情封面子目录名（不参与章节迁移；与 DetailCache/CacheManager 口径一致） */
+const DETAIL_SUBDIR = 'detail';
 /** 章节级并发上限：章内页串行，最多同时跑两章 */
 const MAX_ACTIVE = 2;
 /** 落盘 JPEG 质量：下载时已反打乱，阅读端直接解码，取接近原图的质量 */
@@ -29,7 +39,10 @@ const PUBLISH_INTERVAL = 2000;
 
 export class DownloadManager {
   private static ctx: common.UIAbilityContext | null = null;
+  /** 主根：公共下载目录（成功授权后切换），失败回退 = legacyRoot */
   private static filesRoot: string = '';
+  /** 旧沙箱根（filesDir/download）：迁移完成前双根回读；detail 封面始终在其下 */
+  private static legacyRoot: string = '';
   private static readonly PAGES_FILE: string = 'pages.json';
   private static initialized: boolean = false;
   private static queue: ChapterTask[] = [];
@@ -48,7 +61,8 @@ export class DownloadManager {
     }
     DownloadManager.initialized = true;
     DownloadManager.ctx = context;
-    DownloadManager.filesRoot = `${context.filesDir}/${ROOT_DIR}`;
+    DownloadManager.legacyRoot = `${context.filesDir}/${ROOT_DIR}`;
+    DownloadManager.filesRoot = DownloadManager.legacyRoot;
     await Database.requeueInterruptedDownloads();
     const all: ChapterTask[] = await Database.queryAllChapterTasks();
     for (const task of all) {
@@ -61,6 +75,231 @@ export class DownloadManager {
       DownloadManager.pump();
     }
     Logger.info(TAG, `init done, queued=${DownloadManager.queue.length}`);
+    // 公共下载目录切换（带超时兜底）+ 旧沙箱章节目录迁移；均不阻塞启动
+    DownloadManager.setupPublicRootThenMigrate();
+  }
+
+  /** 主根是否为系统公共下载目录（false=沙箱回退） */
+  static usingPublicRoot(): boolean {
+    return DownloadManager.filesRoot.length > 0 &&
+      DownloadManager.filesRoot !== DownloadManager.legacyRoot;
+  }
+
+  /** 章节目录根列表（主根 + 旧沙箱根，去重；统计/删除遍历用） */
+  static chapterRoots(): string[] {
+    const out: string[] = [];
+    if (DownloadManager.filesRoot.length > 0) {
+      out.push(DownloadManager.filesRoot);
+    }
+    if (DownloadManager.legacyRoot.length > 0 && DownloadManager.legacyRoot !== DownloadManager.filesRoot) {
+      out.push(DownloadManager.legacyRoot);
+    }
+    return out;
+  }
+
+  /** 章节目录（主根；下载写入/回填 pages.json 用） */
+  static chapterDir(chapterId: string): string {
+    if (DownloadManager.filesRoot.length === 0 || chapterId.length === 0) {
+      return '';
+    }
+    return `${DownloadManager.filesRoot}/${chapterId}`;
+  }
+
+  /** 解析已下载图片的本地路径：主根命中 → 旧根回退 → 都无返回 ''（迁移窗口期回读靠旧根） */
+  static localHit(url: string): string {
+    const primary: string = DownloadManager.localPathFor(url);
+    if (primary.length > 0 && DownloadManager.localExists(primary)) {
+      return primary;
+    }
+    const legacy: string = DownloadManager.pathFor(url, DownloadManager.legacyRoot);
+    if (legacy.length > 0 && legacy !== primary && DownloadManager.localExists(legacy)) {
+      return legacy;
+    }
+    return '';
+  }
+
+  /**
+   * 公共下载目录接入（启动后台执行，带超时）：
+   * ① 复用已持久化的授权 URI（持久权限跨启动有效，目录被外删则重新授权）；
+   * ② 未授权则调 DocumentViewPicker DOWNLOAD 模式（官方语义：无选择界面直达 Download/包名，
+   *    返回 URI 具持久写权限）。任一环节失败/超时保持沙箱根，功能不受影响。
+   * 成功切换主根后把旧沙箱章节目录迁移到公共目录（rename 优先，跨分区拷贝兜底）。
+   */
+  private static setupPublicRootThenMigrate(): void {
+    DownloadManager.setupPublicRoot().then(() => {
+      if (DownloadManager.usingPublicRoot()) {
+        Logger.info(TAG, `download root = public: ${DownloadManager.filesRoot}`);
+        DownloadManager.migrateLegacy().then(() => {
+          Logger.info(TAG, 'legacy download dir migrated');
+        }, (e: Object) => {
+          Logger.warn(TAG, `migrate legacy failed: ${Logger.describe(e)}`);
+        });
+      } else {
+        Logger.info(TAG, 'download root = sandbox fallback');
+      }
+    }, (e: Object) => {
+      Logger.warn(TAG, `setupPublicRoot rejected: ${Logger.describe(e)}`);
+    });
+  }
+
+  private static async setupPublicRoot(): Promise<void> {
+    try {
+      const saved: string = await Settings.getString(SettingsKeys.DOWNLOAD_ROOT_URI, '');
+      if (saved.length > 0) {
+        const path: string = DownloadManager.uriToPath(saved);
+        if (path.length > 0 && DownloadManager.localExists(path)) {
+          DownloadManager.filesRoot = DownloadManager.trimSlash(path);
+          return;
+        }
+      }
+      const uri: string = await DownloadManager.requestDownloadDir();
+      if (uri.length > 0) {
+        const path: string = DownloadManager.uriToPath(uri);
+        if (path.length > 0) {
+          const root: string = DownloadManager.trimSlash(path);
+          DownloadManager.ensureDir(root);
+          if (DownloadManager.localExists(root)) {
+            DownloadManager.filesRoot = root;
+            await Settings.putString(SettingsKeys.DOWNLOAD_ROOT_URI, uri);
+          }
+        }
+      }
+    } catch (e) {
+      Logger.warn(TAG, `setupPublicRoot failed, keep sandbox: ${Logger.describe(e)}`);
+    }
+  }
+
+  /** DOWNLOAD 模式取公共下载目录 URI（应无 UI 直达；整体带超时防呆滞阻塞） */
+  private static requestDownloadDir(): Promise<string> {
+    return new Promise<string>((resolve: (uri: string) => void) => {
+      let settled: boolean = false;
+      const guard: number = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          Logger.warn(TAG, 'requestDownloadDir timeout');
+          resolve('');
+        }
+      }, PUBLIC_ROOT_TIMEOUT);
+      const finish: (uri: string) => void = (uri: string) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(guard);
+        resolve(uri);
+      };
+      try {
+        if (DownloadManager.ctx === null) {
+          finish('');
+          return;
+        }
+        const options: picker.DocumentSaveOptions = new picker.DocumentSaveOptions();
+        options.pickerMode = picker.DocumentPickerMode.DOWNLOAD;
+        const viewPicker: picker.DocumentViewPicker = new picker.DocumentViewPicker(DownloadManager.ctx);
+        viewPicker.save(options).then((uris: Array<string>) => {
+          finish(uris.length > 0 ? uris[0] : '');
+        }, (e: BusinessError) => {
+          Logger.warn(TAG, `DOWNLOAD picker failed: ${e.code} ${e.message}`);
+          finish('');
+        });
+      } catch (e) {
+        Logger.warn(TAG, `DOWNLOAD picker throw: ${Logger.describe(e)}`);
+        finish('');
+      }
+    });
+  }
+
+  private static uriToPath(uri: string): string {
+    try {
+      return new fileUri.FileUri(uri).path;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  private static trimSlash(path: string): string {
+    let out: string = path;
+    while (out.length > 1 && out.endsWith('/')) {
+      out = out.substring(0, out.length - 1);
+    }
+    return out;
+  }
+
+  /** 旧沙箱章节目录 → 公共目录（迁移中断可重入：已存在的目标按拷贝合并） */
+  private static async migrateLegacy(): Promise<void> {
+    const legacy: string = DownloadManager.legacyRoot;
+    if (legacy.length === 0 || legacy === DownloadManager.filesRoot) {
+      return;
+    }
+    let names: string[] = [];
+    try {
+      if (!fs.accessSync(legacy)) {
+        return;
+      }
+      names = fs.listFileSync(legacy);
+    } catch (e) {
+      return;
+    }
+    for (const name of names) {
+      if (name === DETAIL_SUBDIR) {
+        continue;
+      }
+      const src: string = `${legacy}/${name}`;
+      const dst: string = `${DownloadManager.filesRoot}/${name}`;
+      try {
+        DownloadManager.ensureDir(DownloadManager.filesRoot);
+        if (DownloadManager.localExists(dst)) {
+          DownloadManager.copyTree(src, dst);
+          DownloadManager.removePathQuiet(src);
+        } else {
+          fs.renameSync(src, dst);
+        }
+      } catch (e) {
+        try {
+          DownloadManager.copyTree(src, dst);
+          DownloadManager.removePathQuiet(src);
+        } catch (e2) {
+          Logger.warn(TAG, `migrate ${name} failed: ${Logger.describe(e2)}`);
+        }
+      }
+      // 让出事件循环，避免大目录迁移时同步 IO 卡死 UI
+      await new Promise<void>((resolve: () => void) => {
+        setTimeout(resolve, 0);
+      });
+    }
+  }
+
+  /** 目录树拷贝（文件级 copyFileSync；目标已存在的文件覆盖为旧副本，内容同 URL 同名） */
+  private static copyTree(src: string, dst: string): void {
+    const st: fs.Stat = fs.statSync(src);
+    if (st.isDirectory()) {
+      DownloadManager.ensureDir(dst);
+      const children: string[] = fs.listFileSync(src);
+      for (const child of children) {
+        DownloadManager.copyTree(`${src}/${child}`, `${dst}/${child}`);
+      }
+    } else {
+      const idx: number = dst.lastIndexOf('/');
+      if (idx > 0) {
+        DownloadManager.ensureDir(dst.substring(0, idx));
+      }
+      fs.copyFileSync(src, dst);
+    }
+  }
+
+  /** 递归删除文件/目录（rmdirSync 对目录递归；文件走 unlinkSync） */
+  private static removePathQuiet(path: string): void {
+    try {
+      if (path.length === 0 || !DownloadManager.localExists(path)) {
+        return;
+      }
+      if (fs.statSync(path).isDirectory()) {
+        fs.rmdirSync(path);
+      } else {
+        fs.unlinkSync(path);
+      }
+    } catch (e) {
+    }
   }
 
   static subscribe(fn: () => void): void {
@@ -108,7 +347,7 @@ export class DownloadManager {
       task.sortOrder = chapter.order;
       task.pageCount = chapter.pages;
       task.status = ChapterDlStatus.QUEUED;
-      task.localDir = `${DownloadManager.filesRoot}/${chapter.id}`;
+      task.localDir = DownloadManager.chapterDir(chapter.id);
       await Database.upsertChapterTask(task);
       DownloadManager.queue.push(task);
       queued++;
@@ -202,7 +441,7 @@ export class DownloadManager {
     }
   }
 
-  /** 取消单章并删除其本地文件 */
+  /** 取消单章并删除其本地文件（主根/旧沙箱根/库内存储路径全清，防迁移窗口期残留） */
   static async cancel(chapterId: string, comicId: string): Promise<void> {
     const running: ChapterTask | undefined = DownloadManager.active.get(DownloadManager.taskKey(chapterId, comicId));
     if (running !== undefined) {
@@ -211,29 +450,43 @@ export class DownloadManager {
     DownloadManager.queue = DownloadManager.queue.filter(
       (task: ChapterTask) => !(task.chapterId === chapterId && task.comicId === comicId));
     const stored: ChapterTask | null = await Database.queryChapterTask(chapterId, comicId);
-    const dir: string = stored !== null && stored.localDir.length > 0
-      ? stored.localDir : `${DownloadManager.filesRoot}/${chapterId}`;
-    DownloadManager.removeDirQuiet(dir);
+    const paths: string[] = [`${DownloadManager.filesRoot}/${chapterId}`];
+    if (DownloadManager.legacyRoot.length > 0) {
+      paths.push(`${DownloadManager.legacyRoot}/${chapterId}`);
+    }
+    if (stored !== null && stored.localDir.length > 0) {
+      paths.push(stored.localDir);
+    }
+    for (const path of paths) {
+      DownloadManager.removeDirQuiet(path);
+    }
     await Database.removeChapterTask(chapterId, comicId);
     DownloadManager.notify();
     DownloadManager.maybeStopBg();
   }
 
-  /** 删除整本漫画：所有章节任务 + 本地文件 + 详情/封面缓存 + downloads 记录 */
+  /** 删除整本漫画：所有章节任务 + 本地文件 + 详情/封面缓存 + 图片缓存归因条目 + downloads 记录 */
   static async removeComic(comicId: string, source: string): Promise<void> {
     const tasks: ChapterTask[] = await Database.queryChapterTasks(comicId);
     for (const task of tasks) {
       await DownloadManager.cancel(task.chapterId, comicId);
     }
     await DetailCache.remove(comicId, source);
+    // 该漫画的 img_cache 归因条目（在线读页/封面缩略图缓存）一并删除，避免删除后缓存仍占空间
+    await ImageCache.removeByComic(comicId);
     await Database.removeDownload(comicId, source);
     DownloadManager.notify();
     DownloadManager.maybeStopBg();
   }
 
-  /** 图片 URL → 本地绝对路径（filesDir/download/{photoId}/{文件名}）；无法推导时返回空串 */
+  /** 图片 URL → 主根本地绝对路径（{root}/{photoId}/{文件名}）；无法推导时返回空串 */
   static localPathFor(url: string): string {
-    if (DownloadManager.filesRoot.length === 0) {
+    return DownloadManager.pathFor(url, DownloadManager.filesRoot);
+  }
+
+  /** 图片 URL → 指定根下本地绝对路径；root/url 无效时返回空串 */
+  private static pathFor(url: string, root: string): string {
+    if (root.length === 0) {
       return '';
     }
     const photoId: string = JmImage.photoIdFromUrl(url);
@@ -250,7 +503,7 @@ export class DownloadManager {
     if (name.length === 0) {
       return '';
     }
-    return `${DownloadManager.filesRoot}/${photoId}/${name}`;
+    return `${root}/${photoId}/${name}`;
   }
 
   static localExists(path: string): boolean {
@@ -323,28 +576,53 @@ export class DownloadManager {
     }
   }
 
+  /** 章节目录候选（主根优先、旧沙箱根在后，仅含实际存在的；读取/回填/删除遍历用） */
+  private static existingChapterDirs(chapterId: string): string[] {
+    const out: string[] = [];
+    const primary: string = DownloadManager.chapterDir(chapterId);
+    if (primary.length > 0 && DownloadManager.localExists(primary)) {
+      out.push(primary);
+    }
+    if (DownloadManager.legacyRoot.length > 0 && DownloadManager.legacyRoot !== DownloadManager.filesRoot) {
+      const legacy: string = `${DownloadManager.legacyRoot}/${chapterId}`;
+      if (DownloadManager.localExists(legacy)) {
+        out.push(legacy);
+      }
+    }
+    return out;
+  }
+
   /** 在线取章成功后回填 pages.json（旧版本下载的章节补写离线页列表）；章节目录不存在=未下载，跳过 */
   static cacheChapterPages(chapterId: string, urls: string[]): void {
     if (DownloadManager.filesRoot.length === 0 || chapterId.length === 0 || urls.length === 0) {
       return;
     }
-    const dir: string = `${DownloadManager.filesRoot}/${chapterId}`;
-    try {
-      if (!fs.accessSync(dir)) {
-        return;
-      }
-    } catch (e) {
-      return;
+    const dirs: string[] = DownloadManager.existingChapterDirs(chapterId);
+    for (const dir of dirs) {
+      DownloadManager.writePagesFile(dir, urls);
     }
-    DownloadManager.writePagesFile(dir, urls);
   }
 
-  /** 离线读取章节页 URL 列表（下载时写入的 pages.json）；无文件/坏文件返回空数组 */
+  /** 离线读取章节页 URL 列表（下载时写入的 pages.json）；无文件/坏文件返回空数组。主根优先，迁移窗口期回读旧根 */
   static readChapterPages(chapterId: string): string[] {
     if (DownloadManager.filesRoot.length === 0 || chapterId.length === 0) {
       return [];
     }
-    const path: string = `${DownloadManager.filesRoot}/${chapterId}/${DownloadManager.PAGES_FILE}`;
+    const dirs: string[] = DownloadManager.existingChapterDirs(chapterId);
+    for (const dir of dirs) {
+      const urls: string[] = DownloadManager.readPagesFile(dir);
+      if (urls.length > 0) {
+        return urls;
+      }
+    }
+    return [];
+  }
+
+  private static readPagesFile(dir: string): string[] {
+    if (dir.length === 0) {
+      return [];
+    }
+    const path: string = `${dir}/${DownloadManager.PAGES_FILE}`;
     let file: fs.File | null = null;
     try {
       if (!fs.accessSync(path)) {
@@ -375,7 +653,7 @@ export class DownloadManager {
       }
       return urls;
     } catch (e) {
-      Logger.warn(TAG, `read pages.json failed: ${chapterId} ${Logger.describe(e)}`);
+      Logger.warn(TAG, `read pages.json failed: ${dir} ${Logger.describe(e)}`);
       return [];
     } finally {
       if (file !== null) {
@@ -391,6 +669,8 @@ export class DownloadManager {
     if (task.status !== ChapterDlStatus.QUEUED) {
       return;
     }
+    // 运行时重算章节目录（主根可能在入队后从沙箱切换到公共下载目录，不信旧存储值）
+    task.localDir = DownloadManager.chapterDir(task.chapterId);
     task.status = ChapterDlStatus.RUNNING;
     await Database.updateChapterTask(task);
     DownloadManager.notify();
@@ -414,7 +694,8 @@ export class DownloadManager {
         }
         const url: string = urls[i];
         const dest: string = DownloadManager.localPathFor(url);
-        let ok: boolean = dest.length > 0 && DownloadManager.localExists(dest);
+        // 已存在（含迁移窗口期还在旧沙箱根的同名文件）直接跳过，避免重复下载
+        let ok: boolean = dest.length > 0 && DownloadManager.localHit(url).length > 0;
         if (!ok && dest.length > 0) {
           ok = await DownloadManager.savePage(url, dest);
           if (!ok) {

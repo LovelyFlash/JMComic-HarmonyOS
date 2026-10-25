@@ -14,6 +14,8 @@ import { Logger } from '../../common/Logger';
 const TAG = 'DetailCache';
 /** 封面文件落于 filesDir/download/detail/{comicId}/cover（download 根与章节文件同级，章节目录为纯数字 photoId 不冲突） */
 const ROOT_DIR = 'download';
+/** 下载入队时预缓存的评论页数（更多页由评论页在线浏览时逐页缓存，离线可回看） */
+const COMMENT_CAPTURE_PAGES: number = 3;
 
 export class DetailCache {
   private static ctx: common.UIAbilityContext | null = null;
@@ -90,6 +92,22 @@ export class DetailCache {
       await DetailCache.save(detail, source, comments, maxPage, coverBytes);
       Logger.info(TAG, `captured ${comicId} chapters=${detail.chapters.length} comments=${comments.length}` +
         ` cover=${coverBytes !== null}`);
+      // 预缓存后续评论页（离线翻页用）：单页失败即停（弱网/触限不拖累整体）
+      if (source === 'jm') {
+        for (let pageNo: number = 2; pageNo <= COMMENT_CAPTURE_PAGES && pageNo <= maxPage; pageNo++) {
+          try {
+            const more: JmCommentPage = await JmApi.getComments(comicId, pageNo);
+            if (more.comments.length === 0) {
+              break;
+            }
+            await DetailCache.saveCommentsPage(comicId, source, pageNo, more.comments,
+              more.maxPage > 0 ? more.maxPage : maxPage);
+          } catch (e) {
+            Logger.warn(TAG, `capture comments page ${pageNo} failed: ${Logger.describe(e)}`);
+            break;
+          }
+        }
+      }
     } catch (e) {
       Logger.warn(TAG, `capture failed: ${comicId} ${Logger.describe(e)}`);
     }
@@ -154,16 +172,43 @@ export class DetailCache {
     return comic;
   }
 
-  /** 首页评论本地秒开入口 */
+  /** 首页评论本地秒开入口（= loadCommentsPage 第 1 页；行存在但无评论数据=浏览时建的行，视为无缓存走网络） */
   static async loadComments(comicId: string, source: string): Promise<JmCommentPage | null> {
-    const row: ComicCacheRow | null = await Database.queryComicCache(comicId, source);
-    if (row === null) {
+    return await DetailCache.loadCommentsPage(comicId, source, 1);
+  }
+
+  /**
+   * 按页读取评论缓存（下载预缓存前 3 页 + 浏览逐页回写；离线翻页可回看）。
+   * 格式：v2 包装 {"v":2,"p":{"1":"<评论数组JSON>",...}}；旧版行=纯 JSON 数组（仅第 1 页）。
+   * 无行 / 无数据 / 该页未缓存均返回 null（调用方回退网络）。
+   */
+  static async loadCommentsPage(comicId: string, source: string, page: number): Promise<JmCommentPage | null> {
+    if (page < 1) {
       return null;
     }
-    const page: JmCommentPage = new JmCommentPage();
-    page.comments = DetailCache.parseComments(row.commentsJson);
-    page.maxPage = row.commentMaxPage > 0 ? row.commentMaxPage : 1;
-    return page;
+    const row: ComicCacheRow | null = await Database.queryComicCache(comicId, source);
+    if (row === null || row.commentsJson.length === 0) {
+      return null;
+    }
+    let pageJson: string = '';
+    if (DetailCache.isLegacyComments(row.commentsJson)) {
+      if (page === 1) {
+        pageJson = row.commentsJson;
+      }
+    } else {
+      const pages: Record<string, Object> = DetailCache.pagesRecord(row.commentsJson);
+      const key: string = String(page);
+      if (pages[key] !== undefined && pages[key] !== null) {
+        pageJson = String(pages[key]);
+      }
+    }
+    if (pageJson.length === 0) {
+      return null;
+    }
+    const out: JmCommentPage = new JmCommentPage();
+    out.comments = DetailCache.parseComments(pageJson);
+    out.maxPage = row.commentMaxPage > 0 ? row.commentMaxPage : 1;
+    return out;
   }
 
   /**
@@ -185,19 +230,75 @@ export class DetailCache {
     }
   }
 
-  /** 评论页首页联网成功后回写，保持离线数据新鲜 */
+  /** 评论页联网成功后回写（第 1 页语义等同旧接口），保持离线数据新鲜 */
   static async saveComments(comicId: string, source: string, comments: JmComment[], maxPage: number): Promise<void> {
+    await DetailCache.saveCommentsPage(comicId, source, 1, comments, maxPage);
+  }
+
+  /** 按页写入评论缓存（v2 多页包装；旧格式行升级为 v2 并保留第 1 页内容）；行不存在则跳过（详情浏览会建行） */
+  static async saveCommentsPage(comicId: string, source: string, page: number, comments: JmComment[],
+    maxPage: number): Promise<void> {
+    if (page < 1) {
+      return;
+    }
     try {
       const old: ComicCacheRow | null = await Database.queryComicCache(comicId, source);
       if (old === null) {
         return;
       }
-      old.commentsJson = DetailCache.commentsToJson(comments);
-      old.commentMaxPage = maxPage > 0 ? maxPage : 1;
+      const pages: Record<string, Object> = DetailCache.pagesRecord(old.commentsJson);
+      pages[String(page)] = DetailCache.commentsToJson(comments);
+      const wrapper: Record<string, Object> = {};
+      wrapper['v'] = 2;
+      wrapper['p'] = pages;
+      old.commentsJson = JSON.stringify(wrapper);
+      if (maxPage > 0) {
+        old.commentMaxPage = maxPage;
+      } else if (old.commentMaxPage <= 0) {
+        old.commentMaxPage = 1;
+      }
       await Database.upsertComicCache(old);
     } catch (e) {
-      Logger.warn(TAG, `saveComments failed: ${comicId} ${Logger.describe(e)}`);
+      Logger.warn(TAG, `saveCommentsPage ${page} failed: ${comicId} ${Logger.describe(e)}`);
     }
+  }
+
+  /** 旧格式判定（首字符 '['=纯评论数组；v2 为对象包装） */
+  private static isLegacyComments(json: string): boolean {
+    return json.trim().startsWith('[');
+  }
+
+  /** 取 v2 包装内的页表 {page -> 评论数组JSON字符串}；旧格式行返回含第 1 页的表；坏数据返回空表 */
+  private static pagesRecord(json: string): Record<string, Object> {
+    const out: Record<string, Object> = {};
+    if (json.length === 0) {
+      return out;
+    }
+    if (DetailCache.isLegacyComments(json)) {
+      out['1'] = json;
+      return out;
+    }
+    try {
+      const wrapper: Record<string, Object> = JSON.parse(json) as Record<string, Object>;
+      if (wrapper === null) {
+        return out;
+      }
+      const p: Object | undefined = wrapper['p'];
+      if (p === undefined || p === null) {
+        return out;
+      }
+      // JSON.parse 后 p 即已解析的页表对象（存入时 wrapper['p'] 直接放 Record，非字符串）
+      const pages: Record<string, Object> = p as Record<string, Object>;
+      const keys: string[] = Object.keys(pages);
+      for (const key of keys) {
+        const val: Object | undefined = pages[key];
+        if (val !== undefined && val !== null) {
+          out[key] = String(val);
+        }
+      }
+    } catch (e) {
+    }
+    return out;
   }
 
   /** 封面本地路径（文件不存在返回空串）；路径确定性推导，无需查库 */
@@ -232,7 +333,13 @@ export class DetailCache {
   private static async save(comic: Comic, source: string, comments: JmComment[], maxPage: number,
     coverBytes: Uint8Array | null): Promise<void> {
     const row: ComicCacheRow = DetailCache.comicToRow(comic, source);
-    row.commentsJson = DetailCache.commentsToJson(comments);
+    // v2 包装落第 1 页；后续页由 capture/浏览 saveCommentsPage 合入
+    const pages: Record<string, Object> = {};
+    pages['1'] = DetailCache.commentsToJson(comments);
+    const wrapper: Record<string, Object> = {};
+    wrapper['v'] = 2;
+    wrapper['p'] = pages;
+    row.commentsJson = JSON.stringify(wrapper);
     row.commentMaxPage = maxPage > 0 ? maxPage : 1;
     if (coverBytes !== null) {
       DetailCache.writeCover(comic.id, coverBytes);

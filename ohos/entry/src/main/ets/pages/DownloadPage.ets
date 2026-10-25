@@ -427,17 +427,27 @@ export struct DownloadPage {
               .id('download' + item.id + item.source)
             }, (item: DownloadItem) => item.id + item.source)
           }
-          .width('100%').layoutWeight(1)
-          .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
-          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
-          .padding({ bottom: this.bottomAvoid })
+          .scrollBar(BarState.Off)
+          .edgeEffect(EdgeEffect.Spring)
+          .contentStartOffset(56)
+          .width('100%')
+          .height('100%')
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          .padding({ left: 16, right: 16})
+          .systemMaterial(new uiMaterial.ImmersiveMaterial({
+            style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+          }))
         }
       }
       .width('100%').height('100%')
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .title(Translations.t('download_manager'), { backgroundColor: Color.Transparent })
+    .title(Translations.t('download_manager'), {
+      barStyle: BarStyle.STACK,
+      scrollEffectOptions: {
+        scrollEffectType: ScrollEffectType.GRADUAL_BLUR }
+    })
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))

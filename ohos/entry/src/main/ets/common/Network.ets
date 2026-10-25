@@ -3,6 +3,7 @@ import http from '@ohos.net.http';
 import { request } from '@kit.BasicServicesKit';
 import fs from '@ohos.file.fs';
 import { common } from '@kit.AbilityKit';
+import { connection } from '@kit.NetworkKit';
 import { Logger } from './Logger';
 
 const TAG = 'Network';
@@ -132,6 +133,16 @@ export class Network {
       Logger.warn(TAG, `${method} ${url} -> ${code}, ct=${ct}, head=${head}`);
     } else {
       Logger.debug(TAG, `${method} ${url} -> ${code}, ct=${ct}, bytes=${body.length}`);
+    }
+  }
+
+  /** 是否有系统默认网络（断网快速判定：章节/图片加载前置检查，避免死等超时转圈） */
+  static async isOnline(): Promise<boolean> {
+    try {
+      const handle: connection.NetHandle = await connection.getDefaultNet();
+      return handle.netId > 0;
+    } catch (e) {
+      return false;
     }
   }
 

@@ -11,6 +11,7 @@ import { ReaderParam } from '../../data/model/ReaderParam';
 import { Chapter } from '../../data/model/Chapter';
 import { JmApi } from '../../data/api/JmApi';
 import { DownloadManager } from '../../data/download/DownloadManager';
+import { Network } from '../../common/Network';
 import { Logger } from '../../common/Logger';
 import { ArrayDataSource } from '../../common/ArrayDataSource';
 import { ReaderImage, ReaderImageCache } from '../../components/ReaderImage';
@@ -663,17 +664,30 @@ export struct ReaderPage {
       }
       let imgs: string[] = [];
       let netFailed: boolean = false;
-      try {
-        const ch: Chapter = await JmApi.getChapter(chapterId);
-        imgs = ch.imageUrls;
-        // 已下载章节在线取章成功后回填 pages.json（旧版本下载缺失时的离线兑底）
-        DownloadManager.cacheChapterPages(chapterId, imgs);
-      } catch (e) {
-        // 联网失败（离线）时回退到下载时保存的 pages.json
-        imgs = DownloadManager.readChapterPages(chapterId);
-        Logger.info('ReaderPage', `getChapter failed, local pages: order=${order} count=${imgs.length}` +
-          ` err=${Logger.describe(e)}`);
-        netFailed = imgs.length === 0;
+      // 本地优先：已下载章节直接读 pages.json 渲染。此前先走 getChapter，断网时要等
+      // 请求超时+域名探测+重试 ≈100s 才回退本地，表现为切章/跳页后一直转圈。
+      const local: string[] = DownloadManager.readChapterPages(chapterId);
+      if (local.length > 0) {
+        imgs = local;
+        Logger.info('ReaderPage', `chapter local-first: order=${order} count=${local.length}` +
+          ` online=${await Network.isOnline()}`);
+      } else if (!await Network.isOnline()) {
+        // 离线且未下载：快速失败，不进 getChapter 白等网络超时
+        netFailed = true;
+        Logger.info('ReaderPage', `offline and no local pages: order=${order}`);
+      } else {
+        try {
+          const ch: Chapter = await JmApi.getChapter(chapterId);
+          imgs = ch.imageUrls;
+          // 已下载章节在线取章成功后回填 pages.json（旧版本下载缺失时的离线兑底）
+          DownloadManager.cacheChapterPages(chapterId, imgs);
+        } catch (e) {
+          // 联网失败回退本地（上面已查过一次，双保险）
+          imgs = DownloadManager.readChapterPages(chapterId);
+          Logger.info('ReaderPage', `getChapter failed, local pages: order=${order} count=${imgs.length}` +
+            ` err=${Logger.describe(e)}`);
+          netFailed = imgs.length === 0;
+        }
       }
       if (!this.alive) {
         return;

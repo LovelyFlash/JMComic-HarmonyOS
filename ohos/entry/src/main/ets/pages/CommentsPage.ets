@@ -41,25 +41,31 @@ export struct CommentsPage {
   }
 
   /**
-   * 本地秒开 + 后台刷新：
-   * - 首页有缓存 → 立即渲染缓存；「离线优先」开则到此为止，否则继续联网刷新并回写缓存
-   * - 无缓存 / 翻页 → 走网络（原逻辑）；联网失败且已有缓存内容时静默保留，不清空
+   * 本地秒开 + 后台刷新（逐页缓存）：
+   * - 该页有缓存 → 立即渲染；「离线优先」开则到此为止，否则继续联网刷新并回写（仅 replace，防追加重复）
+   * - replace 模式命中缓存后联网刷新替换；loadMore 翻页命中缓存直接采用不再联网
+   * - 无缓存 → 走网络（原逻辑）；联网失败且已有缓存内容时静默保留，不清空
    */
   async loadPage(page: number, replace: boolean): Promise<void> {
     let fromCache: boolean = false;
-    if (page === 1 && replace) {
-      const cached: JmCommentPage | null = await DetailCache.loadComments(this.comicId, 'jm');
-      if (cached !== null) {
-        fromCache = true;
-        this.maxPage = cached.maxPage > 0 ? cached.maxPage : 1;
-        this.currentPage = 1;
+    const cached: JmCommentPage | null = await DetailCache.loadCommentsPage(this.comicId, 'jm', page);
+    if (cached !== null) {
+      fromCache = true;
+      this.maxPage = cached.maxPage > 0 ? cached.maxPage : 1;
+      this.currentPage = page;
+      if (replace) {
         this.dataSource = new ArrayDataSource<JmComment>(cached.comments);
-        this.loading = false;
-        this.error = '';
-        const offline: boolean = await Settings.getBool(SettingsKeys.OFFLINE_FIRST, false);
-        if (offline) {
-          return;
-        }
+      } else {
+        this.dataSource.addAll(cached.comments);
+      }
+      this.loading = false;
+      this.error = '';
+      if (!replace) {
+        return;
+      }
+      const offline: boolean = await Settings.getBool(SettingsKeys.OFFLINE_FIRST, false);
+      if (offline) {
+        return;
       }
     }
     if (replace && !fromCache) {
@@ -75,9 +81,7 @@ export struct CommentsPage {
       } else {
         this.dataSource.addAll(result.comments);
       }
-      if (page === 1 && replace) {
-        DetailCache.saveComments(this.comicId, 'jm', result.comments, this.maxPage);
-      }
+      DetailCache.saveCommentsPage(this.comicId, 'jm', page, result.comments, this.maxPage);
     } catch (e) {
       if (replace && !fromCache) {
         this.error = String(e);

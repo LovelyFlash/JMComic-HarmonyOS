@@ -6,9 +6,10 @@
 单漫画源（JM），包名 `com.jmcomic.harmony`，无第三方依赖。
 
 **当前状态**：
-- master = **v1.1.1**（versionCode 15，2026-10-24）；GitHub 最新 Release 为 `releases/tag/v1.1.1`
+- master = **v1.1.2**（versionCode 16，2026-10-25）；GitHub 最新 Release 为 `releases/tag/v1.1.2`
 - 版本三处需同步：`AppScope/app.json5`（versionCode/versionName）、`Constants.APP_VERSION`（关于页/设置页动态显示）、`Changelog.ets`（应用内更新日志，倒序新增条目）
 - `feature/compat-sdk20` 分支：`compatibleSdkVersion` 降至 `6.0.0(20)` + 新 API 版本守卫与低版本降级（0 编译兼容告警，真机冒烟通过），**已推送、暂未合并且暂不发版**
+- v1.1.2 落地的主线能力：下载写入系统 Download 目录（DocumentViewPicker DOWNLOAD 模式无感授权 Download/包名/，持久 URI 存 `DOWNLOAD_ROOT_URI`，6s 超时回退沙箱根；启动后台 migrateLegacy 把旧沙箱章节目录 rename/拷贝迁移，`localHit/chapterRoots/existingChapterDirs` 双根回读，detail 封面仍留沙箱）、已下载离线秒开（`loadChapter` 本地优先读 pages.json，未下载且 `Network.isOnline()` 为 false 快速失败；`selectDomain` 加 12s 整体兜底与 probe 拒绝处理；ReaderImage 网络分支前离线检查、GIF 分支走 localHit）、评论多页缓存（commentsJson v2 包装 `{"v":2,"p":{"1":"<json>"}}` 兼容旧数组格式，下载 capture 预缓存前 3 页，CommentsPage 任意页读写）、历史显示作者（history.author 幂等 ALTER + 重建兜底，详情 insertHistory 传 author，HistoryPage 以 `作者:` 行替换章节序号行）、删除下载联动 `ImageCache.removeByComic` 清 img_cache 归因条目（CacheManager 统计覆盖双根）、我的页新增下载卡片（封面横滑 + 进度 400ms 防抖重载 + `SHOW_DOWNLOAD_IMAGES` 开关）并移除追更入口（FollowPage 删除、router_map 减一条），历史/下载页 GRADUAL_BLUR 沉浸标题栏
 - v1.1.1 落地的主线能力：阅读页图片永久转圈修复（getBytesViaDownload 30s 超时防重入 + ReaderImageCache 双队列可见页优先/看门狗/防重入）、离线详情页完整可用（comic_cache 增列 relatedJson 幂等迁移与查询降级、浏览即缓存 updateComic 无行建行、localDetail 用 downloads 表拼最小详情、离线优先缺相关推荐时后台静默补）、相关推荐离线过滤（applyRelated 本地渲染仅显示 hasCoverCache 命中条目、无命中整栏隐藏、联网时 refreshDetail 后台预取前 10 张封面）、封面链补已下载优先（doGetCover 先 readLocalCover）
 - v1.1.0 落地的主线能力：图片持久缓存机制重做（ImageCache：URL→磁盘 `img_cache/<md5>.img` + `image_cache` 表元数据；封面走内存像素 LRU→磁盘→双网络栈写穿，阅读页图下载即落盘、二次阅读免网络；缓存常驻仅超挡位上限时淘汰，页图→详情→缩略图分阶段、同类型按 updateTime 从旧到新、阅读中漫画 pin 保护；NetworkImage 缓存优先，历史/关注/搜索/收藏/分类/每周/推荐/我的 8 处直连 Image 封面全部接入；修复 mkdirSync 目录已存在抛 EEXIST 导致缓存写入失败）
 - v1.0.12 落地的主线能力：首页历史缩略图即时刷新（historyChanged 广播 + @Watch 重载，四写点 bump）、容量挡位缓存管理（CacheManager：SQL 聚合占用统计 / 上限挡位 LRU 淘汰至 90% / 清理弹窗与释放量提示）、图片线路测速与自动切换（ImgLineSpeedTest：启动 24h 保鲜 + 阅读失败 1h 冷却兜底 + 手动测速结果弹窗展示全部节点速度）、设置页图标与文字位置统一对齐（图标列 x16 / 标题列 x52 / 字号 17 Medium）
@@ -62,7 +63,7 @@ ohos/entry/src/main/ets/
 │   ├── LaunchPage.ets     -- 启动页（首帧 + 历史数据预热 + 600ms 最短展示，main_pages 首位）
 │   ├── DiscoverPage / SearchPage / PreSearchPage / CategoryPage / JmCategoryPage
 │   ├── JmWeekPage / JmPromotePage / ComicDetailPage / CommentsPage
-│   ├── HistoryPage / FollowPage / FavoritesContent / DownloadPage（真实下载：聚合进度/暂停继续重试/删除清理，见「下载功能」节）
+│   ├── HistoryPage / FavoritesContent / DownloadPage（真实下载：聚合进度/暂停继续重试/删除清理，见「下载功能」节）
 │   ├── MePage / AccountsPage
 │   ├── reader/ReaderPage.ets  -- 阅读器（6 阅读模式：LTR/RTL/TTB/连续滚动/双页/双页反向；手势缩放；连续滚动锚点稳定；push-first 自取首章 + 三模式 LazyForEach 惰性构建；阅读器内状态栏全程隐藏）
 │   └── settings/          -- SettingsPage(List+Select), ReadingSettings, JmSettings, AboutPage（内置标题栏 .title().hideTitleBar(false)；AboutPage 含「更新日志」分区，数据源 Changelog.ets）
@@ -233,15 +234,15 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 ### 架构（`data/download/DownloadManager.ets` + `data/cache/DetailCache.ets`）
 - **任务队列与状态机**：`ChapterTask`（class，章节任务：jobId/标题/页数/进度/状态）；状态 `QUEUED/RUNNING/PAUSED/DONE/FAILED`；`pump()` 按并发上限（MAX_ACTIVE）派发，`runChapter()` 执行：取章 → 写 `pages.json` → 逐图下载；暂停 = 中断 + 状态回写，恢复/重试从 progress 续跑；进度存 `download_chapters` 表（页级），高频刷新走普通字段不整树重渲；Logger TAG=`Download`
 - **后台长时任务**：入队 `backgroundTaskManager.startBackgroundTask` + 常驻通知（`KEEP_BACKGROUND_RUNNING` 已声明），队列空闲时 `stopBackgroundTask`
-- **落盘管线（存重组后图片）**：`JmApi.getChapter` 取 URL 列表 → `writePagesFile` 持久化页列表（离线兜底）→ 逐图 `Network.getBytes`（http 栈 → 下载栈双栈 + 魔数校验）→ `savePage` = `JmImage.decode` + `recombine`（反打乱）+ `imagePacker.packToData` JPEG（GIF 原样），tmp → rename 原子写入 `filesDir/download/{photoId}/`；读取时本地字节**只解码不重组**（ReaderImage 本地分支跳过 recombine）
-- **详情缓存（DetailCache）**：下载入队时抓详情字段/章节列表/首页评论/封面双栈落盘（受「下载时保存详情数据」开关），`loadComic/localCoverPath/loadComments` 供详情页与下载页本地秒开；封面缺失 `ensureCover` 自愈；删除记录连带清理
-- **离线阅读链路**：ReaderPage `loadChapter` 在线取章失败 → `DownloadManager.readChapterPages`（pages.json）兜底，无本地数据才报错；在线取章成功 → `cacheChapterPages` 回填（旧下载在线打开一次自动补全）；ReaderImage 本地优先（`localPathFor` → `readLocal` → decode），失败回退网络；GIF 喂 `Image()` 走 `fileUri.getUriFromPath` 转 `file://` URI（裸沙箱路径不渲染，封面同理）
-- **入口与列表**：详情页「下载」→ 选章弹窗（全选/单章、已下载打勾）→「开始下载」（EMPHASIZED 按钮）入队，有 DONE 章节回显「已下载」；DownloadPage 聚合进度（页数/百分比）+ 暂停/继续/重试 + 删除清理（`removeComic` → 章节目录 + 详情缓存 + DB 记录）
+- **落盘管线（存重组后图片，v1.1.2 起写系统下载目录）**：`JmApi.getChapter` 取 URL 列表 → `writePagesFile` 持久化页列表（离线兜底）→ 逐图 `Network.getBytes`（http 栈 → 下载栈双栈 + 魔数校验）→ `savePage` = `JmImage.decode` + `recombine`（反打乱）+ `imagePacker.packToData` JPEG（GIF 原样），tmp → rename 原子写入 `{下载根}/{photoId}/`。下载根：`setupPublicRoot` 先读持久化 `DOWNLOAD_ROOT_URI`（FileUri 转路径校验），否则 `DocumentViewPicker` `pickerMode=DOWNLOAD` 无感取 `Download/包名/`（6s 超时兜底，失败回退沙箱 `filesDir/download` 即 legacyRoot）；启动后台 `migrateLegacy` 逐目录 rename→copy 迁移旧沙箱章节目录（跳过 detail 封面子目录、已存在则 merge），读取/删除/统计一律 `localHit`/`chapterRoots`/`existingChapterDirs` 双根回读（迁移窗口期不掉数据）；读取时本地字节**只解码不重组**（ReaderImage 本地分支跳过 recombine）
+- **详情缓存（DetailCache）**：下载入队时抓详情字段/章节列表/封面双栈落盘（受「下载时保存详情数据」开关），评论为**多页 v2 包装**（commentsJson `{"v":2,"p":{"1":"<评论数组JSON>"}}`，旧数组格式读时兼容），capture 预缓存前 `COMMENT_CAPTURE_PAGES=3` 页（单页失败即停），`loadComic/localCoverPath/loadCommentsPage` 供详情页与评论页本地秒开；封面缺失 `ensureCover` 自愈；删除记录连带清理（`removeComic` 同时 `ImageCache.removeByComic` 清该漫画 img_cache 归因条目）
+- **离线阅读链路（v1.1.2 本地优先）**：ReaderPage `loadChapter` **先** `readChapterPages`（双根回读 pages.json）直接渲染，命中即秒切不再等网络；未命中且 `Network.isOnline()` 为 false **快速失败**（不进 getChapter 死等超时），在线取章失败仍有本地兜底；取章成功 → `cacheChapterPages` 回填（旧下载在线打开一次自动补全）；ReaderImage 本地优先（`localHit` → `readLocal` → decode），本地与磁盘缓存都未命中且离线时直接 return null 不发网络请求；GIF 喂 `Image()` 走 `fileUri.getUriFromPath` 转 `file://` URI（裸沙箱路径不渲染，封面同理）
+- **入口与列表**：详情页「下载」→ 选章弹窗（全选/单章、已下载打勾）→「开始下载」（EMPHASIZED 按钮）入队，有 DONE 章节回显「已下载」；DownloadPage 聚合进度（页数/百分比）+ 暂停/继续/重试 + 删除清理（`removeComic` → 章节目录（新旧双根 + 存储路径） + 详情缓存 + 图片缓存归因条目 + DB 记录）
 
 ### 实现约束（沿用）
 - 任务对象用 class（`ChapterTask`），禁 any/globalThis；DB 一律 `CREATE TABLE IF NOT EXISTS` + ALTER 兼容旧库
 - 进度更新勿整树重渲：进度放普通字段/item 级 `@Prop`，`ArrayDataSource.replaceAll` 局部刷新
-- 文案进 `Translations.ets` 四处同步；颜色一律 `$r` 令牌；沙箱 `filesDir` 免权限
+- 文案进 `Translations.ets` 四处同步；颜色一律 `$r` 令牌；沙箱 `filesDir` 免权限（下载图片落系统 Download 目录经 picker 授权，免存储权限）
 - 本地图片喂 `Image()` 必须 `fileUri.getUriFromPath(path)` 转 `file://` URI（ArkUI 官方要求）
 
 ### 参考实现（只读）

@@ -46,11 +46,6 @@
       "pageSourceFile": "src/main/ets/pages/DownloadPage.ets"
     },
     {
-      "buildFunction": "FollowPageBuilder",
-      "name": "follows",
-      "pageSourceFile": "src/main/ets/pages/FollowPage.ets"
-    },
-    {
       "buildFunction": "AboutPageBuilder",
       "name": "about",
       "pageSourceFile": "src/main/ets/pages/settings/AboutPage.ets"

@@ -64,10 +64,12 @@ export struct HistoryPage {
                         .fontColor($r('app.color.text_primary'))
                         .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                         .width('100%')
-                      if (item.lastChapter.length > 0) {
-                        Text(item.lastChapter)
+                      if (item.author.length > 0) {
+                        Text(Translations.t('author') + ': ' + item.author)
                           .fontSize(12).fontColor($r('app.color.text_secondary'))
                           .margin({ top: 4 })
+                          .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+                          .width('100%')
                       }
                       Text(item.source)
                         .fontSize(11).fontColor(this.themeColor)
@@ -86,10 +88,16 @@ export struct HistoryPage {
                 .id('historyRow' + item.id + item.source)
               }, (item: HistoryItem) => item.id + item.source)
             }
-            .width('100%').layoutWeight(1)
-            .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
-            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
-            .padding({ bottom: this.bottomAvoid })
+            .scrollBar(BarState.Off)
+            .edgeEffect(EdgeEffect.Spring)
+            .contentStartOffset(56)
+            .width('100%')
+            .height('100%')
+            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+            .padding({ left: 16, right: 16})
+            .systemMaterial(new uiMaterial.ImmersiveMaterial({
+              style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+            }))
           }
         }
         .width('100%').height('100%')
@@ -97,7 +105,11 @@ export struct HistoryPage {
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .title(Translations.t('tab_history'), { barStyle: BarStyle.STACK, backgroundColor: Color.Transparent })
+    .title(Translations.t('tab_history'),{
+      barStyle: BarStyle.STACK,
+      scrollEffectOptions: {
+        scrollEffectType: ScrollEffectType.GRADUAL_BLUR }
+    })
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))

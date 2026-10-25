@@ -8,7 +8,8 @@ const TAG = 'Database';
 const SQL_CREATE_HISTORY = `CREATE TABLE IF NOT EXISTS history (
   id TEXT PRIMARY KEY, title TEXT NOT NULL, coverUrl TEXT,
   readTime INTEGER DEFAULT 0, lastChapter TEXT DEFAULT '',
-  lastPage INTEGER DEFAULT 0, source TEXT DEFAULT '')`;
+  lastPage INTEGER DEFAULT 0, source TEXT DEFAULT '',
+  author TEXT DEFAULT '')`;
 const SQL_CREATE_DOWNLOADS = `CREATE TABLE IF NOT EXISTS downloads (
   id TEXT NOT NULL, title TEXT NOT NULL, coverUrl TEXT DEFAULT '',
   source TEXT DEFAULT '', downloadPath TEXT DEFAULT '',
@@ -63,6 +64,7 @@ export class Database {
       await Database.store.executeSql(SQL_CREATE_DOWNLOAD_CHAPTERS);
       await Database.store.executeSql(SQL_CREATE_COMIC_CACHE);
       await Database.migrateComicCacheRelated();
+      await Database.migrateHistoryAuthor();
       await Database.store.executeSql(SQL_CREATE_IMAGE_CACHE);
       Logger.info(TAG, 'Database initialized');
     } catch (e) {
@@ -81,13 +83,13 @@ export class Database {
     }
   }
 
-  static async insertHistory(id: string, title: string, coverUrl: string, source: string, lastChapter: string = '', lastPage: number = 0): Promise<void> {
+  static async insertHistory(id: string, title: string, coverUrl: string, source: string, lastChapter: string = '', lastPage: number = 0, author: string = ''): Promise<void> {
     if (!Database.store) return;
     try {
       const bucket: relationalStore.ValuesBucket = {
         'id': id, 'title': title, 'coverUrl': coverUrl,
         'readTime': Date.now(), 'lastChapter': lastChapter,
-        'lastPage': lastPage, 'source': source
+        'lastPage': lastPage, 'source': source, 'author': author
       };
       // 主键冲突静默吞错会导致二次进入同一漫画 readTime/封面永不刷新、排序不更新
       await Database.store.insert('history', bucket,
@@ -120,7 +122,7 @@ export class Database {
       predicates.equalTo('source', 'jm');
       predicates.orderByDesc('readTime');
       const resultSet = await Database.store.query(predicates,
-        ['id', 'title', 'coverUrl', 'readTime', 'lastChapter', 'lastPage', 'source']);
+        ['id', 'title', 'coverUrl', 'readTime', 'lastChapter', 'lastPage', 'source', 'author']);
       const results: HistoryItem[] = [];
       while (resultSet.goToNextRow()) {
         const item = new HistoryItem();
@@ -131,6 +133,7 @@ export class Database {
         item.lastChapter = resultSet.getString(resultSet.getColumnIndex('lastChapter'));
         item.lastPage = resultSet.getLong(resultSet.getColumnIndex('lastPage'));
         item.source = resultSet.getString(resultSet.getColumnIndex('source'));
+        item.author = resultSet.getString(resultSet.getColumnIndex('author'));
         results.push(item);
       }
       resultSet.close();
@@ -420,6 +423,37 @@ export class Database {
     }
   }
 
+  /** history 增列迁移（幂等）：ALTER 补 author 列 → 探测列真实存在 → 缺失则带数据重建表兜底（防 queryHistory 选列失败清空历史） */
+  private static async migrateHistoryAuthor(): Promise<void> {
+    if (!Database.store) return;
+    try {
+      await Database.store.executeSql(`ALTER TABLE history ADD COLUMN author TEXT DEFAULT ''`);
+    } catch (e) {
+      // 列已存在（新库自带/重复迁移）或驱动不支持 ALTER，下方统一探测
+    }
+    try {
+      const rs = await Database.store.querySql(`SELECT author FROM history LIMIT 1`);
+      rs.close();
+      return;
+    } catch (e) {
+      Logger.warn(TAG, `history.author missing after alter, recreate table: ${Logger.describe(e)}`);
+    }
+    try {
+      await Database.store.executeSql(
+        `CREATE TABLE history_new (id TEXT PRIMARY KEY, title TEXT NOT NULL, coverUrl TEXT,` +
+        ` readTime INTEGER DEFAULT 0, lastChapter TEXT DEFAULT '', lastPage INTEGER DEFAULT 0,` +
+        ` source TEXT DEFAULT '', author TEXT DEFAULT '')`);
+      await Database.store.executeSql(
+        `INSERT INTO history_new (id, title, coverUrl, readTime, lastChapter, lastPage, source)` +
+        ` SELECT id, title, coverUrl, readTime, lastChapter, lastPage, source FROM history`);
+      await Database.store.executeSql(`DROP TABLE history`);
+      await Database.store.executeSql(`ALTER TABLE history_new RENAME TO history`);
+      Logger.info(TAG, 'history recreated with author');
+    } catch (e) {
+      Logger.error(TAG, `history recreate failed: ${Logger.describe(e)}`);
+    }
+  }
+
   static async upsertComicCache(row: ComicCacheRow): Promise<void> {
     if (!Database.store) return;
     try {
@@ -683,6 +717,32 @@ export class Database {
     }
   }
 
+  /** 按漫画归因查询图片缓存行（下载删除时联动清理用） */
+  static async queryImageCacheByComic(comicId: string): Promise<ImageCacheRow[]> {
+    if (!Database.store) return [];
+    try {
+      const predicates = new relationalStore.RdbPredicates('image_cache');
+      predicates.equalTo('comicId', comicId);
+      const resultSet = await Database.store.query(predicates);
+      const results: ImageCacheRow[] = [];
+      while (resultSet.goToNextRow()) {
+        const row = new ImageCacheRow();
+        row.key = resultSet.getString(resultSet.getColumnIndex('key'));
+        row.url = resultSet.getString(resultSet.getColumnIndex('url'));
+        row.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
+        row.kind = resultSet.getLong(resultSet.getColumnIndex('kind'));
+        row.bytes = resultSet.getLong(resultSet.getColumnIndex('bytes'));
+        row.updateTime = resultSet.getLong(resultSet.getColumnIndex('updateTime'));
+        results.push(row);
+      }
+      resultSet.close();
+      return results;
+    } catch (e) {
+      Logger.error(TAG, `queryImageCacheByComic failed: ${Logger.describe(e)}`);
+      return [];
+    }
+  }
+
   /** 清空图片缓存元数据（磁盘文件由 ImageCache.clear 一并删除） */
   static async clearImageCache(): Promise<void> {
     if (!Database.store) return;
@@ -820,6 +880,7 @@ export class HistoryItem {
   lastChapter: string = '';
   lastPage: number = 0;
   source: string = '';
+  author: string = '';
 }
 
 export class DownloadItem {

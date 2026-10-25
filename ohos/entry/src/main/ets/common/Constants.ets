@@ -46,7 +46,7 @@ export class ApiConstants {
   static readonly JM_PACKAGE_NAME = 'com.example.app';
 
   // App
-  static readonly APP_VERSION = '1.1.1';
+  static readonly APP_VERSION = '1.1.2';
   static readonly APP_NAME = 'JMComic';
 }
 
@@ -60,6 +60,7 @@ export class SettingsKeys {
   static readonly DARK_MODE = 'darkMode';
   static readonly THEME_COLOR = 'themeColor';
   static readonly SHOW_HISTORY_IMAGES = 'showHistoryImages';
+  static readonly SHOW_DOWNLOAD_IMAGES = 'showDownloadImages';
   static readonly LANGUAGE = 'language';
   static readonly VOLUME_KEY = 'volumeKey';
   static readonly KEEP_SCREEN_ON = 'keepScreenOn';
@@ -98,6 +99,7 @@ export class SettingsKeys {
   // Download settings
   static readonly SAVE_DETAIL_ON_DOWNLOAD = 'saveDetailOnDownload';
   static readonly OFFLINE_FIRST = 'offlineFirst';
+  static readonly DOWNLOAD_ROOT_URI = 'downloadRootUri';
   // Cache settings（0=不限，1=500MB，2=200MB，3=100MB，4=50MB，见 CACHE_GEAR_CAPS）
   static readonly CACHE_GEAR = 'cacheGear';
 }

@@ -1,46 +1,64 @@
-// pages/MePage.ets - 我的页（资料卡 + 历史 + 功能入口）
+// pages/MePage.ets - 我的页（资料卡 + 历史卡片 + 下载卡片）
 import { Translations } from '../common/Translations';
 import { NavUtil } from '../common/NavUtil';
 import { NetworkImage } from '../components/NetworkImage';
 import { DEFAULT_THEME_COLOR, SettingsKeys } from '../common/Constants';
 import { Settings } from '../data/preferences/Settings';
 import { JmApi } from '../data/api/JmApi';
-import { Database, HistoryItem } from '../data/database/Database';
-
-class EntryItem {
-  iconKey: string = '';
-  label: string = '';
-  route: string = '';
-  constructor(iconKey: string, label: string, route: string) {
-    this.iconKey = iconKey;
-    this.label = label;
-    this.route = route;
-  }
-}
-const tabnum:number = 0
+import { Database, DownloadItem, HistoryItem } from '../data/database/Database';
+import { DownloadManager } from '../data/download/DownloadManager';
 
 @Component
 export struct MePage {
 
   @State historyItems: HistoryItem[] = []
   @State historyCount: number = 0
+  @State downloadItems: DownloadItem[] = []
+  @State downloadCount: number = 0
   @State loggedIn: boolean = false
   @State userName: string = ''
   @State accountName: string = ''
   @StorageProp('jmAccountChanged') @Watch('onAccountChanged') jmAccountChanged: number = 0
   @StorageProp('historyChanged') @Watch('onHistoryChanged') historyChanged: number = 0
   @StorageProp('showHistoryImages') showHistoryImages: boolean = true
+  @StorageProp('showDownloadImages') showDownloadImages: boolean = true
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
-
-  static tabnum():number {return tabnum}
+  private dlReloadTimer: number = -1
+  private downloadsListener: () => void = (): void => {
+    this.scheduleDownloadsReload();
+  }
 
   aboutToAppear(): void {
     this.loadHistory();
+    this.loadDownloads();
     this.refreshLoginState();
-    // 首页历史图片显示开关（持久化 -> AppStorage，设置页/本页实时联动）
+    // 首页历史/下载图片显示开关（持久化 -> AppStorage，设置页/本页实时联动）
     Settings.getBool(SettingsKeys.SHOW_HISTORY_IMAGES, true).then((v: boolean) => {
       AppStorage.setOrCreate('showHistoryImages', v);
     });
+    Settings.getBool(SettingsKeys.SHOW_DOWNLOAD_IMAGES, true).then((v: boolean) => {
+      AppStorage.setOrCreate('showDownloadImages', v);
+    });
+    DownloadManager.subscribe(this.downloadsListener);
+  }
+
+  aboutToDisappear(): void {
+    DownloadManager.unsubscribe(this.downloadsListener);
+    if (this.dlReloadTimer >= 0) {
+      clearTimeout(this.dlReloadTimer);
+      this.dlReloadTimer = -1;
+    }
+  }
+
+  /** 下载进度回调防抖重载（400ms），避免逐页进度触发整树重绘 */
+  private scheduleDownloadsReload(): void {
+    if (this.dlReloadTimer >= 0) {
+      clearTimeout(this.dlReloadTimer);
+    }
+    this.dlReloadTimer = setTimeout(() => {
+      this.dlReloadTimer = -1;
+      this.loadDownloads();
+    }, 400);
   }
 
   private onAccountChanged(): void {
@@ -74,33 +92,10 @@ export struct MePage {
     this.historyCount = this.historyItems.length;
   }
 
-  private makeEntries(): EntryItem[] {
-    const list: EntryItem[] = [];
-    list.push(new EntryItem('download', Translations.t('download'), 'downloads'));
-    list.push(new EntryItem('clock', Translations.t('follow'), 'follows'));
-    list.push(new EntryItem('person', Translations.t('account'), 'accounts'));
-    return list;
-  }
-
-  private openEntry(entry: EntryItem): void {
-    if (entry.route.length === 0) {
-      return;
-    }
-    NavUtil.push(entry.route);
-  }
-
-  @Builder
-  iconBuilder(key: string) {
-    if (key === 'download') {
-      SymbolGlyph($r('sys.symbol.arrow_down_circle')).fontSize(28).fontColor([this.themeColor])
-        .id('iconDownload')
-    } else if (key === 'clock') {
-      SymbolGlyph($r('sys.symbol.clock')).fontSize(28).fontColor([this.themeColor])
-        .id('iconClock')
-    } else {
-      SymbolGlyph($r('sys.symbol.person')).fontSize(28).fontColor([this.themeColor])
-        .id('iconPerson')
-    }
+  async loadDownloads(): Promise<void> {
+    const items: DownloadItem[] = await Database.queryDownloads();
+    this.downloadItems = items;
+    this.downloadCount = items.length;
   }
 
   @Builder
@@ -247,6 +242,94 @@ export struct MePage {
     .id('historyCard')
   }
 
+  /** 下载卡片（与历史卡片同款样式：计数头 + 横滑封面/文本，图片显示受设置开关控制） */
+  @Builder
+  downloadCard() {
+    Column({ space: 8 }) {
+      Row({ space: 8 }) {
+        SymbolGlyph($r('sys.symbol.arrow_down_circle'))
+          .fontSize(20)
+          .fontColor([this.themeColor])
+        Text(Translations.t('download') + ' (' + this.downloadCount + ')')
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
+          .layoutWeight(1)
+        SymbolGlyph($r('sys.symbol.chevron_right'))
+          .fontSize(16)
+          .fontColor([$r('app.color.text_tertiary')])
+      }
+      .width('100%')
+      .onClick(() => { NavUtil.push('downloads'); })
+
+      if (this.downloadItems.length === 0) {
+        Text(Translations.t('no_downloads'))
+          .fontSize(13)
+          .fontColor($r('app.color.text_secondary'))
+          .width('100%')
+          .textAlign(TextAlign.Center)
+          .padding(16)
+      } else if (this.showDownloadImages) {
+        List({ space: 8 }) {
+          ForEach(this.downloadItems.slice(0, 10), (item: DownloadItem) => {
+            ListItem() {
+              Column({ space: 4 }) {
+                NetworkImage({ url: item.coverUrl, comicId: item.id, imgWidth: 80, imgHeight: 110, imgBorderRadius: 6 })
+                Text(item.title)
+                  .fontSize(11)
+                  .fontColor($r('app.color.text_primary'))
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .width(80)
+              }
+              .onClick(() => {
+                const param: Record<string, Object> = {
+                  'comicId': item.id, 'title': item.title, 'source': item.source
+                };
+                NavUtil.push('comicDetail', param);
+              })
+              .id('downloadItem' + item.id)
+            }
+          }, (item: DownloadItem) => item.id + item.source)
+        }
+        .listDirection(Axis.Horizontal)
+        .height(140)
+        .width('100%')
+      } else {
+        List({ space: 8 }) {
+          ForEach(this.downloadItems.slice(0, 10), (item: DownloadItem) => {
+            ListItem() {
+              Text(item.title)
+                .fontSize(13)
+                .fontColor($r('app.color.text_primary'))
+                .maxLines(2)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+                .constraintSize({ maxWidth: 160 })
+                .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+                .backgroundColor($r('app.color.bg_fill'))
+                .borderRadius(8)
+                .onClick(() => {
+                  const param: Record<string, Object> = {
+                    'comicId': item.id, 'title': item.title, 'source': item.source
+                  };
+                  NavUtil.push('comicDetail', param);
+                })
+            }
+            .id('downloadChip' + item.id)
+          }, (item: DownloadItem) => item.id + item.source)
+        }
+        .listDirection(Axis.Horizontal)
+        .height(56)
+        .width('100%')
+      }
+    }
+    .width('100%')
+    .padding(14)
+    .backgroundColor($r('app.color.bg_surface'))
+    .borderRadius(16)
+    .id('downloadCard')
+  }
+
   build() {
     
       Scroll() {
@@ -254,34 +337,7 @@ export struct MePage {
           this.searchEntry()
           this.profileHeader()
           this.historyCard()
-
-          Grid() {
-            ForEach(this.makeEntries(), (entry: EntryItem) => {
-              GridItem() {
-                Column({ space: 8 }) {
-                  this.iconBuilder(entry.iconKey)
-                  Text(entry.label)
-                    .fontSize(12)
-                    .fontColor($r('app.color.text_primary'))
-                    .maxLines(1)
-                }
-                .width('100%')
-                .height(88)
-                .justifyContent(FlexAlign.Center)
-                .alignItems(HorizontalAlign.Center)
-                .backgroundColor($r('app.color.bg_surface'))
-                .borderRadius(12)
-                .onClick(() => {
-                  this.openEntry(entry);
-                })
-                .id('entry' + entry.label)
-              }
-            }, (entry: EntryItem) => entry.label)
-          }
-          .columnsTemplate('1fr 1fr 1fr')
-          .columnsGap(10)
-          .rowsGap(10)
-          .width('100%')
+          this.downloadCard()
 
           Row({ space: 12 }) {
             SymbolGlyph($r('sys.symbol.gearshape'))

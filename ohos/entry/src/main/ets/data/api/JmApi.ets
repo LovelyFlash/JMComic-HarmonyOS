@@ -348,32 +348,50 @@ export class JmApi {
     return resp.code === 401;
   }
 
-  /** 并发探测全部域名：POST /login body '&' 期望 401，最快命中者胜出并持久化（对齐原版自动分流） */
+  /** 并发探测全部域名：POST /login body '&' 期望 401，最快命中者胜出并持久化（对齐原版自动分流）。
+   *  探测 Promise 拒绝/整体 12s 兜底均按失败收尾，保证调用方（apiGet 重试、阅读页取章）永不永挂 */
   static async selectDomain(): Promise<number> {
     if (JmApi.domains.length === 0) {
       JmApi.domains = JmApi.builtinDomains();
     }
     return new Promise<number>((resolve: (index: number) => void) => {
       let settled: boolean = false;
+      let guard: number = -1;
+      const finish: (index: number) => void = (index: number) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        if (guard >= 0) {
+          clearTimeout(guard);
+        }
+        resolve(index);
+      };
+      guard = setTimeout(() => {
+        Logger.warn(TAG, 'selectDomain overall timeout, fallback -1');
+        finish(-1);
+      }, 12000);
       let pending: number = JmApi.domains.length;
       for (let i = 0; i < JmApi.domains.length; i++) {
         const idx: number = i;
         const domain: string = JmApi.domains[idx];
-        JmApi.probeDomain(domain).then((ok: boolean) => {
+        const onResult: (ok: boolean) => void = (ok: boolean) => {
           pending--;
           if (ok && !settled) {
-            settled = true;
             JmApi.domainIndex = idx;
             JmApi.currentDomain = domain;
             Settings.putNumber(SettingsKeys.JM_DOMAIN_INDEX, idx).catch((e: Object) => {
               Logger.warn(TAG, `persist domain index failed: ${Logger.describe(e)}`);
             });
             Logger.info(TAG, `Selected JM API domain: ${domain}`);
-            resolve(idx);
+            finish(idx);
           } else if (pending === 0 && !settled) {
-            settled = true;
-            resolve(-1);
+            finish(-1);
           }
+        };
+        JmApi.probeDomain(domain).then(onResult, (e: Object) => {
+          Logger.warn(TAG, `probe ${domain} rejected: ${Logger.describe(e)}`);
+          onResult(false);
         });
       }
     });

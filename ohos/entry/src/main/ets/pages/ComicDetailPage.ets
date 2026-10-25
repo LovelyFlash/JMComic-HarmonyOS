@@ -150,7 +150,8 @@ export struct ComicDetailPage {
       this.chapterSource.replaceAll(this.displayChapters());
       this.isFavorite = this.comic.isFavorite;
       this.isLiked = this.comic.isLiked;
-      await Database.insertHistory(this.comicId, this.title, this.comic.coverUrl, this.source);
+      await Database.insertHistory(this.comicId, this.title, this.comic.coverUrl, this.source, '', 0,
+        this.comic.author);
       // 浏览即缓存：首开联网成功即落库（含相关推荐），断网重进可展示；旧设计仅下载时建行导致回填空转
       await DetailCache.updateComic(this.comic, this.source);
       await this.applyRelated(this.comic, true);
@@ -179,7 +180,8 @@ export struct ComicDetailPage {
       const fresh: Comic = await JmApi.getComicInfo(this.comicId);
       this.applyDetail(fresh);
       await this.applyRelated(fresh, true);
-      await Database.insertHistory(this.comicId, this.title, fresh.coverUrl, this.source);
+      await Database.insertHistory(this.comicId, this.title, fresh.coverUrl, this.source, '', 0,
+        fresh.author);
       await DetailCache.updateComic(fresh, this.source);
       // 后台预取相关推荐封面（离线重进详情页时封面有图不灰块），不阻塞页面
       ImageCache.prefetchCovers(this.relatedUrls(fresh), fresh.id).catch((e: Object) => {

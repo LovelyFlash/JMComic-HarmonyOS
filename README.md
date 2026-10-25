@@ -39,7 +39,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 | 项目 | 说明 |
 |------|------|
 | 包名 | `com.jmcomic.harmony` |
-| 当前版本 | 1.1.1（versionCode 15） |
+| 当前版本 | 1.1.2（versionCode 16） |
 | 目标 API | 26（HarmonyOS NEXT） |
 | 开发语言 / UI 框架 | ArkTS / ArkUI 声明式（Stage 模型，单 `entry` HAP 模块） |
 | 设备类型 | phone / tablet / 2in1 |
@@ -53,13 +53,14 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 - 发现页分区横滑列表（连载更新 / 推荐本本 / 去码全彩化等），主页、最新双 Tab
 
 **账号与收藏**
-- JM 账号登录、自动签到、多文件夹收藏夹（含收藏夹选择面板）、关注 / 追更
-- 历史记录、下载记录、追更列表、账号管理，均由 SQLite 持久化；首页历史缩略图即时刷新
+- JM 账号登录、自动签到、多文件夹收藏夹（含收藏夹选择面板）
+- 历史记录、下载记录、账号管理，均由 SQLite 持久化；首页历史缩略图即时刷新，历史列表显示作者，我的页提供历史 / 下载卡片（封面横滑，图片显示可在设置中关闭）
 
 **下载与离线**
-- 章节真实下载：选章下载、暂停 / 继续 / 重试与页级进度，后台长时任务，删除记录自动清理文件
-- 离线阅读：图片列表随下载持久化，断网可读已下载章节；图片本地优先、网络回退
-- 详情本地秒开：下载时自动缓存详情 / 封面 / 首页评论（可关），支持「离线优先」跳过联网刷新
+- 章节真实下载：选章下载、暂停 / 继续 / 重试与页级进度，后台长时任务，删除记录自动清理文件并联动清理图片缓存
+- 下载写入系统 Download 目录：文件管理器直接可见，无需额外权限；旧沙箱下载数据启动后自动迁移，读取与删除新旧目录全覆盖
+- 离线阅读：图片列表随下载持久化，断网可读已下载章节；章节加载本地优先秒切，离线快速失败，不再等待网络超时转圈
+- 详情本地秒开：下载时自动缓存详情 / 封面 / 前 3 页评论（可关），浏览过的评论页逐页缓存离线可回看，支持「离线优先」跳过联网刷新
 - 图片持久缓存：封面/缩略图与阅读页图统一先走本地缓存再加载网络，缓存常驻，仅超容量挡位上限时按最近使用时间淘汰（阅读页图先淘汰、缩略图最后淘汰），阅读中漫画资源受保护不受淘汰影响
 - 相关推荐离线可用：浏览即缓存相关推荐数据与封面，断网重进详情页可展示；封面未缓存的条目不显示，避免灰块占位
 - 阅读页图片加载稳定：下载 30 秒超时 + 可见页优先的后台并发调度，单张异常图不再导致整页永久转圈
@@ -99,7 +100,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 │ UI 层  pages/ + components/                                  │
 │   LaunchPage → MainPage(底部 4 Tab: 主页/收藏/发现/分类)     │
 │   DiscoverPage · SearchPage · CategoryPage · ComicDetailPage │
-│   reader/ReaderPage · history/follow/download/account…       │
+│   reader/ReaderPage · history/download/account…              │
 │   settings/* · ComicTile/ComicGrid/ReaderImage/Setting*      │
 ├──────────────────────────────────────────────────────────────┤
 │ 状态层  viewmodel/ + AppStorage                              │
@@ -117,7 +118,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 └──────────────────────────────────────────────────────────────┘
 ```
 
-- **路由**：`main_pages.json` 仅含 `LaunchPage`（首帧）与 `MainPage`；其余 16 个页面通过 `router_map.json`（`buildFunction` 声明式路由）注册，由 `NavUtil.push(name, params)` 跳转。
+- **路由**：`main_pages.json` 仅含 `LaunchPage`（首帧）与 `MainPage`；其余 15 个页面通过 `router_map.json`（`buildFunction` 声明式路由）注册，由 `NavUtil.push(name, params)` 跳转。
 - **启动流**：`LaunchPage` 首帧 → `Database.queryHistory()` 预热 → 600ms 最短展示 → `MainPage`；`setupWindow` 幂等，启动页与主页共用。
 - **全局状态**：`AppData` 持有漫画源等全局信息；主题色 / 深色策略走 `AppStorage`，组件用 `@StorageProp` 响应。
 
@@ -170,13 +171,13 @@ JMComic-HarmonyOS/
                 ├── data/
                 │   ├── api/           -- JmApi.ets：禁漫 API 客户端
                 │   ├── database/      -- Database.ets：SQLite 封装
-                │   ├── download/      -- DownloadManager.ets：章节下载队列（后台任务/进度/离线页列表）
-                │   ├── cache/         -- ImageCache.ets：图片持久缓存（先缓存后网络）；DetailCache.ets：已下载详情/封面/评论本地缓存；CacheManager.ets：占用统计/挡位淘汰/清理
+                │   ├── download/      -- DownloadManager.ets：章节下载队列（系统下载目录落盘与旧数据迁移、后台任务/进度/离线页列表）
+                │   ├── cache/         -- ImageCache.ets：图片持久缓存（先缓存后网络）；DetailCache.ets：已下载详情/封面/多页评论本地缓存；CacheManager.ets：占用统计/挡位淘汰/清理
                 │   ├── preferences/   -- Settings.ets：键值存储封装
                 │   └── model/         -- Chapter / Comic / ComicPageData / Comment / ReaderParam
                 ├── viewmodel/         -- AppData.ets：全局状态
                 ├── components/        -- 12 个复用组件
-                ├── pages/             -- 17 个业务页面
+                ├── pages/             -- 16 个业务页面
                 │   ├── reader/        -- ReaderPage.ets：阅读器
                 │   └── settings/      -- SettingsPage / ReadingSettings / JmSettings / AboutPage
                 └── plugin/            -- 预留插件目录
@@ -234,6 +235,7 @@ URL → Network.getBytes(http 栈) → 魔数嗅探(looksLikeImage)
 ### 3. ReaderPage —— 阅读器
 
 - **进入与切章（push-first）**：详情页 `startReading` 同步转场（`NavUtil.push` 传 `images=[]`），阅读器自取首章（`silent` 模式：不弹 toast、不落盘防覆盖进度），取图完成后再做续读检查；失败置 `chapterError` → 内容层「错误 + 重试」遮罩。
+- **本地优先与离线快速失败**：`loadChapter` 先读已下载章节的 `pages.json` 直接渲染（切章 / 大跨度跳页不再等网络）；未下载且 `Network.isOnline()` 判定离线时直接快速失败回退，不再死等请求超时 + 域名探测（`selectDomain` 同步加 12s 兜底与拒绝处理，杜绝永久挂起转圈）。
 - **三模式 LazyForEach**：单页 / 双页 Swiper 与连续 List 的数据源 `singleSource` / `dualSource` / `stripSource` 均为 `ArrayDataSource.replaceAll`，切章 / 进入只创建 visible + cachedCount 节点（原 ForEach eager 构建一帧重建 50–120 个页面节点是掉帧主因）。
 - **状态栏全程隐藏**：进入后 400ms（跨过 push 转场）隐藏、退出恢复，世代号 `statusBarGen` 防乱序；打开工具栏 / 半模态**不恢复**状态栏（恢复会回写 `topAvoidHeight` → `@StorageProp` 整树重渲染导致图片错位），工具栏 padding 直接联动 `topAvoidHeight`。
 - **连续滚动稳定**：外层 `Scroll`（pinch 缩放 + 缩放态平移）+ 内层 `List`（`cachedCount` + 嵌套滚动 PARENT_FIRST）；`onDidZoom` 写普通字段避免逐帧重渲；锚点 `scrollToIndex` + 80/400ms 两次重校；护栏期间屏蔽页码上报；进度 500ms 防抖落盘、退出前强制 flush。
@@ -266,7 +268,7 @@ URL → Network.getBytes(http 栈) → 魔数嗅探(looksLikeImage)
 
 ### 7. Database / Settings —— 持久化
 
-- SQLite `pica_comic.db`（S1）7 张表：`history`（阅读进度）、`downloads`（下载记录）、`follows`（追更）、`comments`（评论缓存）、`download_chapters`（下载章节）、`comic_cache`（详情缓存）、`image_cache`（图片持久缓存元数据），`Database.init` 后 `CREATE TABLE IF NOT EXISTS`。
+- SQLite `pica_comic.db`（S1）7 张表：`history`（阅读进度与作者，author 列幂等迁移）、`downloads`（下载记录）、`follows`（追更）、`comments`（评论缓存）、`download_chapters`（下载章节）、`comic_cache`（详情缓存，评论为多页 v2 包装）、`image_cache`（图片持久缓存元数据，含漫画归因），`Database.init` 后 `CREATE TABLE IF NOT EXISTS`。
 - `Settings.ets` 封装 preferences：深色 / 主题色 / 语言 / 阅读相关 / JM 域名与账号等键值（`SettingsKeys` 统一定义）。
 
 ### 8. ThemeManager 与国际化
@@ -343,8 +345,8 @@ NavUtil.push('comicDetail', { comicId, title, source })
 ```json5
 {
   bundleName: "com.jmcomic.harmony",
-  versionCode: 15,
-  versionName: "1.1.1",
+  versionCode: 16,
+  versionName: "1.1.2",
   targetAPIVersion: 26
 }
 ```
@@ -358,7 +360,7 @@ NavUtil.push('comicDetail', { comicId, title, source })
 **模块级（`entry/src/main/module.json5`）**
 
 - `mainElement: EntryAbility`，`deviceTypes: [phone, tablet, 2in1]`
-- `pages: $profile:main_pages`（LaunchPage / MainPage）、`routerMap: $profile:router_map`（16 条声明式路由）
+- `pages: $profile:main_pages`（LaunchPage / MainPage）、`routerMap: $profile:router_map`（15 条声明式路由）
 - metadata：`ohos.arkui.UIMaterial.state = enable`（沉浸光感总开关）
 
 **依赖（`ohos/oh-package.json5`）**：`modelVersion 5.0.0`；运行时依赖为空，仅 devDependency `@ohos/hypium 1.0.19`。

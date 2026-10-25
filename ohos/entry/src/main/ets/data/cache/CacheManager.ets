@@ -7,6 +7,7 @@ import fs from '@ohos.file.fs';
 import { ComicCacheLruRow, Database } from '../database/Database';
 import { DetailCache } from './DetailCache';
 import { ImageCache, ImageCacheKind } from './ImageCache';
+import { DownloadManager } from '../download/DownloadManager';
 import { Network } from '../../common/Network';
 import { ReaderImageCache } from '../../components/ReaderImage';
 import { Settings } from '../preferences/Settings';
@@ -55,26 +56,28 @@ export class CacheManager {
     return bytes;
   }
 
-  /** 下载章节占用（仅统计，永不清理；排除 detail 封面子目录） */
+  /** 下载章节占用（仅统计，永不清理；主根=公共下载目录 + 旧沙箱根，均排除 detail 封面子目录） */
   static statDownloads(): number {
-    const root: string = CacheManager.pathOf(DOWNLOAD_ROOT);
-    if (root.length === 0) {
-      return 0;
-    }
+    const roots: string[] = DownloadManager.chapterRoots();
     let total: number = 0;
-    try {
-      if (!fs.accessSync(root)) {
-        return 0;
+    for (const root of roots) {
+      if (root.length === 0) {
+        continue;
       }
-      const names: string[] = fs.listFileSync(root);
-      for (let i = 0; i < names.length; i++) {
-        if (names[i] === DETAIL_SUBDIR) {
+      try {
+        if (!fs.accessSync(root)) {
           continue;
         }
-        total += CacheManager.walkBytes(`${root}/${names[i]}`);
+        const names: string[] = fs.listFileSync(root);
+        for (let i = 0; i < names.length; i++) {
+          if (names[i] === DETAIL_SUBDIR) {
+            continue;
+          }
+          total += CacheManager.walkBytes(`${root}/${names[i]}`);
+        }
+      } catch (e) {
+        Logger.warn(TAG, `statDownloads failed on ${root}: ${Logger.describe(e)}`);
       }
-    } catch (e) {
-      Logger.warn(TAG, `statDownloads failed: ${Logger.describe(e)}`);
     }
     return total;
   }

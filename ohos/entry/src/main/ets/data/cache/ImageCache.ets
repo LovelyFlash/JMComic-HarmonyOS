@@ -154,6 +154,29 @@ export class ImageCache {
     return await Database.imageCacheBytes();
   }
 
+  /** 删除指定漫画的全部归因缓存条目（文件 + 元数据行 + 内存像素）；下载整本删除时联动调用 */
+  static async removeByComic(comicId: string): Promise<void> {
+    if (comicId.length === 0) {
+      return;
+    }
+    const rows: ImageCacheRow[] = await Database.queryImageCacheByComic(comicId);
+    for (const row of rows) {
+      try {
+        const path: string = ImageCache.pathOf(row.key);
+        if (path.length > 0 && fs.accessSync(path)) {
+          fs.unlinkSync(path);
+        }
+      } catch (e) {
+        Logger.warn(TAG, `removeByComic unlink failed: ${row.key} ${Logger.describe(e)}`);
+      }
+      ImageCache.memDrop(row.url);
+      await Database.removeImageCache(row.key);
+    }
+    if (rows.length > 0) {
+      Logger.info(TAG, `removeByComic ${comicId}: ${rows.length} entries`);
+    }
+  }
+
   // ---- 封面/缩略图主入口（内存像素→已下载封面→磁盘→网络写穿） ----
 
   /**
