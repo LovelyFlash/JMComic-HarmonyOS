@@ -225,7 +225,7 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 ### 进入与切章（push-first + LazyForEach）
 - **push-first 进入**：详情页 `startReading` **同步转场**（`NavUtil.push` 传 `images=[]`，不再前置 `await getChapter`——点击后几百毫秒网络等待无反馈是「假死感」主因）；ReaderPage `aboutToAppear` 的 `loadConfig().then` 中 images 为空 → `pendingRestore=true` + `loadChapter(order, startAtEnd, silent=true)` 自取首章，取到图片后再 `restoreProgress()`（续读弹窗依赖 `images.length` 判定，必须在取图后）
 - **silent 模式**：不弹「已切换」toast、**不落盘**（`pendingRestore` 期间跳过 `flushStripSave`——进入时无旧章可存，落盘会把已存进度覆盖为第 0 页）；失败置 `@State chapterError` → 内容层「错误+重试」overlay（盖住点按区，点击重取）
-- **LazyForEach 惰性构建**：三模式数据源 `singleSource`/`dualSource`/`stripSource`（`ArrayDataSource.replaceAll → onDataReloaded`）。单页/双页 Swiper 原为 ForEach eager 构建——切章/进入一帧内销毁重建整章 N 个页面节点（50-120 页）是掉帧主因；Swiper 官方支持 LazyForEach + `cachedCount(2)` 懒加载（**Repeat 懒加载不支持 V1 状态管理，不可用**）。模式/RTL 切换统一走 `refreshDataSources()` 全量 replaceAll；`active` 窗口门控与 `scale` 绑定为 @Prop/@State 属性级绑定，LazyForEach 节点创建后仍响应状态变化
+- **LazyForEach 惰性构建**：三模式数据源 `singleSource`/`dualSource`/`stripSource`（`ArrayDataSource.replaceAll → onDataReloaded`）。单页/双页 Swiper 原为 ForEach eager 构建——切章/进入一帧内销毁重建整章 N 个页面节点（50-120 页）是掉帧主因；Swiper 官方支持 LazyForEach + `cachedCount(2)` 懒加载（**Repeat 懒加载不支持 V1 状态管理，不可用**）。模式/RTL 切换统一走 `refreshDataSources()` 全量 replaceAll；单页/双页图片随节点挂载加载，由 Swiper 的 `cachedCount(2)` 控制节点窗口；禁止经多参数 `@Builder pageImage` 按值传递 `active`（预建节点拿到 false 后无法随翻页更新，会从第四张起卡在占位态）；双页数据源的 `p` 为图片起始索引（0/2/4），不是双页组索引
 - **切章反馈**：`loadChapter` 入口**立即** `showSheet=false`（关闭动画不与内容重建叠帧）+ 内容层半透明 `reader_overlay` 遮罩 + LoadingProgress（盖住点按区防误触，工具栏在其上仍可操作）；诊断日志 `fetchMs`/`totalMs`（TAG=ReaderPage）
 - **异步安全**：`alive` 标记（`aboutToDisappear` 置 false），取章/续读等异步回调返回时若已退出则丢弃状态写入
 

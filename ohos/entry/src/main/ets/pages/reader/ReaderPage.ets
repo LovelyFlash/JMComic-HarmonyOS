@@ -29,9 +29,6 @@ const SIDE_TRACK: number = 280;
 const SIDE_THUMB: number = 36;
 /** 自动翻页可选间隔（秒） */
 const AUTO_TIMES: number[] = [3, 5, 8, 10, 15];
-/** 视口懒加载窗口：仅加载距当前页 N 页内的图片（离窗丢像素、保留比例占位） */
-const ACTIVE_WINDOW_SINGLE: number = 2;
-const ACTIVE_WINDOW_DUAL: number = 2;
 /** 进入阅读器后隐藏状态栏的延时（ms，跨过 push 转场再切换避让） */
 const ENTRY_BAR_HIDE_DELAY: number = 400;
 
@@ -770,19 +767,13 @@ export struct ReaderPage {
     }
   }
 
-  private singleActive(idx: number): boolean {
-    return Math.abs(idx - this.toDisplay(this.currentIndex)) <= ACTIVE_WINDOW_SINGLE;
-  }
-
-  private dualActive(p: number): boolean {
-    return Math.abs(p - Math.floor(this.currentIndex / 2)) <= ACTIVE_WINDOW_DUAL;
-  }
-
   // ---------- 内容区 ----------
   @Builder
-  pageImage(url: string, dual: boolean, active: boolean) {
+  pageImage(url: string, dual: boolean) {
     if (url.length > 0) {
-      ReaderImage({ url: url, imageLayout: this.imageLayout, fill: true, dual: dual, active: active })
+      // Swiper + LazyForEach + cachedCount(2) 已限制节点数量，图片挂载即加载。
+      // 不经 @Builder 按值传递 active：预建节点拿到 false 后不会随翻页更新，会永久停在占位态。
+      ReaderImage({ url: url, imageLayout: this.imageLayout, fill: true, dual: dual })
     } else {
       Column({ space: 8 }) {
         LoadingProgress().width(40).height(40).color($r('app.color.text_on_reader'))
@@ -799,7 +790,7 @@ export struct ReaderPage {
     Swiper() {
       LazyForEach(this.singleSource, (url: string, idx: number) => {
         Stack() {
-          this.pageImage(url, false, this.singleActive(idx))
+          this.pageImage(url, false)
         }
         .width('100%').height('100%')
         .clip(true)
@@ -873,29 +864,29 @@ export struct ReaderPage {
             // 双页反向：右页在前；两半贴中线对齐（消除中部间隔）
             if (p + 1 < this.images.length) {
               Stack({ alignContent: Alignment.End }) {
-                this.pageImage(this.images[p + 1], true, this.dualActive(p))
+                this.pageImage(this.images[p + 1], true)
               }
               .width('50%').height('100%').clip(true)
               Stack({ alignContent: Alignment.Start }) {
-                this.pageImage(this.images[p], true, this.dualActive(p))
+                this.pageImage(this.images[p], true)
               }
               .width('50%').height('100%').clip(true)
             }
           else {
               Stack() {
-                this.pageImage(this.images[p], true, this.dualActive(p))
+                this.pageImage(this.images[p], true)
               }
               .width('100%').height('100%').clip(true)
             }
           }
           else {
             Stack({ alignContent: Alignment.End }) {
-              this.pageImage(this.images[p], true, this.dualActive(p))
+              this.pageImage(this.images[p], true)
             }
             .width('50%').height('100%').clip(true)
             if (p + 1 < this.images.length) {
               Stack({ alignContent: Alignment.Start }) {
-                this.pageImage(this.images[p + 1], true, this.dualActive(p))
+                this.pageImage(this.images[p + 1], true)
               }
               .width('50%').height('100%').clip(true)
             }
