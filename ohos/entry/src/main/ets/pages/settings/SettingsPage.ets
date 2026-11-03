@@ -12,6 +12,7 @@ import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingSelect } from '../../components/SettingSelect';
 import { SettingInfoItem } from '../../components/SettingInfoItem';
 import { SettingCorner } from '../../components/SettingCommon';
+import { ChineseConversion } from '../../common/ChineseConversion';
 import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
@@ -27,6 +28,7 @@ export struct SettingsPage {
   @State showColorSheet: boolean = false
   @State showHistoryImages: boolean = true
   @State showDownloadImages: boolean = true
+  @State convertT2S: boolean = true
   @State saveDetail: boolean = true
   @State offlineFirst: boolean = false
   @State cacheSize: string = '-'
@@ -42,6 +44,10 @@ export struct SettingsPage {
     Settings.getBool(SettingsKeys.SHOW_DOWNLOAD_IMAGES, true).then((v: boolean) => {
       this.showDownloadImages = v;
       AppStorage.setOrCreate('showDownloadImages', v);
+    });
+    Settings.getBool(SettingsKeys.T2S, true).then((v: boolean) => {
+      this.convertT2S = v;
+      ChineseConversion.enabled = v;
     });
     Settings.getBool(SettingsKeys.SAVE_DETAIL_ON_DOWNLOAD, true).then((v: boolean) => {
       this.saveDetail = v;
@@ -146,6 +152,12 @@ export struct SettingsPage {
     await Settings.setBool(SettingsKeys.SHOW_DOWNLOAD_IMAGES, value);
   }
 
+  private async setConvertT2S(value: boolean): Promise<void> {
+    this.convertT2S = value;
+    ChineseConversion.enabled = value;
+    await Settings.setBool(SettingsKeys.T2S, value);
+  }
+
   private async setSaveDetail(value: boolean): Promise<void> {
     this.saveDetail = value;
     await Settings.setBool(SettingsKeys.SAVE_DETAIL_ON_DOWNLOAD, value);
@@ -237,6 +249,16 @@ export struct SettingsPage {
             isOn: this.showHistoryImages,
             onToggle: (value: boolean) => {
               this.setShowHistoryImages(value);
+            }
+          })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          SettingSwitch({
+            corner: SettingCorner.MIDDLE,
+            icon: $r('sys.symbol.book'),
+            title: Translations.t('convert_t2s'),
+            isOn: this.convertT2S,
+            onToggle: (value: boolean) => {
+              this.setConvertT2S(value);
             }
           })
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
@@ -376,6 +398,7 @@ export struct SettingsPage {
     .backgroundColor($r('app.color.bg_page'))
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .bindSheet($$this.showColorSheet, this.colorSheetContent(), {
+      preferType: SheetType.BOTTOM,
       title: { title: Translations.t('select_theme_color') },
       detents: [SheetSize.MEDIUM],
       blurStyle: BlurStyle.COMPONENT_THICK,

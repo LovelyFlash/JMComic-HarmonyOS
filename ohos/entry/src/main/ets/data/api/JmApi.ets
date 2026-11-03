@@ -4,6 +4,7 @@ import { Logger } from '../../common/Logger';
 import { Comic } from '../model/Comic';
 import { Chapter } from '../model/Chapter';
 import { ApiConstants, SettingsKeys } from '../../common/Constants';
+import { ChineseConversion } from '../../common/ChineseConversion';
 import { Settings } from '../preferences/Settings';
 import cryptoFramework from '@ohos.security.cryptoFramework';
 import { util } from '@kit.ArkTS';
@@ -77,7 +78,7 @@ export class JmApi {
     }
     const rec = obj as Record<string, Object>;
     const val = rec[key];
-    return val !== undefined && val !== null ? String(val) : def;
+    return val !== undefined && val !== null ? ChineseConversion.t2s(String(val)) : def;
   }
 
   private static safeNum(obj: Object | undefined, key: string, def: number = 0): number {

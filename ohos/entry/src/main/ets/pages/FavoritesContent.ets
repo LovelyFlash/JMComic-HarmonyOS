@@ -379,6 +379,7 @@ export struct FavoritesContent {
     .padding({ bottom: 76 })
     .backgroundColor($r('app.color.bg_page'))
     .bindSheet($$this.showNewFolderSheet, this.newFolderSheetContent(), {
+      preferType: SheetType.BOTTOM,
       height: SheetSize.MEDIUM,
       dragBar: true,
       onDisappear: () => {

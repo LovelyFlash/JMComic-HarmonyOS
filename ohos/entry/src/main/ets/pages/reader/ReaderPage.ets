@@ -1682,6 +1682,8 @@ export struct ReaderPage {
       .backgroundColor($r('app.color.reader_bg'))
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       .bindSheet($$this.showSheet, this.sheetContent(), {
+        // 平板横屏窗口宽 ≥840vp 时默认非底部样式，detents 不生效 → 显式底部样式（与详情页一致）
+        preferType: SheetType.BOTTOM,
         detents: [SheetSize.MEDIUM, SheetSize.LARGE],
         blurStyle: BlurStyle.COMPONENT_THICK,
         showClose: true,

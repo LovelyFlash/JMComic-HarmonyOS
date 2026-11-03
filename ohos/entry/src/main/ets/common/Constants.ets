@@ -46,7 +46,7 @@ export class ApiConstants {
   static readonly JM_PACKAGE_NAME = 'com.example.app';
 
   // App
-  static readonly APP_VERSION = '1.1.2';
+  static readonly APP_VERSION = '1.1.3';
   static readonly APP_NAME = 'JMComic';
 }
 
@@ -62,6 +62,7 @@ export class SettingsKeys {
   static readonly SHOW_HISTORY_IMAGES = 'showHistoryImages';
   static readonly SHOW_DOWNLOAD_IMAGES = 'showDownloadImages';
   static readonly LANGUAGE = 'language';
+  static readonly T2S = 't2s';
   static readonly VOLUME_KEY = 'volumeKey';
   static readonly KEEP_SCREEN_ON = 'keepScreenOn';
   static readonly FONT_SIZE = 'fontSize';

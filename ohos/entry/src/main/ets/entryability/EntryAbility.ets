@@ -6,6 +6,8 @@ import { window, display } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { Database } from '../data/database/Database';
 import { Settings } from '../data/preferences/Settings';
+import { SettingsKeys } from '../common/Constants';
+import { ChineseConversion } from '../common/ChineseConversion';
 import { ThemeManager } from '../common/ThemeManager';
 import { ReadingConfig } from '../common/ReadingConfig';
 import { JmApi } from '../data/api/JmApi';
@@ -54,6 +56,8 @@ export default class EntryAbility extends UIAbility {
 
   private async initAsync(): Promise<void> {
     await Settings.init(this.context);
+    // 繁转简开关（默认开）：须在首个网络解析前生效
+    ChineseConversion.enabled = await Settings.getBool(SettingsKeys.T2S, true);
     await Database.init(this.context);
     await ThemeManager.restore();
     // loadContent 之前应用颜色模式，避免手动策略下首帧按系统色渲染闪烁
@@ -145,6 +149,8 @@ export default class EntryAbility extends UIAbility {
       }
       Logger.info(TAG, 'Content loaded successfully');
       this.setupWindow(windowStage);
+      // 公共下载目录 picker：须在窗口内容就绪后触发（init 阶段无 loadContent 会失败）
+      DownloadManager.maybeSetupPublicRoot();
     });
   }
 
@@ -244,6 +250,8 @@ export default class EntryAbility extends UIAbility {
 
   onForeground(): void {
     Logger.info(TAG, 'Ability onForeground');
+    // 公共下载目录初始化失败时的重试点（幂等，最多 3 次）
+    DownloadManager.maybeSetupPublicRoot();
   }
 
   onBackground(): void {

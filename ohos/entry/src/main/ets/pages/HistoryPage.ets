@@ -5,7 +5,8 @@ import { NetworkImage } from '../components/NetworkImage';
 import { Database, HistoryItem } from '../data/database/Database';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
+import { ToastUtil } from '../common/ToastUtil';
+import { SymbolGlyphModifier, uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function HistoryPageBuilder(name: string, param: object) {
@@ -33,6 +34,52 @@ export struct HistoryPage {
     this.loading = true;
     this.dataSource = new ArrayDataSource<HistoryItem>(await Database.queryHistory());
     this.loading = false;
+  }
+
+  private confirmClearHistory(): void {
+    if (this.dataSource.totalCount() === 0) {
+      return;
+    }
+    this.getUIContext().showAlertDialog({
+      title: Translations.t('clear_history'),
+      message: Translations.t('clear_history_confirm'),
+      primaryButton: {
+        value: Translations.t('cancel'),
+        action: () => {
+        }
+      },
+      secondaryButton: {
+        value: Translations.t('confirm'),
+        fontColor: $r('app.color.danger'),
+        action: () => {
+          Database.clearHistory().then(() => {
+            ToastUtil.show(Translations.t('deleted'), 1500);
+          });
+        }
+      }
+    });
+  }
+
+  private confirmDeleteHistory(item: HistoryItem): void {
+    this.getUIContext().showAlertDialog({
+      title: Translations.t('delete'),
+      message: `${Translations.t('history_delete_confirm_prefix')}${item.title}` +
+        `${Translations.t('history_delete_confirm_suffix')}`,
+      primaryButton: {
+        value: Translations.t('cancel'),
+        action: () => {
+        }
+      },
+      secondaryButton: {
+        value: Translations.t('delete'),
+        fontColor: $r('app.color.danger'),
+        action: () => {
+          Database.removeHistory(item.id, item.source).then(() => {
+            ToastUtil.show(Translations.t('deleted'), 1500);
+          });
+        }
+      }
+    });
   }
 
   build() {
@@ -84,6 +131,9 @@ export struct HistoryPage {
                     };
                     NavUtil.push('comicDetail', param);
                   })
+                  .gesture(LongPressGesture().onAction(() => {
+                    this.confirmDeleteHistory(item);
+                  }))
                 }
                 .id('historyRow' + item.id + item.source)
               }, (item: HistoryItem) => item.id + item.source)
@@ -110,6 +160,13 @@ export struct HistoryPage {
       scrollEffectOptions: {
         scrollEffectType: ScrollEffectType.GRADUAL_BLUR }
     })
+    .menus([
+      {
+        value: Translations.t('clear_history'),
+        symbolIcon: new SymbolGlyphModifier($r('sys.symbol.trash')),
+        action: () => { this.confirmClearHistory(); }
+      }
+    ])
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))

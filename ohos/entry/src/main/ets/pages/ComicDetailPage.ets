@@ -943,6 +943,10 @@ export struct ComicDetailPage {
         .align(Alignment.TopStart)
         .scrollBar(BarState.Off)
         .edgeEffect(EdgeEffect.Spring)
+        .nestedScroll({
+          scrollForward: NestedScrollMode.PARENT_FIRST,
+          scrollBackward: NestedScrollMode.SELF_FIRST,
+        })
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
 
         Divider()
@@ -1048,6 +1052,10 @@ export struct ComicDetailPage {
       .align(Alignment.TopStart)
       .scrollBar(BarState.Off)
       .edgeEffect(EdgeEffect.Spring)
+      .nestedScroll({
+        scrollForward: NestedScrollMode.PARENT_FIRST,
+        scrollBackward: NestedScrollMode.SELF_FIRST,
+      })
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
 
       Divider()
@@ -1180,8 +1188,11 @@ export struct ComicDetailPage {
         .width('100%').height('100%')
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         // 单 bindSheet 复用：同一节点仅允许一个 bindSheet，双绑会互相覆盖（收藏 sheet 弹不出的根因）
+        // preferType 显式 BOTTOM：平板横屏窗口宽 ≥840vp 时默认跟手/居中样式，detents(MEDIUM/LARGE)
+        // 在该样式下不生效（固定 560vp），内容 height('100%') 失去约束会把底部「开始下载」按钮挤出屏
         .bindSheet($$this.showSheet,
           this.sheetKind === 'fav' ? this.favSheetContent() : this.dlSheetContent(), {
+            preferType: SheetType.BOTTOM,
             detents: [SheetSize.MEDIUM, SheetSize.LARGE],
             blurStyle: BlurStyle.COMPONENT_THICK,
             showClose: true,

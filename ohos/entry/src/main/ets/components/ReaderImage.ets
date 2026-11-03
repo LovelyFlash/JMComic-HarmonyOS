@@ -119,6 +119,7 @@ export class ReaderImageCache {
     const key: string = `${quality}_${url}`;
     const exist: Promise<image.PixelMap | null> | undefined = ReaderImageCache.inflight.get(key);
     if (exist !== undefined) {
+      Logger.debug(TAG, `join inflight: ${key}`);
       return exist;
     }
     let settle: (pm: image.PixelMap | null) => void = (_pm: image.PixelMap | null) => {
@@ -128,11 +129,21 @@ export class ReaderImageCache {
     });
     ReaderImageCache.inflight.set(key, task);
     const isBg: boolean = !priority;
+    const enqueuedAt: number = Date.now();
+    Logger.debug(TAG, `enqueue ${isBg ? 'B' : 'P'} run=${ReaderImageCache.running}` +
+      `/bg=${ReaderImageCache.runningBg} q=${ReaderImageCache.pendingPriority.length}` +
+      `/${ReaderImageCache.pending.length} ${key}`);
     const start = (): void => {
       ReaderImageCache.running++;
       if (isBg) {
         ReaderImageCache.runningBg++;
       }
+      const waitMs: number = Date.now() - enqueuedAt;
+      if (waitMs > 3000) {
+        Logger.warn(TAG, `slow queue wait ${waitMs}ms: ${key}`);
+      }
+      Logger.debug(TAG, `start ${isBg ? 'B' : 'P'} wait=${waitMs}ms run=${ReaderImageCache.running}` +
+        `/bg=${ReaderImageCache.runningBg} ${key}`);
       let finished: boolean = false;
       let timer: number = -1;
       const done = (pm: image.PixelMap | null): void => {
@@ -148,6 +159,9 @@ export class ReaderImageCache {
           ReaderImageCache.runningBg--;
         }
         ReaderImageCache.inflight.delete(key);
+        Logger.debug(TAG, `done ${isBg ? 'B' : 'P'} ${pm !== null ? 'ok' : 'null'} cost=${Date.now() - enqueuedAt}ms` +
+          ` run=${ReaderImageCache.running}/bg=${ReaderImageCache.runningBg}` +
+          ` q=${ReaderImageCache.pendingPriority.length}/${ReaderImageCache.pending.length} ${key}`);
         ReaderImageCache.runNext();
         settle(pm);
       };
@@ -213,8 +227,10 @@ export class ReaderImageCache {
   }
 
   private static async doLoad(url: string, quality: number, ui: UIContext): Promise<image.PixelMap | null> {
+    const t0: number = Date.now();
     const cached: image.PixelMap | undefined = ReaderImageCache.get(url);
     if (cached !== undefined) {
+      Logger.debug(TAG, `hit pixel cache: ${url}`);
       return cached;
     }
     // 离线优先：已下载页面直读本地文件（下载时已反打乱并落盘，无需重组）；解码失败则回退网络
@@ -225,11 +241,16 @@ export class ReaderImageCache {
       if (localBytes !== null && localBytes.length > 0) {
         try {
           const pm: image.PixelMap = await JmImage.decode(localBytes, JmImage.maxEdgeForQuality(quality));
+          Logger.debug(TAG, `local ok ${Date.now() - t0}ms ${localPath}`);
           return await ReaderImageCache.settle(url, quality, pm);
         } catch (e) {
           Logger.warn(TAG, `local decode failed, fallback to network: ${Logger.describe(e)}`);
         }
+      } else {
+        Logger.warn(TAG, `local read empty: ${localPath}`);
       }
+    } else {
+      Logger.debug(TAG, `local miss: ${url}`);
     }
     // 持久缓存：上次读过的原图字节（仍为打乱态），解码+重组后复用，省一次网络往返
     const diskBytes: Uint8Array | null = await ImageCache.get(url);
@@ -237,6 +258,7 @@ export class ReaderImageCache {
       try {
         const dpm: image.PixelMap = await JmImage.decode(diskBytes, JmImage.maxEdgeForQuality(quality));
         const dcombined: image.PixelMap = await JmImage.recombine(dpm, url);
+        Logger.debug(TAG, `disk ok ${Date.now() - t0}ms: ${url}`);
         return await ReaderImageCache.settle(url, quality, dcombined);
       } catch (e) {
         Logger.warn(TAG, `disk cache decode failed, fallback to network: ${Logger.describe(e)}`);
@@ -248,6 +270,7 @@ export class ReaderImageCache {
       return null;
     }
     const headers: Record<string, string> = JmImage.imgHeaders();
+    Logger.debug(TAG, `net fetch start ${Date.now() - t0}ms: ${url}`);
     let bytes: Uint8Array | null = await Network.getBytes(url, headers);
     if (bytes !== null && bytes.length > 0 && !JmImage.looksLikeImage(bytes)) {
       Logger.warn(TAG, `non-image bytes via http stack: len=${bytes.length} head=${JmImage.headHex(bytes)}`);
@@ -281,6 +304,7 @@ export class ReaderImageCache {
     });
     const pm: image.PixelMap = await JmImage.decode(bytes, JmImage.maxEdgeForQuality(quality));
     const combined: image.PixelMap = await JmImage.recombine(pm, url);
+    Logger.debug(TAG, `net ok len=${bytes.length} ${Date.now() - t0}ms: ${url}`);
     return await ReaderImageCache.settle(url, quality, combined);
   }
 
@@ -327,6 +351,8 @@ export struct ReaderImage {
     this.loadedQuality = this.imgQuality;
     if (this.active) {
       this.load();
+    } else {
+      Logger.debug(TAG, `defer load (inactive at mount): ${this.url}`);
     }
   }
 
@@ -374,6 +400,7 @@ export struct ReaderImage {
   }
 
   private async load(): Promise<void> {
+    const t0: number = Date.now();
     const url: string = this.url;
     if (url.length === 0) {
       return;
@@ -392,10 +419,13 @@ export struct ReaderImage {
     const quality: number = this.imgQuality;
     const pm: image.PixelMap | null = await ReaderImageCache.loadPixelMap(url, quality, this.getUIContext(), true);
     if (this.url !== url || this.loadedQuality !== quality) {
+      Logger.debug(TAG, `discard after await (prop changed) url=${this.url === url ? 'same' : 'diff'}` +
+        ` q=${this.loadedQuality}/${quality}: ${url}`);
       return;
     }
     if (!this.active) {
       // 加载完成前已离开窗口：不写组件状态（像素已入缓存，回窗时命中缓存再加载）
+      Logger.debug(TAG, `discard after await (inactive): ${url}`);
       return;
     }
     if (pm === null) {
@@ -403,6 +433,7 @@ export struct ReaderImage {
       return;
     }
     this.pixelMap = pm;
+    Logger.debug(TAG, `set pixelMap cost~${Date.now() - t0}ms: ${url}`);
   }
 
   private retry(): void {

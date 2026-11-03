@@ -10,6 +10,7 @@ import { SettingsKeys } from '../../common/Constants';
 import { Network } from '../../common/Network';
 import { JmImage } from '../../common/JmImage';
 import { Logger } from '../../common/Logger';
+import { ChineseConversion } from '../../common/ChineseConversion';
 
 const TAG = 'DetailCache';
 /** 封面文件落于 filesDir/download/detail/{comicId}/cover（download 根与章节文件同级，章节目录为纯数字 photoId 不冲突） */
@@ -122,10 +123,10 @@ export class DetailCache {
     const comic: Comic = new Comic();
     comic.id = row.comicId;
     comic.source = row.source;
-    comic.title = row.title;
+    comic.title = ChineseConversion.t2s(row.title);
     comic.coverUrl = row.coverUrl;
-    comic.description = row.description;
-    comic.author = row.author;
+    comic.description = ChineseConversion.t2s(row.description);
+    comic.author = ChineseConversion.t2s(row.author);
     comic.categories = DetailCache.parseStringArray(row.categoriesJson);
     comic.likes = row.likes;
     comic.comments = row.commentCount;
@@ -155,14 +156,14 @@ export class DetailCache {
     const comic: Comic = new Comic();
     comic.id = dl.id;
     comic.source = dl.source.length > 0 ? dl.source : source;
-    comic.title = dl.title;
+    comic.title = ChineseConversion.t2s(dl.title);
     comic.coverUrl = dl.coverUrl;
     const chapters: Chapter[] = [];
     for (const t of tasks) {
       const ch: Chapter = new Chapter();
       ch.id = t.chapterId;
       ch.comicId = comicId;
-      ch.title = t.title;
+      ch.title = ChineseConversion.t2s(t.title);
       ch.order = t.sortOrder;
       ch.pages = t.pageCount;
       chapters.push(ch);
@@ -535,7 +536,7 @@ export class DetailCache {
     try {
       const arr: Object[] = JSON.parse(json) as Object[];
       for (const item of arr) {
-        out.push(String(item));
+        out.push(ChineseConversion.t2s(String(item)));
       }
     } catch (e) {
       Logger.warn(TAG, `parseStringArray failed: ${Logger.describe(e)}`);
@@ -545,7 +546,7 @@ export class DetailCache {
 
   private static str(r: Record<string, Object>, key: string): string {
     const v: Object | undefined = r[key];
-    return v !== undefined && v !== null ? String(v) : '';
+    return v !== undefined && v !== null ? ChineseConversion.t2s(String(v)) : '';
   }
 
   private static num(r: Record<string, Object>, key: string): number {

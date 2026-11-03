@@ -3,6 +3,7 @@ import relationalStore from '@ohos.data.relationalStore';
 import { Logger } from '../../common/Logger';
 import { common } from '@kit.AbilityKit';
 import { JmApi } from '../api/JmApi';
+import { ChineseConversion } from '../../common/ChineseConversion';
 
 const TAG = 'Database';
 const SQL_CREATE_HISTORY = `CREATE TABLE IF NOT EXISTS history (
@@ -127,13 +128,13 @@ export class Database {
       while (resultSet.goToNextRow()) {
         const item = new HistoryItem();
         item.id = resultSet.getString(resultSet.getColumnIndex('id'));
-        item.title = resultSet.getString(resultSet.getColumnIndex('title'));
+        item.title = ChineseConversion.t2s(resultSet.getString(resultSet.getColumnIndex('title')));
         item.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
         item.readTime = resultSet.getLong(resultSet.getColumnIndex('readTime'));
-        item.lastChapter = resultSet.getString(resultSet.getColumnIndex('lastChapter'));
+        item.lastChapter = ChineseConversion.t2s(resultSet.getString(resultSet.getColumnIndex('lastChapter')));
         item.lastPage = resultSet.getLong(resultSet.getColumnIndex('lastPage'));
         item.source = resultSet.getString(resultSet.getColumnIndex('source'));
-        item.author = resultSet.getString(resultSet.getColumnIndex('author'));
+        item.author = ChineseConversion.t2s(resultSet.getString(resultSet.getColumnIndex('author')));
         results.push(item);
       }
       resultSet.close();
@@ -251,7 +252,7 @@ export class Database {
   private static rowToDownloadItem(resultSet: relationalStore.ResultSet): DownloadItem {
     const item = new DownloadItem();
     item.id = resultSet.getString(resultSet.getColumnIndex('id'));
-    item.title = resultSet.getString(resultSet.getColumnIndex('title'));
+    item.title = ChineseConversion.t2s(resultSet.getString(resultSet.getColumnIndex('title')));
     item.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
     item.source = resultSet.getString(resultSet.getColumnIndex('source'));
     item.downloadPath = resultSet.getString(resultSet.getColumnIndex('downloadPath'));
@@ -372,7 +373,7 @@ export class Database {
     try {
       task.chapterId = resultSet.getString(resultSet.getColumnIndex('chapterId'));
       task.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
-      task.title = resultSet.getString(resultSet.getColumnIndex('title'));
+      task.title = ChineseConversion.t2s(resultSet.getString(resultSet.getColumnIndex('title')));
       task.sortOrder = resultSet.getLong(resultSet.getColumnIndex('sortOrder'));
       task.pageCount = resultSet.getLong(resultSet.getColumnIndex('pageCount'));
       task.progress = resultSet.getLong(resultSet.getColumnIndex('progress'));

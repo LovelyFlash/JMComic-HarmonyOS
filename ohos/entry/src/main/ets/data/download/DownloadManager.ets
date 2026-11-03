@@ -53,6 +53,10 @@ export class DownloadManager {
   private static notificationId: number = -1;
   private static wantAgentObj: WantAgent | null = null;
   private static lastPublishAt: number = 0;
+  /** 公共下载目录初始化状态（picker 须在 UI 就绪后调用，失败可重试，最多 PUBLIC_ROOT_MAX_TRIES 次） */
+  private static publicRootBusy: boolean = false;
+  private static publicRootTries: number = 0;
+  private static readonly PUBLIC_ROOT_MAX_TRIES: number = 3;
 
   /** 启动接入：恢复被杀进程中断的 RUNNING 任务（断点续传），重新拉起排队任务 */
   static async init(context: common.UIAbilityContext): Promise<void> {
@@ -75,7 +79,21 @@ export class DownloadManager {
       DownloadManager.pump();
     }
     Logger.info(TAG, `init done, queued=${DownloadManager.queue.length}`);
-    // 公共下载目录切换（带超时兜底）+ 旧沙箱章节目录迁移；均不阻塞启动
+    // 公共下载目录切换不在这里触发：picker 需窗口内容已加载（initAsync 早于 loadContent），
+    // 改由 EntryAbility 在主页面加载完成/onForeground 时调 maybeSetupPublicRoot()
+  }
+
+  /** 公共下载目录初始化（幂等；UI 就绪后调用）：已接入/超次/进行中则直接返回 */
+  static maybeSetupPublicRoot(): void {
+    if (!DownloadManager.initialized || DownloadManager.ctx === null ||
+      DownloadManager.publicRootBusy ||
+      DownloadManager.publicRootTries >= DownloadManager.PUBLIC_ROOT_MAX_TRIES ||
+      DownloadManager.usingPublicRoot()) {
+      return;
+    }
+    DownloadManager.publicRootBusy = true;
+    DownloadManager.publicRootTries++;
+    Logger.info(TAG, `setupPublicRoot attempt=${DownloadManager.publicRootTries}`);
     DownloadManager.setupPublicRootThenMigrate();
   }
 
@@ -127,6 +145,7 @@ export class DownloadManager {
    */
   private static setupPublicRootThenMigrate(): void {
     DownloadManager.setupPublicRoot().then(() => {
+      DownloadManager.publicRootBusy = false;
       if (DownloadManager.usingPublicRoot()) {
         Logger.info(TAG, `download root = public: ${DownloadManager.filesRoot}`);
         DownloadManager.migrateLegacy().then(() => {
@@ -138,6 +157,7 @@ export class DownloadManager {
         Logger.info(TAG, 'download root = sandbox fallback');
       }
     }, (e: Object) => {
+      DownloadManager.publicRootBusy = false;
       Logger.warn(TAG, `setupPublicRoot rejected: ${Logger.describe(e)}`);
     });
   }
@@ -147,23 +167,33 @@ export class DownloadManager {
       const saved: string = await Settings.getString(SettingsKeys.DOWNLOAD_ROOT_URI, '');
       if (saved.length > 0) {
         const path: string = DownloadManager.uriToPath(saved);
-        if (path.length > 0 && DownloadManager.localExists(path)) {
+        const exists: boolean = path.length > 0 && DownloadManager.localExists(path);
+        Logger.info(TAG, `saved root: uri=${saved} path=${path} exists=${exists}`);
+        if (exists) {
           DownloadManager.filesRoot = DownloadManager.trimSlash(path);
           return;
         }
       }
       const uri: string = await DownloadManager.requestDownloadDir();
-      if (uri.length > 0) {
-        const path: string = DownloadManager.uriToPath(uri);
-        if (path.length > 0) {
-          const root: string = DownloadManager.trimSlash(path);
-          DownloadManager.ensureDir(root);
-          if (DownloadManager.localExists(root)) {
-            DownloadManager.filesRoot = root;
-            await Settings.putString(SettingsKeys.DOWNLOAD_ROOT_URI, uri);
-          }
-        }
+      if (uri.length === 0) {
+        Logger.warn(TAG, 'picker returned empty uri');
+        return;
       }
+      const path: string = DownloadManager.uriToPath(uri);
+      if (path.length === 0) {
+        Logger.warn(TAG, `uriToPath empty: uri=${uri}`);
+        return;
+      }
+      const root: string = DownloadManager.trimSlash(path);
+      DownloadManager.ensureDir(root);
+      const exists: boolean = DownloadManager.localExists(root);
+      if (!exists) {
+        Logger.warn(TAG, `public root not accessible: ${root}`);
+        return;
+      }
+      DownloadManager.filesRoot = root;
+      await Settings.putString(SettingsKeys.DOWNLOAD_ROOT_URI, uri);
+      Logger.info(TAG, `public root ok: ${root}`);
     } catch (e) {
       Logger.warn(TAG, `setupPublicRoot failed, keep sandbox: ${Logger.describe(e)}`);
     }

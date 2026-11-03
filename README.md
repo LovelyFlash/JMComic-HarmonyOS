@@ -39,7 +39,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 | 项目 | 说明 |
 |------|------|
 | 包名 | `com.jmcomic.harmony` |
-| 当前版本 | 1.1.2（versionCode 16） |
+| 当前版本 | 1.1.3（versionCode 17） |
 | 目标 API | 26（HarmonyOS NEXT） |
 | 开发语言 / UI 框架 | ArkTS / ArkUI 声明式（Stage 模型，单 `entry` HAP 模块） |
 | 设备类型 | phone / tablet / 2in1 |
@@ -54,7 +54,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 
 **账号与收藏**
 - JM 账号登录、自动签到、多文件夹收藏夹（含收藏夹选择面板）
-- 历史记录、下载记录、账号管理，均由 SQLite 持久化；首页历史缩略图即时刷新，历史列表显示作者，我的页提供历史 / 下载卡片（封面横滑，图片显示可在设置中关闭）
+- 历史记录、下载记录、账号管理，均由 SQLite 持久化；首页历史缩略图即时刷新，历史列表显示作者，我的页提供历史 / 下载卡片（封面横滑，图片显示可在设置中关闭）；历史支持长按删除单条与标题栏一键清空（均带确认）
 
 **下载与离线**
 - 章节真实下载：选章下载、暂停 / 继续 / 重试与页级进度，后台长时任务，删除记录自动清理文件并联动清理图片缓存
@@ -86,6 +86,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 
 **个性化与其它**
 - 深色模式：跟随系统 / 禁用 / 启用；多套预设主题色
+- 繁体转简体：全局转换开关（默认开），接口与本地数据全链路繁转简
 - 中文 / 英文国际化
 - 独立启动页（首帧显示 + 历史数据预热 + 600ms 最短展示）
 - 应用内更新日志（关于页，按版本倒序展示历史更新内容）
@@ -345,8 +346,8 @@ NavUtil.push('comicDetail', { comicId, title, source })
 ```json5
 {
   bundleName: "com.jmcomic.harmony",
-  versionCode: 16,
-  versionName: "1.1.2",
+  versionCode: 17,
+  versionName: "1.1.3",
   targetAPIVersion: 26
 }
 ```
