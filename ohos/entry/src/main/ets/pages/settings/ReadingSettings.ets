@@ -108,7 +108,8 @@ export struct ReadingSettings {
 
   build() {
     NavDestination() {
-      List({ space: 24 }) {
+      // 分组间距 = List space 8 + groupHeader top padding 16 = 24vp（与设置主页一致）
+      List({ space: 8 }) {
         ListItemGroup({ header: this.groupHeader(Translations.t('section_turn_method')) }) {
           SettingSelect({
             corner: SettingCorner.ALL,

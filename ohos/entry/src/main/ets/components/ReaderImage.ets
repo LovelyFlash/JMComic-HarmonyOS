@@ -337,8 +337,6 @@ export struct ReaderImage {
   /** 绘制扩展至安全区（沉浸式铺满状态栏/导航条）。连续滚动模式同样传 true：
    *  官方示例7 要求 item 到滚动祖先整链 expandSafeArea + 滚动容器 clip(false)，成链配置滚动后不失效 */
   @Prop expandArea: boolean = true;
-  /** 视口窗口门控：仅在窗口内加载；离开窗口丢弃像素（比例缓存保留 → 占位高度不变） */
-  @Prop @Watch('onActiveChange') active: boolean = true;
   @StorageProp('imageQuality') @Watch('onQualityChange') imgQuality: number = 0;
   @State pixelMap: image.PixelMap | undefined = undefined;
   @State useRaw: boolean = false;
@@ -349,24 +347,10 @@ export struct ReaderImage {
 
   aboutToAppear(): void {
     this.loadedQuality = this.imgQuality;
-    if (this.active) {
-      this.load();
-    } else {
-      Logger.debug(TAG, `defer load (inactive at mount): ${this.url}`);
-    }
-  }
-
-  private onActiveChange(): void {
-    if (this.active) {
-      if (this.pixelMap === undefined && !this.useRaw && !this.loadFailed) {
-        this.load();
-      }
-      return;
-    }
-    // 离开视口窗口：仅丢弃像素引用（本组件与缓存可能共持同一像素，比例已缓存不受影响）
-    if (!JmImage.isGif(this.url) && this.pixelMap !== undefined) {
-      this.pixelMap = undefined;
-    }
+    // 组件挂载即加载：单页/双页 Swiper 与连续 List 都由 LazyForEach 按 cachedCount 惰性创建，
+    // 天然只构建当前/邻近页。不要再按父组件 currentIndex 传 active 门控——LazyForEach 的 item
+    // 构建器不会随父状态重跑，active 会永远停留在创建时的值，导致第 4 页起永久不加载。
+    this.load();
   }
 
   private onQualityChange(): void {
@@ -380,9 +364,7 @@ export struct ReaderImage {
     this.useRaw = false;
     this.loadFailed = false;
     this.pixelMap = undefined;
-    if (this.active) {
-      this.load();
-    }
+    this.load();
   }
 
   private placeRatio(): number {
@@ -421,11 +403,6 @@ export struct ReaderImage {
     if (this.url !== url || this.loadedQuality !== quality) {
       Logger.debug(TAG, `discard after await (prop changed) url=${this.url === url ? 'same' : 'diff'}` +
         ` q=${this.loadedQuality}/${quality}: ${url}`);
-      return;
-    }
-    if (!this.active) {
-      // 加载完成前已离开窗口：不写组件状态（像素已入缓存，回窗时命中缓存再加载）
-      Logger.debug(TAG, `discard after await (inactive): ${url}`);
       return;
     }
     if (pm === null) {

@@ -56,8 +56,12 @@ export class CacheManager {
     return bytes;
   }
 
-  /** 下载章节占用（仅统计，永不清理；主根=公共下载目录 + 旧沙箱根，均排除 detail 封面子目录） */
-  static statDownloads(): number {
+  /**
+   * 下载章节占用（仅统计，永不清理；主根=公共下载目录 + 旧沙箱根，均排除 detail 封面子目录）。
+   * 先等待公共根初始化完成：设置页可能在 picker 切换根之前打开，否则只扫到空的沙箱根而显示 0。
+   */
+  static async statDownloads(): Promise<number> {
+    await DownloadManager.ensurePublicRootReady();
     const roots: string[] = DownloadManager.chapterRoots();
     let total: number = 0;
     for (const root of roots) {
@@ -79,6 +83,7 @@ export class CacheManager {
         Logger.warn(TAG, `statDownloads failed on ${root}: ${Logger.describe(e)}`);
       }
     }
+    Logger.debug(TAG, `statDownloads roots=${roots.length} total=${total}`);
     return total;
   }
 

@@ -57,6 +57,8 @@ export class DownloadManager {
   private static publicRootBusy: boolean = false;
   private static publicRootTries: number = 0;
   private static readonly PUBLIC_ROOT_MAX_TRIES: number = 3;
+  /** 当前公共根初始化流程的 Promise（设置页统计下载占用前可等待，避免根尚未切换时统计为 0） */
+  private static rootPromise: Promise<void> | null = null;
 
   /** 启动接入：恢复被杀进程中断的 RUNNING 任务（断点续传），重新拉起排队任务 */
   static async init(context: common.UIAbilityContext): Promise<void> {
@@ -94,7 +96,27 @@ export class DownloadManager {
     DownloadManager.publicRootBusy = true;
     DownloadManager.publicRootTries++;
     Logger.info(TAG, `setupPublicRoot attempt=${DownloadManager.publicRootTries}`);
-    DownloadManager.setupPublicRootThenMigrate();
+    DownloadManager.rootPromise = DownloadManager.setupPublicRootThenMigrate();
+  }
+
+  /**
+   * 等待公共下载根初始化完成（幂等）：已切换到公共根立即返回；初始化进行中则等待本次流程；
+   * 尚未启动时先触发一次。失败回退沙箱根也会正常结束，调用方随后按 chapterRoots() 统计。
+   */
+  static async ensurePublicRootReady(): Promise<void> {
+    if (DownloadManager.usingPublicRoot()) {
+      return;
+    }
+    // 幂等：进行中会直接返回；未启动/上次失败未超次数时补触发一次
+    DownloadManager.maybeSetupPublicRoot();
+    const pending: Promise<void> | null = DownloadManager.rootPromise;
+    if (pending !== null) {
+      try {
+        await pending;
+      } catch (e) {
+        Logger.warn(TAG, `wait public root failed: ${Logger.describe(e)}`);
+      }
+    }
   }
 
   /** 主根是否为系统公共下载目录（false=沙箱回退） */
@@ -143,23 +165,25 @@ export class DownloadManager {
    *    返回 URI 具持久写权限）。任一环节失败/超时保持沙箱根，功能不受影响。
    * 成功切换主根后把旧沙箱章节目录迁移到公共目录（rename 优先，跨分区拷贝兜底）。
    */
-  private static setupPublicRootThenMigrate(): void {
-    DownloadManager.setupPublicRoot().then(() => {
-      DownloadManager.publicRootBusy = false;
+  private static async setupPublicRootThenMigrate(): Promise<void> {
+    try {
+      await DownloadManager.setupPublicRoot();
       if (DownloadManager.usingPublicRoot()) {
         Logger.info(TAG, `download root = public: ${DownloadManager.filesRoot}`);
-        DownloadManager.migrateLegacy().then(() => {
+        try {
+          await DownloadManager.migrateLegacy();
           Logger.info(TAG, 'legacy download dir migrated');
-        }, (e: Object) => {
+        } catch (e) {
           Logger.warn(TAG, `migrate legacy failed: ${Logger.describe(e)}`);
-        });
+        }
       } else {
         Logger.info(TAG, 'download root = sandbox fallback');
       }
-    }, (e: Object) => {
-      DownloadManager.publicRootBusy = false;
+    } catch (e) {
       Logger.warn(TAG, `setupPublicRoot rejected: ${Logger.describe(e)}`);
-    });
+    } finally {
+      DownloadManager.publicRootBusy = false;
+    }
   }
 
   private static async setupPublicRoot(): Promise<void> {

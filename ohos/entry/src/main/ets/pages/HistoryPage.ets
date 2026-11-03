@@ -19,25 +19,32 @@ export struct HistoryPage {
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageProp('historyChanged') @Watch('onHistoryChanged') historyChanged: number = 0
-  @State dataSource: ArrayDataSource<HistoryItem> = new ArrayDataSource<HistoryItem>()
+  /** LazyForEach 数据源固定为同一实例：删除/清空后必须用 replaceAll 通知刷新，
+   *  重新赋值 dataSource 不会触发 LazyForEach 更新（历史列表长按删除后残留旧行即此原因）。 */
+  private dataSource: ArrayDataSource<HistoryItem> = new ArrayDataSource<HistoryItem>()
+  @State itemCount: number = 0
   @State loading: boolean = true
 
   aboutToAppear(): void {
-    this.loadData();
+    this.loadData(true);
   }
 
   private onHistoryChanged(): void {
-    this.loadData();
+    this.loadData(false);
   }
 
-  async loadData(): Promise<void> {
-    this.loading = true;
-    this.dataSource = new ArrayDataSource<HistoryItem>(await Database.queryHistory());
+  async loadData(showLoading: boolean = true): Promise<void> {
+    if (showLoading) {
+      this.loading = true;
+    }
+    const items: HistoryItem[] = await Database.queryHistory();
+    this.dataSource.replaceAll(items);
+    this.itemCount = items.length;
     this.loading = false;
   }
 
   private confirmClearHistory(): void {
-    if (this.dataSource.totalCount() === 0) {
+    if (this.itemCount === 0) {
       return;
     }
     this.getUIContext().showAlertDialog({
@@ -54,6 +61,8 @@ export struct HistoryPage {
         action: () => {
           Database.clearHistory().then(() => {
             ToastUtil.show(Translations.t('deleted'), 1500);
+            // 广播之外再直接刷新一次：确保当前页立刻变为空态
+            this.loadData(false);
           });
         }
       }
@@ -76,6 +85,8 @@ export struct HistoryPage {
         action: () => {
           Database.removeHistory(item.id, item.source).then(() => {
             ToastUtil.show(Translations.t('deleted'), 1500);
+            // 广播之外再直接刷新一次：不依赖 @Watch 时序，删除后当前列表立即移除该行
+            this.loadData(false);
           });
         }
       }
@@ -92,7 +103,7 @@ export struct HistoryPage {
             }
             .width('100%').layoutWeight(1)
             .justifyContent(FlexAlign.Center)
-          } else if (this.dataSource.totalCount() === 0) {
+          } else if (this.itemCount === 0) {
             Column({ space: 8 }) {
               Text(Translations.t('no_data'))
                 .fontSize(14).fontColor($r('app.color.text_secondary'))

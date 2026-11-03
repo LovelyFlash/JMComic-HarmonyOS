@@ -286,7 +286,8 @@ export struct JmSettings {
 
   build() {
     NavDestination() {
-      List({ space: 24 }) {
+      // 分组间距 = List space 8 + groupHeader top padding 16 = 24vp（与设置主页一致）
+      List({ space: 8 }) {
         ListItemGroup({ header: this.groupHeader(Translations.t('api_line')) }) {
           SettingSwitch({
             corner: SettingCorner.FIRST,

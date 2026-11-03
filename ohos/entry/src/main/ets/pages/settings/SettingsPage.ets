@@ -61,7 +61,7 @@ export struct SettingsPage {
   private async refreshCacheState(): Promise<void> {
     this.cacheGear = await CacheManager.getGear();
     this.cacheSize = CacheManager.formatBytes(await CacheManager.statCache());
-    this.downloadSize = CacheManager.formatBytes(CacheManager.statDownloads());
+    this.downloadSize = CacheManager.formatBytes(await CacheManager.statDownloads());
   }
 
   private async setCacheGear(gear: number): Promise<void> {
@@ -220,7 +220,8 @@ export struct SettingsPage {
 
   build() {
     NavDestination() {
-      List({space: 24 }) {
+      // 分组间距 = List space 8 + groupHeader top padding 16 = 24vp（此前 24+16=40 偏大）
+      List({ space: 8 }) {
         ListItemGroup({ header: this.groupHeader(Translations.t('settings_appearance')) }) {
           SettingSelect({
             corner: SettingCorner.FIRST,
