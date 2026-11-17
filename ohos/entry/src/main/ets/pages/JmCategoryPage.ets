@@ -35,6 +35,7 @@ export struct JmCategoryPage {
   @State currentPage: number = 1
   @State maxPage: number = 1
   
+  @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
@@ -107,27 +108,60 @@ export struct JmCategoryPage {
     this.loadPage(1, true);
   }
 
-  @Builder
-  sortBar() {
-    Scroll() {
-      Row({ space: 8 }) {
-        ForEach(this.makeSorts(), (opt: SortOption) => {
-          Text(Translations.t(opt.labelKey))
-            .fontSize(12)
-            .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-            .borderRadius(14)
-            .fontColor(this.sort === opt.key ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
-            .backgroundColor(this.sort === opt.key ? this.themeColor : $r('app.color.bg_fill'))
-            .onClick(() => { this.changeSort(opt.key); })
-            .id('jmCategorySort' + opt.key)
-        }, (opt: SortOption) => opt.key)
-      }
-      .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+  private sortOptions(): SelectOption[] {
+    const sorts: SortOption[] = this.makeSorts();
+    const opts: SelectOption[] = [];
+    for (let i = 0; i < sorts.length; i++) {
+      opts.push({ value: Translations.t(sorts[i].labelKey) });
     }
-    .scrollable(ScrollDirection.Horizontal)
-    .scrollBar(BarState.Off)
-    .width('100%')
-    .id('jmCategorySortBar')
+    return opts;
+  }
+
+  private sortIndex(): number {
+    const sorts: SortOption[] = this.makeSorts();
+    for (let i = 0; i < sorts.length; i++) {
+      if (sorts[i].key === this.sort) {
+        return i;
+      }
+    }
+    return 0;
+  }
+
+  private currentSortLabel(): string {
+    const sorts: SortOption[] = this.makeSorts();
+    const idx: number = this.sortIndex();
+    return sorts.length > 0 ? Translations.t(sorts[idx].labelKey) : '';
+  }
+
+  private selectSort(index: number): void {
+    const sorts: SortOption[] = this.makeSorts();
+    if (index < 0 || index >= sorts.length) {
+      return;
+    }
+    this.changeSort(sorts[index].key);
+  }
+
+  @Builder
+  sortMenu() {
+    Row() {
+      Select(this.sortOptions())
+        .selected(this.sortIndex())
+        .value(this.currentSortLabel())
+        .font({ size: 14 })
+        .fontColor($r('app.color.text_secondary'))
+        .selectedOptionFontColor(this.themeColor)
+        .optionFontColor($r('app.color.text_primary'))
+        .menuBackgroundColor($r('app.color.bg_elevated'))
+        .menuAlign(MenuAlignType.END)
+        .height(28)
+        .constraintSize({ maxWidth: 120 })
+        .onSelect((index: number) => {
+          this.selectSort(index);
+        })
+    }
+    .height(56)
+    .padding({ right: 16 })
+    .alignItems(VerticalAlign.Center)
   }
 
   @Builder
@@ -179,6 +213,8 @@ export struct JmCategoryPage {
       }
     }
     .layoutWeight(1)
+    // 标题栏为 STACK 悬浮层：列表内容从状态栏下方 + 标题栏高度之后开始
+    .contentStartOffset(this.topAvoid + 56)
     .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
     .edgeEffect(EdgeEffect.Spring)
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
@@ -191,7 +227,6 @@ export struct JmCategoryPage {
     NavDestination() {
       
         Column({ space: 0 }) {
-          this.sortBar()
           if (this.loading) {
             Column() {
               LoadingProgress().width(40).height(40)
@@ -216,12 +251,18 @@ export struct JmCategoryPage {
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .title(this.categoryTitle, { backgroundColor: Color.Transparent })
+    .title(this.categoryTitle, {
+      barStyle: BarStyle.STACK,
+      scrollEffectOptions: {
+        scrollEffectType: ScrollEffectType.GRADUAL_BLUR
+      },
+      systemMaterial: new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+      })
+    })
+    .menus(this.sortMenu())
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
   }
 }

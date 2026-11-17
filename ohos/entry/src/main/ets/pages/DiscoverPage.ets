@@ -6,6 +6,7 @@ import { JmApi, JmHomeSection } from '../data/api/JmApi';
 import { NetworkImage } from '../components/NetworkImage';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { ListCache } from '../data/cache/ListCache';
 import { SymbolGlyphModifier, uiMaterial } from '@kit.ArkUI';
 
 @Component
@@ -28,7 +29,30 @@ export struct DiscoverPage {
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   aboutToAppear(): void {
-    this.loadHome();
+    // 首帧先进入加载态：避免 LazyForEach 先绑定空数据源，后续替换实例导致列表不刷新
+    this.homeLoading = this.homeSource.totalCount() === 0;
+    // 先展示本地缓存，再后台刷新主页数据
+    this.restoreCachedContent().then(() => {
+      this.loadHome();
+    });
+  }
+
+  /** 恢复主页分区与「最新」首屏缓存 */
+  private async restoreCachedContent(): Promise<void> {
+    const home: JmHomeSection[] | null = await ListCache.loadHome();
+    if (home !== null) {
+      // LazyForEach 必须固定数据源实例，只更新内部数据
+      this.homeSource.replaceAll(home);
+      // 缓存已可展示：结束首屏加载态，网络刷新在后台进行
+      this.homeLoading = false;
+    }
+    const latest: Comic[] | null = await ListCache.loadLatest();
+    if (latest !== null) {
+      this.latestSource.replaceAll(latest);
+      this.loading = false;
+      this.page = 1;
+      this.hasMore = true;
+    }
   }
 
   private switchMode(idx: number): void {
@@ -44,13 +68,20 @@ export struct DiscoverPage {
   }
 
   private async loadHome(): Promise<void> {
-    this.homeLoading = true;
+    this.homeLoading = this.homeSource.totalCount() === 0;
     this.homeError = '';
     try {
-      this.homeSource = new ArrayDataSource<JmHomeSection>(await JmApi.getHomePage());
+      const sections: JmHomeSection[] = await JmApi.getHomePage();
+      // 固定数据源实例：replaceAll 触发 LazyForEach 全量刷新
+      this.homeSource.replaceAll(sections);
+      ListCache.saveHome(sections).catch((e: Object) => {
+        // 缓存写入失败不影响页面
+      });
     } catch (e) {
-      this.homeError = String(e);
-      this.homeSource = new ArrayDataSource<JmHomeSection>();
+      // 有缓存时保留列表，不切错误页
+      if (this.homeSource.totalCount() === 0) {
+        this.homeError = String(e);
+      }
     }
     this.homeLoading = false;
     this.homeRefreshing = false;
@@ -58,20 +89,24 @@ export struct DiscoverPage {
 
   private async loadLatest(reset: boolean): Promise<void> {
     if (reset) {
-      this.loading = true;
+      // 已有数据时用下拉刷新动画，不切整页加载圈
+      this.loading = this.latestSource.totalCount() === 0;
       this.error = '';
       this.page = 1;
       this.hasMore = true;
     }
     try {
-      const items = await JmApi.getLatest(1);
-      this.latestSource = new ArrayDataSource<Comic>(items);
+      const items: Comic[] = await JmApi.getLatest(1);
+      this.latestSource.replaceAll(items);
       this.page = 1;
       this.hasMore = items.length > 0;
+      ListCache.saveLatest(items).catch((e: Object) => {
+        // 缓存写入失败不影响页面
+      });
     } catch (e) {
-      if (reset) {
+      // 有缓存时保留列表，不切错误页
+      if (reset && this.latestSource.totalCount() === 0) {
         this.error = String(e);
-        this.latestSource = new ArrayDataSource<Comic>();
       }
     }
     this.loading = false;
@@ -192,12 +227,12 @@ export struct DiscoverPage {
 
   @Builder
   homeContent() {
-    if (this.homeLoading) {
+    if (this.homeLoading && this.homeSource.totalCount() === 0) {
       Column() {
         LoadingProgress().width(40).height(40)
       }
       .layoutWeight(1).justifyContent(FlexAlign.Center)
-    } else if (this.homeError.length > 0) {
+    } else if (this.homeError.length > 0 && this.homeSource.totalCount() === 0) {
       Column({ space: 12 }) {
         Text(this.homeError).fontSize(14).fontColor($r('app.color.danger'))
         Button(Translations.t('retry')).fontSize(14).backgroundColor(this.themeColor).fontColor($r('app.color.text_on_brand'))
@@ -264,12 +299,12 @@ export struct DiscoverPage {
 
   @Builder
   latestContent() {
-    if (this.loading) {
+    if (this.loading && this.latestSource.totalCount() === 0) {
       Column() {
         LoadingProgress().width(40).height(40)
       }
       .layoutWeight(1).justifyContent(FlexAlign.Center)
-    } else if (this.error.length > 0) {
+    } else if (this.error.length > 0 && this.latestSource.totalCount() === 0) {
       Column({ space: 12 }) {
         Text(this.error).fontSize(14).fontColor($r('app.color.danger'))
         Button(Translations.t('retry')).fontSize(14).backgroundColor(this.themeColor).fontColor($r('app.color.text_on_brand'))

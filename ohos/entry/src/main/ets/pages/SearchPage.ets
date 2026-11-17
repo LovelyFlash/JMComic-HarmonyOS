@@ -8,6 +8,7 @@ import { Settings } from '../data/preferences/Settings';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { uiMaterial } from '@kit.ArkUI';
+import { SearchBar } from '../components/SearchBar';
 
 class SortOption {
   key: string = '';
@@ -52,6 +53,45 @@ export struct SearchPage {
     return list;
   }
 
+  private sortOptions(): SelectOption[] {
+    const sorts: SortOption[] = this.makeSorts();
+    const opts: SelectOption[] = [];
+    for (let i = 0; i < sorts.length; i++) {
+      opts.push({ value: Translations.t(sorts[i].labelKey) });
+    }
+    return opts;
+  }
+
+  private sortIndex(): number {
+    const sorts: SortOption[] = this.makeSorts();
+    for (let i = 0; i < sorts.length; i++) {
+      if (sorts[i].key === this.sort) {
+        return i;
+      }
+    }
+    return 0;
+  }
+
+  private currentSortLabel(): string {
+    const sorts: SortOption[] = this.makeSorts();
+    const idx: number = this.sortIndex();
+    return sorts.length > 0 ? Translations.t(sorts[idx].labelKey) : '';
+  }
+
+  private selectSort(index: number): void {
+    const sorts: SortOption[] = this.makeSorts();
+    if (index < 0 || index >= sorts.length) {
+      return;
+    }
+    const key: string = sorts[index].key;
+    if (this.sort !== key) {
+      this.sort = key;
+      if (this.keyword.length > 0) {
+        this.doSearch();
+      }
+    }
+  }
+
   aboutToAppear(): void {
     if (this.pageParam !== undefined && this.pageParam !== null) {
       const params = this.pageParam as Record<string, Object>;
@@ -82,6 +122,7 @@ export struct SearchPage {
     }
     this.loading = true;
     this.error = '';
+    this.title = Translations.t('search_results');
     this.dataSource = new ArrayDataSource<Comic>();
     this.currentPage = 1;
     this.searched = true;
@@ -131,75 +172,6 @@ export struct SearchPage {
       this.error = String(e);
     }
     this.loadingMore = false;
-  }
-
-  @Builder
-  searchInput() {
-    Column() {
-      Row({ space: 8 }) {
-        SymbolGlyph($r('sys.symbol.magnifyingglass'))
-          .fontSize(20)
-          .fontColor([$r('app.color.text_secondary')])
-        TextInput({ text: this.keyword, placeholder: Translations.t('search_hint') })
-          .layoutWeight(1)
-          .height(36)
-          .fontSize(14)
-          .backgroundColor(Color.Transparent)
-          .fontColor($r('app.color.text_primary'))
-          .placeholderColor($r('app.color.text_secondary'))
-          .caretColor(this.themeColor)
-          .onChange((value: string) => { this.keyword = value; })
-          .onSubmit(() => { this.doSearch(); })
-        if (this.keyword.length > 0) {
-          SymbolGlyph($r('sys.symbol.xmark_circle_fill'))
-            .fontSize(18)
-            .fontColor([$r('app.color.text_tertiary')])
-            .onClick(() => {
-              this.keyword = '';
-              this.dataSource = new ArrayDataSource<Comic>();
-              this.searched = false;
-            })
-        }
-      }
-      .width('100%')
-      .height(44)
-      .padding({ left: 12, right: 12 })
-      .backgroundColor($r('app.color.bg_fill'))
-      .borderRadius(22)
-    }
-    .width('100%')
-    .padding({ left: 16, right: 16, bottom: 8 })
-    .id('searchInput')
-  }
-
-  @Builder
-  sortBar() {
-    Scroll() {
-      Row({ space: 8 }) {
-        ForEach(this.makeSorts(), (opt: SortOption) => {
-          Text(Translations.t(opt.labelKey))
-            .fontSize(12)
-            .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-            .borderRadius(14)
-            .fontColor(this.sort === opt.key ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
-            .backgroundColor(this.sort === opt.key ? this.themeColor : $r('app.color.bg_fill'))
-            .onClick(() => {
-              if (this.sort !== opt.key) {
-                this.sort = opt.key;
-                if (this.keyword.length > 0) {
-                  this.doSearch();
-                }
-              }
-            })
-            .id('searchSort' + opt.key)
-        }, (opt: SortOption) => opt.key)
-      }
-      .padding({ left: 16, right: 16, bottom: 8 })
-    }
-    .scrollable(ScrollDirection.Horizontal)
-    .scrollBar(BarState.Off)
-    .width('100%')
-    .id('searchSortBar')
   }
 
   @Builder
@@ -295,8 +267,30 @@ export struct SearchPage {
     NavDestination() {
       
         Column({ space: 0 }) {
-          this.searchInput()
-          this.sortBar()
+          Column() {
+            SearchBar({
+              editable: true,
+              text: this.keyword,
+              placeholder: Translations.t('search_hint'),
+              showClear: this.keyword.length > 0,
+              itemId: 'searchInput',
+              showSortSelect: true,
+              sortOptions: this.sortOptions(),
+              sortIndex: this.sortIndex(),
+              sortLabel: this.currentSortLabel(),
+              onSortSelect: (index: number) => { this.selectSort(index); },
+              onTextChange: (value: string) => { this.keyword = value; },
+              onSubmit: () => { this.doSearch(); },
+              onClear: () => {
+                this.keyword = '';
+                this.title = Translations.t('search');
+                this.dataSource = new ArrayDataSource<Comic>();
+                this.searched = false;
+              }
+            })
+          }
+          .width('100%')
+          .padding({ left: 16, right: 16, bottom: 8 })
           this.results()
         }
         .width('100%').height('100%')

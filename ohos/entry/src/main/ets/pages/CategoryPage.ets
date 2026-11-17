@@ -1,7 +1,6 @@
-// pages/CategoryPage.ets - 分类页（禁漫固定分类 + 排行榜 + 每周推荐入口）
-import { Translations } from '../common/Translations';
+// pages/CategoryPage.ets - 分类页（禁漫固定分类筛选）
 import { NavUtil } from '../common/NavUtil';
-import { ChipTokens, DEFAULT_THEME_COLOR } from '../common/Constants';
+import { ChipTokens } from '../common/Constants';
 
 class CategoryEntry {
   label: string = '';
@@ -25,8 +24,6 @@ class CategorySection {
 
 @Component
 export struct CategoryPage {
-  
-  @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageLink('bottomRectHeight') bottomRectHeight: number = 0;
 
   private makeSections(): CategorySection[] {
@@ -143,29 +140,6 @@ export struct CategoryPage {
     .id('entryChips' + section.title)
   }
 
-  @Builder
-  entryRow(icon: Resource, label: string, onTap: () => void) {
-    Row({ space: 12 }) {
-      SymbolGlyph(icon)
-        .fontSize(22)
-        .fontColor([this.themeColor])
-      Text(label)
-        .fontSize(15)
-        .fontColor($r('app.color.text_primary'))
-        .layoutWeight(1)
-      SymbolGlyph($r('sys.symbol.chevron_right'))
-        .fontSize(16)
-        .fontColor([$r('app.color.text_tertiary')])
-    }
-    .width('100%')
-    .height(52)
-    .padding({ left: 14, right: 14 })
-    .backgroundColor($r('app.color.bg_surface'))
-    .borderRadius(12)
-    .onClick(() => { onTap(); })
-    .id('entryRow' + label)
-  }
-
   build() {
     
       Column({ space: 0 }) {
@@ -184,20 +158,6 @@ export struct CategoryPage {
               .width('100%')
               .id('categorySection' + section.title)
             }, (section: CategorySection) => section.title)
-
-            Column({ space: 12 }) {
-              this.entryRow($r('sys.symbol.list_number'), Translations.t('ranking'), () => {
-                const param: Record<string, Object> = {
-                  'slug': '0', 'title': Translations.t('ranking'), 'order': 'mv'
-                };
-                NavUtil.push('jmCategory', param);
-              })
-              this.entryRow($r('sys.symbol.clock'), Translations.t('week_recommendation'), () => {
-                NavUtil.push('jmWeek');
-              })
-            }
-            .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-            .width('100%')
           }
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           .width('100%')

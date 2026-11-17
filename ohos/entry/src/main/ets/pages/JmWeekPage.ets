@@ -33,6 +33,7 @@ export struct JmWeekPage {
   @State loading: boolean = false
   @State error: string = ''
   
+  @StorageProp('topAvoidHeight') topAvoid: number = 0
   @StorageProp('bottomAvoidHeight') bottomAvoid: number = 0
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
@@ -47,6 +48,83 @@ export struct JmWeekPage {
     list.push(new WeekType('manga', 'type_manga'));
     list.push(new WeekType('another', 'type_another'));
     return list;
+  }
+
+  private categoryOptions(): SelectOption[] {
+    const opts: SelectOption[] = [];
+    for (let i = 0; i < this.categories.length; i++) {
+      opts.push({ value: this.categories[i].label });
+    }
+    return opts;
+  }
+
+  private categoryIndex(): number {
+    for (let i = 0; i < this.categories.length; i++) {
+      if (this.categories[i].id === this.currentId) {
+        return i;
+      }
+    }
+    return 0;
+  }
+
+  private currentCategoryLabel(): string {
+    return this.categories.length > 0 ? this.categories[this.categoryIndex()].label : '';
+  }
+
+  /** 标题栏下拉按钮只显示期数（如「第265期」），完整年份与日期范围保留在下拉菜单中 */
+  private currentCategoryShortLabel(): string {
+    const label: string = this.currentCategoryLabel();
+    const start: number = label.indexOf('第');
+    const end: number = start >= 0 ? label.indexOf('期', start) : -1;
+    return start >= 0 && end >= start ? label.substring(start, end + 1) : label;
+  }
+
+  private selectWeekCategory(index: number): void {
+    if (index < 0 || index >= this.categories.length) {
+      return;
+    }
+    const cat: JmWeekCategory = this.categories[index];
+    if (cat.id !== this.currentId) {
+      this.currentId = cat.id;
+      this.loadComics();
+    }
+  }
+
+  private typeOptions(): SelectOption[] {
+    const types: WeekType[] = this.makeTypes();
+    const opts: SelectOption[] = [];
+    for (let i = 0; i < types.length; i++) {
+      opts.push({ value: Translations.t(types[i].labelKey) });
+    }
+    return opts;
+  }
+
+  private typeIndex(): number {
+    const types: WeekType[] = this.makeTypes();
+    for (let i = 0; i < types.length; i++) {
+      if (types[i].key === this.currentType) {
+        return i;
+      }
+    }
+    return 0;
+  }
+
+  private currentTypeLabel(): string {
+    const types: WeekType[] = this.makeTypes();
+    const idx: number = this.typeIndex();
+    return types.length > 0 ? Translations.t(types[idx].labelKey) : '';
+  }
+
+  private selectWeekType(index: number): void {
+    const types: WeekType[] = this.makeTypes();
+    if (index < 0 || index >= types.length) {
+      return;
+    }
+    const type: WeekType = types[index];
+    if (type.key !== this.currentType) {
+      this.currentType = type.key;
+      this.loadComics();
+    }
   }
 
   private async loadCategories(): Promise<void> {
@@ -78,60 +156,58 @@ export struct JmWeekPage {
     this.loading = false;
   }
 
+  /** 期数选择：作为 .title 自定义标题的一部分，位于标题文字右侧 */
   @Builder
-  categoryChips() {
-    Scroll() {
-      Row({ space: 8 }) {
-        ForEach(this.categories, (cat: JmWeekCategory) => {
-          Text(cat.label)
-            .fontSize(13)
-            .padding({ left: 14, right: 14, top: 7, bottom: 7 })
-            .borderRadius(16)
-            .fontColor(this.currentId === cat.id ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
-            .backgroundColor(this.currentId === cat.id ? this.themeColor : $r('app.color.bg_fill'))
-            .onClick(() => {
-              if (this.currentId !== cat.id) {
-                this.currentId = cat.id;
-                this.loadComics();
-              }
-            })
-            .id('cat' + cat.id)
-        }, (cat: JmWeekCategory) => cat.id)
-      }
-      .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+  weekCategorySelect() {
+    if (this.categories.length > 0) {
+      // 与 SettingsPage 的 SettingSelect 下拉样式保持一致：无胶囊底色，14fp 次要文字色
+      Select(this.categoryOptions())
+        .selected(this.categoryIndex())
+        .value(this.currentCategoryShortLabel())
+        .font({ size: 14 })
+        .fontColor($r('app.color.text_secondary'))
+        .selectedOptionFontColor(this.themeColor)
+        .optionFontColor($r('app.color.text_primary'))
+        .menuBackgroundColor($r('app.color.bg_elevated'))
+        .menuAlign(MenuAlignType.END)
+        .height(28)
+        .constraintSize({ maxWidth: 112 })
+        .onSelect((index: number) => {
+          this.selectWeekCategory(index);
+        })
     }
-    .scrollable(ScrollDirection.Horizontal)
-    .scrollBar(BarState.Off)
-    .width('100%')
-    .id('categoryChips')
   }
 
+  /** 分类选择：全部 / 韩漫 / 日漫 / 其它，同样放在 .title 内 */
   @Builder
-  typeChips() {
-    Scroll() {
-      Row({ space: 8 }) {
-        ForEach(this.makeTypes(), (t: WeekType) => {
-          Text(Translations.t(t.labelKey))
-            .fontSize(12)
-            .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-            .borderRadius(14)
-            .fontColor(this.currentType === t.key ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
-            .backgroundColor(this.currentType === t.key ? this.themeColor : $r('app.color.bg_fill'))
-            .onClick(() => {
-              if (this.currentType !== t.key) {
-                this.currentType = t.key;
-                this.loadComics();
-              }
-            })
-            .id('type' + t.key)
-        }, (t: WeekType) => t.key)
-      }
-      .padding({ left: 16, right: 16, bottom: 8 })
+  weekTypeSelect() {
+    Select(this.typeOptions())
+      .selected(this.typeIndex())
+      .value(this.currentTypeLabel())
+      .font({ size: 14 })
+      .fontColor($r('app.color.text_secondary'))
+      .selectedOptionFontColor(this.themeColor)
+      .optionFontColor($r('app.color.text_primary'))
+      .menuBackgroundColor($r('app.color.bg_elevated'))
+      .menuAlign(MenuAlignType.END)
+      .height(28)
+      .constraintSize({ maxWidth: 80 })
+      .onSelect((index: number) => {
+        this.selectWeekType(index);
+      })
+  }
+
+  /** 标题栏右侧菜单区：由系统标题栏承载，两个下拉共享系统菜单背板材质 */
+  @Builder
+  weekSelectors() {
+    Row({ space: 8 }) {
+      this.weekCategorySelect()
+      this.weekTypeSelect()
     }
-    .scrollable(ScrollDirection.Horizontal)
-    .scrollBar(BarState.Off)
-    .width('100%')
-    .id('typeChips')
+    .height(56)
+    // 菜单区默认贴屏幕右缘，补 16vp 右边距；高度对齐标题栏，使下拉中心与返回键中心一致
+    .padding({ right: 16 })
+    .alignItems(VerticalAlign.Center)
   }
 
   @Builder
@@ -171,6 +247,7 @@ export struct JmWeekPage {
     .edgeEffect(EdgeEffect.Spring)
     .scrollBar(BarState.Off)
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+    .contentStartOffset(this.topAvoid + 56)
     .padding({ bottom: this.bottomAvoid })
     .id('jmWeekComicRows')
   }
@@ -195,8 +272,6 @@ export struct JmWeekPage {
             }
             .layoutWeight(1).justifyContent(FlexAlign.Center)
           } else {
-            this.categoryChips()
-            this.typeChips()
             if (this.loading) {
               Column() {
                 LoadingProgress().width(40).height(40)
@@ -224,16 +299,19 @@ export struct JmWeekPage {
           }
         }
         .width('100%').height('100%')
+        // STACK 标题栏悬浮在内容之上：内容从状态栏下方 + 标题栏高度之后开始，避免被标题栏遮挡
         .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    .title(Translations.t('week_recommendation'), { backgroundColor: Color.Transparent })
+    .title(Translations.t('week_recommendation'), {
+      barStyle: BarStyle.STACK,
+      scrollEffectOptions: {
+        scrollEffectType: ScrollEffectType.GRADUAL_BLUR }
+    })
+    .menus(this.weekSelectors())
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
   }
 }

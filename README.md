@@ -39,7 +39,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 | 项目 | 说明 |
 |------|------|
 | 包名 | `com.jmcomic.harmony` |
-| 当前版本 | 1.1.4（versionCode 18） |
+| 当前版本 | 1.1.5（versionCode 19） |
 | 目标 API | 26（HarmonyOS NEXT） |
 | 开发语言 / UI 框架 | ArkTS / ArkUI 声明式（Stage 模型，单 `entry` HAP 模块） |
 | 设备类型 | phone / tablet / 2in1 |
@@ -51,9 +51,11 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 **浏览与发现**
 - 最新漫画、分类浏览、每周必看、推荐专题、热搜词搜索、作品 ID 精确搜索与搜索历史
 - 发现页分区横滑列表（连载更新 / 推荐本本 / 去码全彩化等），主页、最新双 Tab
+- 收藏页与发现页本地列表缓存：冷启动 / 弱网先展示缓存内容再后台刷新，请求失败保留缓存列表；修复禁漫主页退出重进后空白
 
 **账号与收藏**
 - JM 账号登录、自动签到、多文件夹收藏夹（含收藏夹选择面板）
+- 收藏页系统标题栏 + 收藏夹下拉（新建 / 删除），支持下拉刷新首屏
 - 历史记录、下载记录、账号管理，均由 SQLite 持久化；首页历史缩略图即时刷新，历史列表显示作者，我的页提供历史 / 下载卡片（封面横滑，图片显示可在设置中关闭）；历史支持长按删除单条与标题栏一键清空（均带确认）
 
 **下载与离线**
@@ -75,6 +77,8 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 **沉浸体验**
 - 沉浸式详情页：封面模糊大图 + 深浅自适应渐变遮罩全屏延伸，悬浮光感材质标题栏
 - 详情页信息栏：名称栏完整展示 ID / 作者 / 更新日期，标签按钮化、点击直达搜索
+- 统一 `SearchBar` 系统材质搜索栏（首页 / 搜索入口 / 搜索结果页），排序下拉内嵌搜索栏
+- 阅读器工具栏：顶部悬浮漫画 / 章节标题，底部 HdsTabs 四按钮（自动翻页 / 章节 / 设置 / 进度），阴影延伸至系统导航条
 - 阅读器内状态栏全程隐藏（打开菜单 / 半模态不恢复，退出自动还原）
 - 详情页点击即转场（章节图片由阅读器异步自取、loading 反馈、失败可重试）
 
@@ -173,11 +177,11 @@ JMComic-HarmonyOS/
                 │   ├── api/           -- JmApi.ets：禁漫 API 客户端
                 │   ├── database/      -- Database.ets：SQLite 封装
                 │   ├── download/      -- DownloadManager.ets：章节下载队列（系统下载目录落盘与旧数据迁移、后台任务/进度/离线页列表）
-                │   ├── cache/         -- ImageCache.ets：图片持久缓存（先缓存后网络）；DetailCache.ets：已下载详情/封面/多页评论本地缓存；CacheManager.ets：占用统计/挡位淘汰/清理
+                │   ├── cache/         -- ImageCache.ets：图片持久缓存（先缓存后网络）；DetailCache.ets：已下载详情/封面/多页评论本地缓存；ListCache.ets：收藏/发现列表首屏缓存；CacheManager.ets：占用统计/挡位淘汰/清理
                 │   ├── preferences/   -- Settings.ets：键值存储封装
                 │   └── model/         -- Chapter / Comic / ComicPageData / Comment / ReaderParam
                 ├── viewmodel/         -- AppData.ets：全局状态
-                ├── components/        -- 12 个复用组件
+                ├── components/        -- 13 个复用组件
                 ├── pages/             -- 16 个业务页面
                 │   ├── reader/        -- ReaderPage.ets：阅读器
                 │   └── settings/      -- SettingsPage / ReadingSettings / JmSettings / AboutPage
@@ -203,6 +207,7 @@ JMComic-HarmonyOS/
 **`components/` 复用组件**
 
 - 内容类：`ComicTile`、`ComicGrid`、`AppIcon`
+- 搜索类：`SearchBar`（按钮态 / 输入态 + 系统材质 + 可选排序下拉）
 - 图片类：`NetworkImage`（封面，无需反打乱）、`ReaderImage`（阅读器图片：下载 → 解码 → 反打乱 → LRU，失败可重试）
 - 设置类：`SettingSection` / `SettingItem` / `SettingSwitch` / `SettingSelect` / `SettingCheckItem` / `SettingInfoItem` / `SettingCommon`
 
@@ -311,8 +316,9 @@ ReaderImage(onAppear/预热窗口)
 ```
 写：收藏 / 历史 / 追更 / 下载 / 评论操作 → Database(SQLite pica_comic.db)
     阅读进度 → strip 500ms 防抖 + 退出 flush → Database.insertHistory
-    设置项 → Settings(preferences)
+    设置项 / 收藏与发现列表首屏 → Settings(preferences；列表走 ListCache)
 读：启动 LaunchPage → Database.queryHistory() 预热 → MainPage 各 Tab 按需查询
+    收藏 / 发现页 → ListCache 先展示首屏缓存 → 后台请求刷新
     阅读器进入 → getReadingProgress → 续读弹窗
 ```
 
@@ -346,8 +352,8 @@ NavUtil.push('comicDetail', { comicId, title, source })
 ```json5
 {
   bundleName: "com.jmcomic.harmony",
-  versionCode: 18,
-  versionName: "1.1.4",
+  versionCode: 19,
+  versionName: "1.1.5",
   targetAPIVersion: 26
 }
 ```

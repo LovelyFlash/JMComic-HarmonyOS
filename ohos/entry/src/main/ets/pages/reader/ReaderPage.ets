@@ -1,6 +1,7 @@
 // pages/reader/ReaderPage.ets - 阅读器（6 阅读模式 + 手势缩放 + bindSheet 设置/章节 + 续读 + 进度保存）- NavDestination
 import { window } from '@kit.ArkUI';
 import { uiMaterial } from '@kit.ArkUI';
+import { HdsTabs, HdsTabsController, hdsMaterial } from '@kit.UIDesignKit';
 import { inputConsumer, KeyCode, KeyEvent } from '@kit.InputKit';
 import { Translations } from '../../common/Translations';
 import { NavUtil } from '../../common/NavUtil';
@@ -50,6 +51,10 @@ export struct ReaderPage {
   @State showToolbar: boolean = false;
   @State showSheet: boolean = false;
   @State sheetMode: string = 'settings';
+  /** 底部系统 TabBar 当前项：0 自动 / 1 章节 / 2 设置 / 3 进度 */
+  @State toolbarTab: number = 3;
+  @State showProgressPanel: boolean = false;
+  private toolbarTabs: HdsTabsController = new HdsTabsController();
   @State loadingChapter: boolean = false;
   /** 首章自取（push-first 进入）失败：内容层错误态 + 点击重试 */
   @State chapterError: boolean = false;
@@ -99,6 +104,12 @@ export struct ReaderPage {
   private alive: boolean = true;
   /** 状态栏切换世代号（并发切换仅末次生效，防止隐藏/恢复乱序） */
   private statusBarGen: number = 0;
+  /** 进入阅读器后延时隐藏状态栏的定时器（退出时清除，避免退出后误隐藏详情页状态栏） */
+  private statusBarHideTimer: number = -1;
+  /** 当前状态栏实际可见状态：避免退出时与 aboutToDisappear 重复恢复造成二次避让区回写 */
+  private statusBarShown: boolean = true;
+  /** 退出阅读器流程防重入：先恢复状态栏，再 pop，避免详情页在转场后跳高度 */
+  private exitingReader: boolean = false;
   // 音量键翻页订阅
   private volumeUpOptions: inputConsumer.KeyPressedConfig = {
     key: KeyCode.KEYCODE_VOLUME_UP,
@@ -160,13 +171,18 @@ export struct ReaderPage {
     // Q2：阅读器内状态栏全程隐藏（打开菜单/半模态也不恢复，避免避让区变化
     // 触发 @StorageProp 整树重渲染导致图片错位）；延后到 push 转场结束，
     // 避免前一页避让区在转场中塌陷（渲染顺序：转场稳定后再切换避让）
-    setTimeout(() => {
+    this.statusBarHideTimer = setTimeout(() => {
+      this.statusBarHideTimer = -1;
       void this.setStatusBarVisible(false);
     }, ENTRY_BAR_HIDE_DELAY);
   }
 
   aboutToDisappear(): void {
     this.alive = false;
+    if (this.statusBarHideTimer >= 0) {
+      clearTimeout(this.statusBarHideTimer);
+      this.statusBarHideTimer = -1;
+    }
     // 离开阅读器：解除 pin，恢复可淘汰
     ImageCache.unpinComic(this.comicId);
     if (ImageCache.readingComicId === this.comicId) {
@@ -552,9 +568,38 @@ export struct ReaderPage {
     if (this.showToolbar) {
       // 先撤浮层；阅读器内状态栏本就隐藏，内容容器不读避让高度 → 高度不变
       this.showToolbar = false;
+      this.showProgressPanel = false;
       return;
     }
+    // 每次打开工具栏回到进度项，避免动作项（自动/章节/设置）处于选中态后再次点击不触发
+    this.toolbarTab = 3;
+    this.showProgressPanel = false;
     this.showToolbar = true;
+  }
+
+  /** 底部 TabBar 动作分发：自动翻页 / 章节 / 设置 / 进度 */
+  private onToolbarTab(index: number): void {
+    this.toolbarTab = index;
+    if (index === 0) {
+      this.showProgressPanel = false;
+      this.toggleAutoPlay();
+      return;
+    }
+    if (index === 1) {
+      this.showProgressPanel = false;
+      this.showToolbar = false;
+      this.sheetMode = 'chapters';
+      this.showSheet = true;
+      return;
+    }
+    if (index === 2) {
+      this.showProgressPanel = false;
+      this.showToolbar = false;
+      this.sheetMode = 'settings';
+      this.showSheet = true;
+      return;
+    }
+    this.showProgressPanel = !this.showProgressPanel;
   }
 
   /**
@@ -563,6 +608,9 @@ export struct ReaderPage {
    * 世代号防乱序（进入隐藏/退出恢复并发时仅末次生效）。
    */
   private async setStatusBarVisible(show: boolean): Promise<void> {
+    if (this.statusBarShown === show) {
+      return;
+    }
     const gen: number = ++this.statusBarGen;
     try {
       const host: Context | undefined = this.getUIContext().getHostContext();
@@ -575,10 +623,29 @@ export struct ReaderPage {
       }
       // @SuppressWarnings syscap
       await win.setSpecificSystemBarEnabled('status', show, true);
+      this.statusBarShown = show;
       Logger.debug('ReaderPage', `status bar ${show ? 'shown' : 'hidden'} gen=${gen}`);
     } catch (e) {
       Logger.warn('ReaderPage', `setSpecificSystemBarEnabled failed: ${Logger.describe(e)}`);
     }
+  }
+
+  /**
+   * 退出阅读器：先把状态栏恢复完成，再执行返回。
+   * 否则详情页会先以 topAvoid=0 完成布局，转场结束后状态栏出现再触发一次高度变化，产生可见跳变。
+   */
+  private async exitReader(): Promise<void> {
+    if (this.exitingReader) {
+      return;
+    }
+    this.exitingReader = true;
+    this.flushStripSave();
+    await this.setStatusBarVisible(true);
+    // 等一帧让 avoidAreaChange -> AppStorage(topAvoidHeight) 回写到被阅读器覆盖的详情页
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 60);
+    });
+    NavUtil.back();
   }
 
   private prevPage(): void {
@@ -1175,148 +1242,164 @@ export struct ReaderPage {
   }
 
   @Builder
+  materialBackButton() {
+    Button({ type: ButtonType.Circle, stateEffect: true }) {
+      SymbolGlyph($r('sys.symbol.chevron_left'))
+        .fontSize(24)
+        .fontColor([$r('app.color.text_on_reader')])
+    }
+    .width(40).height(40)
+    .backgroundColor($r('app.color.reader_overlay'))
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
+    .shadow({ radius: 10, color: '#66000000', offsetX: 0, offsetY: 2 })
+    .onClick(() => {
+      void this.exitReader();
+    })
+  }
+
+  @Builder
+  bottomTabItem(index: number, icon: Resource, label: string) {
+    Column({ space: 2 }) {
+      SymbolGlyph(icon)
+        .fontSize(22)
+        .fontColor([this.toolbarTab === index ? this.themeColor : $r('app.color.text_tertiary')])
+      Text(label)
+        .fontSize(10)
+        .fontColor(this.toolbarTab === index ? this.themeColor : $r('app.color.text_tertiary'))
+        .maxLines(1)
+    }
+    .width('100%').height('100%')
+    .justifyContent(FlexAlign.Center)
+  }
+
+  @Builder
+  progressPanel() {
+    Column({ space: 6 }) {
+      if (this.showPageInfo) {
+        Text(this.pageLabel())
+          .fontSize(13).fontColor($r('app.color.text_on_reader'))
+          .width('100%').textAlign(TextAlign.Center)
+      }
+      Slider({
+        value: this.currentIndex,
+        min: 0,
+        max: Math.max(this.images.length - 1, 1),
+        step: 1,
+        style: SliderStyle.OutSet
+      })
+      .selectedColor(this.themeColor)
+      .trackColor($r('app.color.reader_slider_track'))
+      .width('100%')
+      .onChange((value: number) => {
+        this.navigateToIndex(Math.floor(value));
+      })
+    }
+    .width('100%')
+    .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+    .backgroundColor(Color.Transparent)
+    .systemMaterial(new uiMaterial.ImmersiveMaterial({
+      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+    }))
+    .borderRadius(16)
+  }
+
+  @Builder
   buildToolbar() {
-    
-      Column({ space: 0 }) {
+    Column({ space: 0 }) {
+      // 顶部：渐变阴影 + 材质返回按钮 + 漫画/章节标题
+      Stack({ alignContent: Alignment.Top }) {
+        Column()
+          .width('100%')
+          .height(160)
+          .linearGradient({
+            angle: 180,
+            colors: [['#D9000000', 0.0], ['#66000000', 0.55], ['#00000000', 1.0]]
+          })
+          .hitTestBehavior(HitTestMode.None)
+
         Row({ space: 8 }) {
-        Button({ type: ButtonType.Normal, stateEffect: true }) {
-          SymbolGlyph($r('sys.symbol.chevron_left'))
-            .fontSize(24)
-            .fontColor([$r('app.color.content_on_media')])
-        }
-        .width(40).height(40)
-        .borderRadius(24)
-        .backgroundColor(Color.Transparent)
-        .onClick(() => {
-          this.flushStripSave();
-          NavUtil.back();
-        })
-        Column({ space: 2 }) {
-          Text(this.title)
-            .fontSize(14).fontColor($r('app.color.text_on_reader'))
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-          if (this.chapters.length > 0 && this.currentChapterTitle().length > 0) {
-            Text(this.currentChapterTitle())
-              .fontSize(11).fontColor($r('app.color.reader_text_secondary'))
+          this.materialBackButton()
+          Column({ space: 2 }) {
+            Text(this.title)
+              .fontSize(15)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.text_on_reader'))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .width('100%')
+            if (this.chapters.length > 0 && this.currentChapterTitle().length > 0) {
+              Text(this.currentChapterTitle())
+                .fontSize(11)
+                .fontColor($r('app.color.reader_text_secondary'))
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+                .width('100%')
+            }
           }
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Start)
         }
-        .layoutWeight(1)
-        .alignItems(HorizontalAlign.Start)
-        Button({ type: ButtonType.Normal, stateEffect: true }) {
-          SymbolGlyph(this.autoPlay ? $r('sys.symbol.pause') : $r('sys.symbol.play_fill'))
-            .fontSize(20)
-            .fontColor([$r('app.color.content_on_media')])
-        }
-        .width(40).height(40)
-        .borderRadius(24)
-        .backgroundColor(Color.Transparent)
-        .onClick(() => {
-          this.toggleAutoPlay();
-        })
-        if (this.chapters.length > 0) {
-          Button({ type: ButtonType.Normal, stateEffect: true }) {
-            SymbolGlyph($r('sys.symbol.list_bullet'))
-              .fontSize(20)
-              .fontColor([$r('app.color.content_on_media')])
-          }
-          .width(40).height(40)
-          .borderRadius(24)
-          .backgroundColor(Color.Transparent)
-          .onClick(() => {
-            this.showToolbar = false;
-            this.sheetMode = 'chapters';
-            this.showSheet = true;
-          })
-        }
-        Button({ type: ButtonType.Normal, stateEffect: true }) {
-          SymbolGlyph($r('sys.symbol.gearshape'))
-            .fontSize(20)
-            .fontColor([$r('app.color.content_on_media')])
-        }
-        .width(40).height(40)
-        .borderRadius(24)
-        .backgroundColor(Color.Transparent)
-        .onClick(() => {
-          this.showToolbar = false;
-          this.sheetMode = 'settings';
-          this.showSheet = true;
-        })
+        .width('100%')
+        // 阅读器隐藏状态栏后 topAvoid 可能为 0，仍需给状态栏/摄像头区域留出安全距离
+        .padding({ left: 12, right: 12, top: Math.max(this.topAvoid, 34) + 10 })
+        .alignItems(VerticalAlign.Center)
       }
       .width('100%')
-      .padding({ left: 12, right: 12, top: this.topAvoid + 30, bottom: 6 })
-      .backgroundColor($r('app.color.reader_overlay'))
-      .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
-      .alignItems(VerticalAlign.Center)
-      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+      .height(160)
 
       Blank().layoutWeight(1)
         .onClick(() => {
           this.showToolbar = false;
+          this.showProgressPanel = false;
         })
 
-      Column({ space: 6 }) {
-        if (this.showPageInfo) {
-          Text(this.pageLabel())
-            .fontSize(13).fontColor($r('app.color.text_on_reader'))
-            .width('100%').textAlign(TextAlign.Center)
+      if (this.showProgressPanel) {
+        this.progressPanel()
+      }
+
+      // 底部系统 TabBar：自动翻页 / 章节 / 设置 / 进度
+      Stack({ alignContent: Alignment.Bottom }) {
+        HdsTabs({ controller: this.toolbarTabs, index: this.toolbarTab }) {
+          TabContent() {
+            Column()
+          }.tabBar(this.bottomTabItem(0,
+            this.autoPlay ? $r('sys.symbol.pause') : $r('sys.symbol.play_fill'),
+            Translations.t('section_auto')))
+          TabContent() {
+            Column()
+          }.tabBar(this.bottomTabItem(1, $r('sys.symbol.list_bullet'), Translations.t('chapters')))
+          TabContent() {
+            Column()
+          }.tabBar(this.bottomTabItem(2, $r('sys.symbol.gearshape'), Translations.t('tab_settings')))
+          TabContent() {
+            Column()
+          }.tabBar(this.bottomTabItem(3, $r('sys.symbol.list_number'), Translations.t('reader_progress')))
         }
-        Slider({
-          value: this.currentIndex,
-          min: 0,
-          max: Math.max(this.images.length - 1, 1),
-          step: 1,
-          style: SliderStyle.OutSet
-        })
-        .selectedColor(this.themeColor)
-        .trackColor($r('app.color.reader_slider_track'))
-        .width('92%')
-        .onChange((value: number) => {
-          this.navigateToIndex(Math.floor(value));
-        })
-        if (this.chapters.length > 0) {
-          Row({ space: 12 }) {
-            Text(Translations.t('prev_chapter'))
-              .fontSize(13).fontColor($r('app.color.text_on_reader'))
-              .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-              .backgroundColor($r('app.color.reader_overlay_button'))
-              .borderRadius(14)
-              .onClick(() => {
-                const prev: number = this.prevChapterOrder();
-                if (prev > 0) {
-                  this.loadChapter(prev, true);
-                } else {
-                  ToastUtil.show(Translations.t('start_of_chapter'), 1200);
-                }
-              })
-            Text(Translations.t('next_chapter'))
-              .fontSize(13).fontColor($r('app.color.text_on_reader'))
-              .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-              .backgroundColor($r('app.color.reader_overlay_button'))
-              .borderRadius(14)
-              .onClick(() => {
-                const next: number = this.nextChapterOrder();
-                if (next > 0) {
-                  this.loadChapter(next, false);
-                } else {
-                  ToastUtil.show(Translations.t('end_of_chapter'), 1200);
-                }
-              })
+        .height(92)
+        .margin({ bottom: this.bottomAvoid })
+        .barPosition(BarPosition.End)
+        .barOverlap(true)
+        .vertical(false)
+        .barFloatingStyle({
+          barBottomMargin: 12,
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.IMMERSIVE,
+            materialLevel: hdsMaterial.MaterialLevel.EXQUISITE
           }
-        }
+        })
+        .backgroundColor(Color.Transparent)
+        .onTabBarClick((index: number) => {
+          this.onToolbarTab(index);
+        })
       }
       .width('100%')
-      .padding({ top: 8, bottom: this.bottomAvoid + 10 })
-      .backgroundColor($r('app.color.reader_overlay'))
-      .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
-      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+      .height(92)
     }
     .width('100%').height('100%')
     .clip(false)
     .id('toolbar')
-    
   }
 
   // ---------- bindSheet：设置 / 章节 ----------
@@ -1668,12 +1751,32 @@ export struct ReaderPage {
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
         if (this.showToolbar) {
+          // 底部阴影层独立于工具栏布局，铺到屏幕最底部（含导航条区域）。
+          // 注意：expandSafeArea 要求组件不要设置固定宽高，固定高度只能向上扩展；
+          // 这里用百分比高度铺满全屏，通过渐变色停靠点只在底部形成阴影，并让整条父链一起 expand。
+          Stack({ alignContent: Alignment.Bottom }) {
+            Column()
+              .width('100%')
+              .height('100%')
+              .linearGradient({
+                angle: 180,
+                colors: [['#00000000', 0.62], ['#99000000', 0.82], ['#F2000000', 1.0]]
+              })
+              .hitTestBehavior(HitTestMode.None)
+              .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+              .clip(false)
+          }
+          .width('100%').height('100%')
+          .hitTestBehavior(HitTestMode.None)
+          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+          .clip(false)
           this.buildToolbar()
         }
       }
       .width('100%').height('100%')
       .backgroundColor($r('app.color.reader_bg'))
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+      .clip(false)
       .bindSheet($$this.showSheet, this.sheetContent(), {
         // 平板横屏窗口宽 ≥840vp 时默认非底部样式，detents 不生效 → 显式底部样式（与详情页一致）
         preferType: SheetType.BOTTOM,
@@ -1692,11 +1795,13 @@ export struct ReaderPage {
       })
     }
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+    .clip(false)
     .hideTitleBar(true)
     .backgroundColor($r('app.color.reader_bg'))
     .onBackPressed(() => {
-      this.flushStripSave();
-      return false;
+      // 接管返回：等状态栏恢复后再 pop，避免详情页转场后从无状态栏跳到有状态栏
+      void this.exitReader();
+      return true;
     })
   }
 }

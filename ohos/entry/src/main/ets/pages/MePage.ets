@@ -7,6 +7,7 @@ import { Settings } from '../data/preferences/Settings';
 import { JmApi } from '../data/api/JmApi';
 import { Database, DownloadItem, HistoryItem } from '../data/database/Database';
 import { DownloadManager } from '../data/download/DownloadManager';
+import { SearchBar } from '../components/SearchBar';
 
 @Component
 export struct MePage {
@@ -96,27 +97,6 @@ export struct MePage {
     const items: DownloadItem[] = await Database.queryDownloads();
     this.downloadItems = items;
     this.downloadCount = items.length;
-  }
-
-  @Builder
-  searchEntry() {
-    Row({ space: 8 }) {
-      SymbolGlyph($r('sys.symbol.magnifyingglass'))
-        .fontSize(20)
-        .fontColor([$r('app.color.text_secondary')])
-      Text(Translations.t('search_hint'))
-        .fontSize(14)
-        .fontColor($r('app.color.text_secondary'))
-        .layoutWeight(1)
-        .maxLines(1)
-    }
-    .width('100%')
-    .height(44)
-    .padding({ left: 12, right: 12 })
-    .backgroundColor($r('app.color.bg_fill'))
-    .borderRadius(22)
-    .onClick(() => { NavUtil.push('preSearch'); })
-    .id('searchEntry')
   }
 
   @Builder
@@ -330,14 +310,51 @@ export struct MePage {
     .id('downloadCard')
   }
 
+  /** 快捷入口（排行榜 / 每周必看）：从分类页迁入，位于下载卡片与设置入口之间 */
+  @Builder
+  quickEntry(icon: Resource, label: string, onTap: () => void) {
+    Row({ space: 12 }) {
+      SymbolGlyph(icon)
+        .fontSize(22)
+        .fontColor([this.themeColor])
+      Text(label)
+        .fontSize(15)
+        .fontColor($r('app.color.text_primary'))
+        .layoutWeight(1)
+      SymbolGlyph($r('sys.symbol.chevron_right'))
+        .fontSize(16)
+        .fontColor([$r('app.color.text_tertiary')])
+    }
+    .width('100%')
+    .height(52)
+    .padding({ left: 14, right: 14 })
+    .backgroundColor($r('app.color.bg_surface'))
+    .borderRadius(12)
+    .onClick(() => { onTap(); })
+  }
+
   build() {
     
       Scroll() {
         Column({ space: 12 }) {
-          this.searchEntry()
+          SearchBar({
+            editable: false,
+            placeholder: Translations.t('search_hint'),
+            itemId: 'searchEntry',
+            onTap: () => { NavUtil.push('preSearch'); }
+          })
           this.profileHeader()
           this.historyCard()
           this.downloadCard()
+          this.quickEntry($r('sys.symbol.list_number'), Translations.t('ranking'), () => {
+            const param: Record<string, Object> = {
+              'slug': '0', 'title': Translations.t('ranking'), 'order': 'mv'
+            };
+            NavUtil.push('jmCategory', param);
+          })
+          this.quickEntry($r('sys.symbol.clock'), Translations.t('week_recommendation'), () => {
+            NavUtil.push('jmWeek');
+          })
 
           Row({ space: 12 }) {
             SymbolGlyph($r('sys.symbol.gearshape'))

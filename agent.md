@@ -6,9 +6,10 @@
 单漫画源（JM），包名 `com.jmcomic.harmony`，无第三方依赖。
 
 **当前状态**：
-- master = **v1.1.4**（versionCode 18，2026-11-03）；GitHub 最新 Release 为 `releases/tag/v1.1.4`
+- master = **v1.1.5**（versionCode 19，2026-11-17，待发布）；上一个 GitHub Release 为 `releases/tag/v1.1.4`
 - 版本三处需同步：`AppScope/app.json5`（versionCode/versionName）、`Constants.APP_VERSION`（关于页/设置页动态显示）、`Changelog.ets`（应用内更新日志，倒序新增条目）
 - `feature/compat-sdk20` 分支：`compatibleSdkVersion` 降至 `6.0.0(20)` + 新 API 版本守卫与低版本降级（0 编译兼容告警，真机冒烟通过），**已推送、暂未合并且暂不发版**
+- v1.1.5 落地的主线能力：统一 `SearchBar` 组件（首页按钮态 / 搜索入口与结果页输入态，系统沉浸材质 + 描边投影；搜索页排序改为栏内下拉，标题显示「搜索 / 搜索结果」）、阅读器工具栏改版（顶部漫画/章节标题 + 阴影，底部 HdsTabs 四按钮：自动翻页/章节/设置/进度，底栏阴影延伸至系统导航条，退出先恢复状态栏）、排行榜与每周必看标题栏统一（排序/期数/类型改为标题栏下拉 + contentStartOffset，入口迁至我的页）、收藏页改版（NavDestination STACK 标题 + 收藏夹下拉新建/删除 + 隐藏返回按钮 + 下拉刷新 + 加载时序修复）、列表缓存 `ListCache`（收藏夹/首屏漫画与发现页主页分区/最新首屏，冷启动先展示缓存再后台刷新，失败保留列表）、修复禁漫主页退出重进空白（固定 ArrayDataSource + replaceAll + 首帧加载态）
 - v1.1.4 落地的主线能力：阅读页「只能加载三页」修复（移除 LazyForEach 子项的 active 视口门控，ReaderImage 挂载即加载；第 4 页起在线/离线/已下载均正常）、下载占用统计修复（`DownloadManager.ensurePublicRootReady()` + async `statDownloads`，等待公共 Download 根授权/切换完成）、历史删除即时刷新（HistoryPage 固定 ArrayDataSource + `replaceAll`，删除/清空后直接重载）、设置页分组间距统一 24vp
 - v1.1.3 落地的主线能力：繁体转简体（`ChineseConversion` 全局开关默认开，`JmApi.safeStr` / DetailCache / Database 读取链路 `t2s`，`SettingsKeys.T2S` + 设置页开关）、历史管理（HistoryPage 长按删除单条 + 标题栏菜单清空，确认弹窗 + `removeHistory/clearHistory`）、平板横屏半模态修复（详情页 / 阅读页 / 收藏 / 设置 bindSheet 显式 `preferType: BOTTOM`，详情页嵌套滚动 PARENT_FIRST/SELF_FIRST，防 detents 失效挤出「开始下载」按钮）、下载目录授权时机修复（DocumentViewPicker 从 initAsync 移到主页 loadContent 完成后触发 + onForeground 幂等重试最多 3 次，`setupPublicRoot` 各失败分支补日志，解决启动期无窗口内容导致 `downloadRootUri` 从未持久化、文件管理不可见）、ReaderImage 加载诊断日志（enqueue/start/done 队列状态与排队耗时、doLoad 本地/磁盘/网络各阶段、组件 discard 路径）
 - v1.1.2 落地的主线能力：下载写入系统 Download 目录（DocumentViewPicker DOWNLOAD 模式无感授权 Download/包名/，持久 URI 存 `DOWNLOAD_ROOT_URI`，6s 超时回退沙箱根；启动后台 migrateLegacy 把旧沙箱章节目录 rename/拷贝迁移，`localHit/chapterRoots/existingChapterDirs` 双根回读，detail 封面仍留沙箱）、已下载离线秒开（`loadChapter` 本地优先读 pages.json，未下载且 `Network.isOnline()` 为 false 快速失败；`selectDomain` 加 12s 整体兜底与 probe 拒绝处理；ReaderImage 网络分支前离线检查、GIF 分支走 localHit）、评论多页缓存（commentsJson v2 包装 `{"v":2,"p":{"1":"<json>"}}` 兼容旧数组格式，下载 capture 预缓存前 3 页，CommentsPage 任意页读写）、历史显示作者（history.author 幂等 ALTER + 重建兜底，详情 insertHistory 传 author，HistoryPage 以 `作者:` 行替换章节序号行）、删除下载联动 `ImageCache.removeByComic` 清 img_cache 归因条目（CacheManager 统计覆盖双根）、我的页新增下载卡片（封面横滑 + 进度 400ms 防抖重载 + `SHOW_DOWNLOAD_IMAGES` 开关）并移除追更入口（FollowPage 删除、router_map 减一条），历史/下载页 GRADUAL_BLUR 沉浸标题栏
@@ -51,6 +52,7 @@ ohos/entry/src/main/ets/
 │   ├── download/DownloadManager.ets -- 章节下载队列（后台任务/页级进度/暂停重试/离线页列表）
 │   ├── cache/DetailCache.ets -- 已下载漫画详情/封面/评论本地缓存（详情页秒开）
 │   ├── cache/ImageCache.ets -- 图片持久磁盘缓存（URL→字节，先缓存后网络写穿；仅超挡位上限淘汰，页图先于缩略图，阅读中漫画 pin 保护）
+│   ├── cache/ListCache.ets -- 收藏/发现列表首屏 JSON 缓存（收藏夹+首屏漫画、发现主页分区+最新首屏，冷启动先展示后刷新）
 │   ├── cache/CacheManager.ets -- 缓存占用统计/上限挡位分阶段淘汰（含 pin 保护）/清理（设置页缓存管理）
 │   ├── model/             -- Comic, Chapter, Comment, ComicPageData, ReaderParam
 │   └── preferences/Settings.ets -- 键值存储
@@ -58,6 +60,7 @@ ohos/entry/src/main/ets/
 ├── components/
 │   ├── ReaderImage.ets    -- 阅读器图片（下载→解码→反打乱→LRU 缓存，失败可重试）
 │   ├── NetworkImage.ets   -- 普通网络图片（封面等，无需反打乱）
+│   ├── SearchBar.ets      -- 统一搜索栏（按钮态/输入态 + 系统材质 + 可选排序下拉，首页/搜索入口/搜索结果页共用）
 │   ├── ComicTile/ComicGrid/AppIcon
 │   └── SettingItem/SettingSection/SettingSwitch/SettingSelect/SettingCommon/SettingCheckItem/SettingInfoItem
 ├── pages/
@@ -253,6 +256,15 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 ### 参考实现（只读）
 - `D:\desktop\JMComic-Crawler-Python-master\src\jmcomic\jm_toolkit.py` — `JmImageTools.download_image` / `decode_and_save`（下载即反打乱落盘的标准流程）
 - `jmcomic-downloader` `download_manager.rs::stitch_img`（下载侧重组）、PicaComic 下载管理交互（任务列表/进度/暂停）
+
+## 列表缓存与下拉刷新
+
+- **缓存层**：`data/cache/ListCache.ets` 使用 preferences 存 JSON（非图片，图片仍走 `ImageCache`），只保存展示字段（`id/source/title/author/coverUrl`）与收藏夹 `maxPage`；收藏缓存键按 `JmApi.getUserId()` 区分，避免切换账号串数据。
+- **收藏页**：`aboutToAppear` 先 `restoreCachedData()` 恢复收藏夹列表 + 当前收藏夹首屏，再 `refreshLoginState()` 后台请求；`cloudDataSource` 非空时不显示整页加载圈；网络失败保留缓存列表。`selectFolder` 先恢复目标收藏夹缓存再请求；`loadCloudPage` 捕获 `requestFolder`，请求期间切换收藏夹时丢弃迟到响应，防止串数据/写错缓存。
+- **发现页**：`restoreCachedContent()` 恢复主页分区与「最新」首屏，再后台 `loadHome()` 刷新；`homeLoading` / `loading` 仅在数据源为空时显示整页加载圈；请求失败保留缓存列表，不切错误页。
+- **下拉刷新**：收藏页 `cloudComicRows` 与空态均包在 `Refresh({ refreshing: $$this.cloudRefreshing })` 中，`onRefreshing` → `refreshAll()` → `loadFolders()`（内部 `await loadCloudPage(1, true)`），完成后再置 `cloudRefreshing=false`。
+- **LazyForEach 固定实例**：主页分区 / 最新 / 收藏列表一律使用初始化时的 `ArrayDataSource` + `replaceAll`（清空用 `clearData`），不要再 `this.source = new ArrayDataSource(...)`；数据源实例替换后 LazyForEach 的监听仍挂在旧实例上，重进页面会空白。
+- **注意**：`Refresh` 的 `$$` 双向绑定会在回调前把 `cloudRefreshing` 置 true，`onRefreshing` 内不要再用 `if (this.cloudRefreshing) return` 做防重入，否则刷新会被直接跳过。
 
 ## 常见问题
 

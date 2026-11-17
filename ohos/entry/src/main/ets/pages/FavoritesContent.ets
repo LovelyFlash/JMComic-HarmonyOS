@@ -7,6 +7,8 @@ import { JmApi, JmFolder } from '../data/api/JmApi';
 import { Comic } from '../data/model/Comic';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
+import { ListCache, CachedComicPage } from '../data/cache/ListCache';
+import { uiMaterial } from '@kit.ArkUI';
 
 @Component
 export struct FavoritesContent {
@@ -16,6 +18,7 @@ export struct FavoritesContent {
   @State currentFolder: string = '0'
   @State cloudDataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
   @State cloudLoading: boolean = false
+  @State cloudRefreshing: boolean = false
   @State cloudLoadingMore: boolean = false
   @State cloudError: string = ''
   @State currentPage: number = 1
@@ -29,25 +32,100 @@ export struct FavoritesContent {
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
 
   aboutToAppear(): void {
-    this.refreshLoginState();
+    // 先读本地缓存秒开列表，再后台请求最新数据
+    this.restoreCachedData().then(() => {
+      this.refreshLoginState();
+    });
   }
 
   private onAccountChanged(): void {
-    this.refreshLoginState();
+    // 账号切换：清空上一账号的列表，再恢复新账号缓存并刷新
+    this.folders = [];
+    this.currentFolder = '0';
+    this.cloudDataSource.clearData();
+    this.cloudLoadedIds = new Set<string>();
+    this.currentPage = 1;
+    this.maxPage = 1;
+    this.cloudLoading = false;
+    this.cloudError = '';
+    this.restoreCachedData().then(() => {
+      this.refreshLoginState();
+    });
+  }
+
+  private cacheUserId(): string {
+    return JmApi.getUserId();
+  }
+
+  /** 恢复收藏夹列表 + 当前收藏夹首屏漫画缓存 */
+  private async restoreCachedData(): Promise<void> {
+    if (!JmApi.isLoggedIn()) {
+      return;
+    }
+    const userId: string = this.cacheUserId();
+    const cachedFolders: JmFolder[] | null = await ListCache.loadFolders(userId);
+    if (cachedFolders !== null) {
+      this.folders = cachedFolders;
+      // 当前收藏夹已不存在时回退到「全部」
+      if (this.currentFolder !== '0') {
+        let found: boolean = false;
+        for (let i = 0; i < this.folders.length; i++) {
+          if (this.folders[i].id === this.currentFolder) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          this.currentFolder = '0';
+        }
+      }
+    }
+    await this.restoreCachedPage(this.currentFolder);
+  }
+
+  /** 恢复指定收藏夹的首屏缓存；无缓存时清空旧列表避免串数据 */
+  private async restoreCachedPage(folderId: string): Promise<void> {
+    const cached: CachedComicPage | null = await ListCache.loadFolderComics(this.cacheUserId(), folderId);
+    if (cached === null) {
+      this.cloudDataSource.clearData();
+      this.cloudLoadedIds = new Set<string>();
+      this.currentPage = 1;
+      this.maxPage = 1;
+      return;
+    }
+    this.currentPage = 1;
+    this.maxPage = cached.maxPage > 0 ? cached.maxPage : 1;
+    this.cloudLoadedIds = new Set<string>();
+    for (let i = 0; i < cached.comics.length; i++) {
+      this.cloudLoadedIds.add(cached.comics[i].id);
+    }
+    this.cloudDataSource.replaceAll(cached.comics);
   }
 
   private refreshLoginState(): void {
     this.loggedIn = JmApi.isLoggedIn();
     if (this.loggedIn) {
+      // 无缓存时才展示整页加载态；有缓存则直接展示旧数据并后台刷新
+      if (this.cloudDataSource.totalCount() === 0) {
+        this.cloudLoading = true;
+      }
+      this.cloudError = '';
       this.loadFolders();
+    } else {
+      this.cloudLoading = false;
+      this.cloudError = '';
     }
   }
 
   private async loadFolders(): Promise<void> {
     try {
-      this.folders = await JmApi.getFolders();
+      const fresh: JmFolder[] = await JmApi.getFolders();
+      this.folders = fresh;
+      ListCache.saveFolders(this.cacheUserId(), fresh).catch((e: Object) => {
+        // 缓存写入失败不影响页面
+      });
     } catch (e) {
-      this.folders = [];
+      // 请求失败时保留已恢复的缓存收藏夹
     }
     if (this.currentFolder !== '0') {
       let found: boolean = false;
@@ -61,16 +139,39 @@ export struct FavoritesContent {
         this.currentFolder = '0';
       }
     }
-    this.loadCloudPage(1, true);
+    await this.loadCloudPage(1, true);
+  }
+
+  /** 下拉刷新：重新拉取收藏夹列表与当前收藏夹首屏 */
+  private async refreshAll(): Promise<void> {
+    try {
+      if (JmApi.isLoggedIn()) {
+        await this.loadFolders();
+      }
+    } catch (e) {
+      // loadFolders/loadCloudPage 内部已处理错误
+    }
+    this.cloudRefreshing = false;
   }
 
   private async loadCloudPage(page: number, replace: boolean): Promise<void> {
+    const requestFolder: string = this.currentFolder;
     if (replace) {
-      this.cloudLoading = true;
+      // 有缓存时保留列表展示，只有空列表才显示整页加载圈
+      if (this.cloudDataSource.totalCount() === 0) {
+        this.cloudLoading = true;
+      }
       this.cloudError = '';
     }
     try {
-      const result = await JmApi.getFolderComicsPage(this.currentFolder, page);
+      const result = await JmApi.getFolderComicsPage(requestFolder, page);
+      // 请求期间切换了收藏夹：丢弃旧收藏夹的迟到响应，避免串数据/写错缓存
+      if (this.currentFolder !== requestFolder) {
+        if (replace) {
+          this.cloudLoading = false;
+        }
+        return;
+      }
       this.currentPage = page;
       if (replace) {
         // maxPage 仅按首页条数估算：用后续页条数重算会高估总页数，导致请求超范围页并重复加载
@@ -81,7 +182,11 @@ export struct FavoritesContent {
           this.cloudLoadedIds.add(result.comics[i].id);
           first.push(result.comics[i]);
         }
-        this.cloudDataSource = new ArrayDataSource<Comic>(first);
+        this.cloudDataSource.replaceAll(first);
+        ListCache.saveFolderComics(this.cacheUserId(), requestFolder, first, this.maxPage)
+          .catch((e: Object) => {
+            // 缓存写入失败不影响页面
+          });
       } else {
         const fresh: Comic[] = [];
         for (let i = 0; i < result.comics.length; i++) {
@@ -100,7 +205,7 @@ export struct FavoritesContent {
         }
       }
     } catch (e) {
-      if (replace) {
+      if (this.currentFolder === requestFolder && replace && this.cloudDataSource.totalCount() === 0) {
         this.cloudError = String(e);
       }
     }
@@ -121,12 +226,63 @@ export struct FavoritesContent {
     this.cloudLoadingMore = false;
   }
 
-  private selectFolder(folderId: string): void {
+  private async selectFolder(folderId: string): Promise<void> {
     if (this.currentFolder === folderId) {
       return;
     }
     this.currentFolder = folderId;
+    // 先展示该收藏夹的本地缓存，再请求最新数据
+    await this.restoreCachedPage(folderId);
     this.loadCloudPage(1, true);
+  }
+
+  /** 收藏夹下拉数据：第 0 项固定为「全部」，其后为云端收藏夹 */
+  private folderOptions(): SelectOption[] {
+    const opts: SelectOption[] = [{ value: Translations.t('folder_all') }];
+    for (let i = 0; i < this.folders.length; i++) {
+      opts.push({ value: this.folders[i].name });
+    }
+    return opts;
+  }
+
+  private folderIndex(): number {
+    if (this.currentFolder === '0') {
+      return 0;
+    }
+    for (let i = 0; i < this.folders.length; i++) {
+      if (this.folders[i].id === this.currentFolder) {
+        return i + 1;
+      }
+    }
+    return 0;
+  }
+
+  private currentFolderLabel(): string {
+    const idx: number = this.folderIndex();
+    if (idx === 0 || idx > this.folders.length) {
+      return Translations.t('folder_all');
+    }
+    return this.folders[idx - 1].name;
+  }
+
+  private selectFolderByIndex(index: number): void {
+    if (index <= 0) {
+      this.selectFolder('0');
+      return;
+    }
+    const folderIdx: number = index - 1;
+    if (folderIdx >= 0 && folderIdx < this.folders.length) {
+      this.selectFolder(this.folders[folderIdx].id);
+    }
+  }
+
+  private confirmDeleteCurrentFolder(): void {
+    for (let i = 0; i < this.folders.length; i++) {
+      if (this.folders[i].id === this.currentFolder) {
+        this.confirmDeleteFolder(this.folders[i]);
+        return;
+      }
+    }
   }
 
   private confirmDeleteFolder(folder: JmFolder): void {
@@ -174,55 +330,54 @@ export struct FavoritesContent {
     }
   }
 
+  /** 标题栏右侧：收藏夹下拉 + 新建/删除收藏夹 */
   @Builder
-  folderChips() {
-    Scroll() {
-      Row({ space: 8 }) {
-        Text(Translations.t('folder_all'))
-          .fontSize(13)
-          .padding({ left: 14, right: 14, top: 7, bottom: 7 })
-          .borderRadius(16)
-          .fontColor(this.currentFolder === '0' ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
-          .backgroundColor(this.currentFolder === '0' ? this.themeColor : $r('app.color.bg_fill'))
-          .onClick(() => { this.selectFolder('0'); })
-        ForEach(this.folders, (folder: JmFolder) => {
-          Text(folder.name)
-            .fontSize(13)
-            .padding({ left: 14, right: 14, top: 7, bottom: 7 })
-            .borderRadius(16)
-            .fontColor(this.currentFolder === folder.id ? $r('app.color.text_on_brand') : $r('app.color.text_secondary'))
-            .backgroundColor(this.currentFolder === folder.id ? this.themeColor : $r('app.color.bg_fill'))
-            .onClick(() => { this.selectFolder(folder.id); })
-            .gesture(LongPressGesture().onAction(() => { this.confirmDeleteFolder(folder); }))
-            .id('folder' + folder.id)
-        }, (folder: JmFolder) => folder.id)
-        Row({ space: 4 }) {
-          SymbolGlyph($r('sys.symbol.folder'))
-            .fontSize(14)
-            .fontColor([this.themeColor])
-          Text(Translations.t('new_folder'))
-            .fontSize(13)
-            .fontColor(this.themeColor)
+  folderMenus() {
+    if (this.loggedIn) {
+      Row({ space: 4 }) {
+        Select(this.folderOptions())
+          .selected(this.folderIndex())
+          .value(this.currentFolderLabel())
+          .font({ size: 14 })
+          .fontColor($r('app.color.text_secondary'))
+          .selectedOptionFontColor(this.themeColor)
+          .optionFontColor($r('app.color.text_primary'))
+          .menuBackgroundColor($r('app.color.bg_elevated'))
+          .menuAlign(MenuAlignType.END)
+          .height(28)
+          .constraintSize({ maxWidth: 132 })
+          .onSelect((index: number) => {
+            this.selectFolderByIndex(index);
+          })
+          .id('folderSelect')
+        SymbolGlyph($r('sys.symbol.folder_badge_plus'))
+          .fontSize(22)
+          .fontColor([this.themeColor])
+          .padding(6)
+          .onClick(() => {
+            this.newFolderName = '';
+            this.showNewFolderSheet = true;
+          })
+          .id('folderCreate')
+        if (this.currentFolder !== '0') {
+          SymbolGlyph($r('sys.symbol.trash'))
+            .fontSize(20)
+            .fontColor([$r('app.color.text_secondary')])
+            .padding(6)
+            .onClick(() => { this.confirmDeleteCurrentFolder(); })
+            .id('folderDelete')
         }
-        .padding({ left: 14, right: 14, top: 7, bottom: 7 })
-        .borderRadius(16)
-        .backgroundColor($r('app.color.bg_fill'))
-        .onClick(() => {
-          this.newFolderName = '';
-          this.showNewFolderSheet = true;
-        })
       }
-      .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+      .height(56)
+      .padding({ right: 12 })
+      .alignItems(VerticalAlign.Center)
     }
-    .scrollable(ScrollDirection.Horizontal)
-    .scrollBar(BarState.Off)
-    .width('100%')
-    .id('folderChips')
   }
 
   @Builder
   cloudComicRows() {
-    List({ space: 1 }) {
+    Refresh({ refreshing: $$this.cloudRefreshing, offset: 64, friction: 100 }) {
+      List({ space: 1 }) {
       LazyForEach(this.cloudDataSource, (comic: Comic) => {
         ListItem() {
           Row({ space: 12 }) {
@@ -271,8 +426,14 @@ export struct FavoritesContent {
     .layoutWeight(1)
     .divider({ strokeWidth: 0.5, color: $r('app.color.divider') })
     .edgeEffect(EdgeEffect.Spring)
+    .contentStartOffset(56)
+    .contentEndOffset(120)
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
     .onReachEnd(() => { this.loadCloudMore(); })
     .id('cloudComicRows')
+    }
+    .layoutWeight(1)
+    .onRefreshing(() => { this.refreshAll(); })
   }
 
   @Builder
@@ -296,7 +457,6 @@ export struct FavoritesContent {
       .alignItems(HorizontalAlign.Center)
       .id('cloudBodyLogin')
     } else {
-      this.folderChips()
       if (this.cloudLoading) {
         Column() {
           LoadingProgress().width(40).height(40)
@@ -314,11 +474,20 @@ export struct FavoritesContent {
         .layoutWeight(1).justifyContent(FlexAlign.Center)
         .id('cloudBodyError')
       } else if (this.cloudDataSource.totalCount() === 0) {
-        Column({ space: 8 }) {
-          Text(Translations.t('no_data'))
-            .fontSize(14).fontColor($r('app.color.text_secondary'))
+        Refresh({ refreshing: $$this.cloudRefreshing, offset: 64, friction: 100 }) {
+          Scroll() {
+            Column({ space: 8 }) {
+              Text(Translations.t('no_data'))
+                .fontSize(14).fontColor($r('app.color.text_secondary'))
+            }
+            .width('100%').height('100%')
+            .justifyContent(FlexAlign.Center)
+          }
+          .width('100%').height('100%')
+          .edgeEffect(EdgeEffect.Spring)
         }
-        .layoutWeight(1).justifyContent(FlexAlign.Center)
+        .layoutWeight(1)
+        .onRefreshing(() => { this.refreshAll(); })
         .id('cloudBodyEmpty')
       } else {
         this.cloudComicRows()
@@ -371,20 +540,35 @@ export struct FavoritesContent {
 
   build() {
 
-    Column({ space: 0 }) {
-      this.cloudBody()
-    }
-    .width('100%')
-    .height('100%')
-    .padding({ bottom: 76 })
-    .backgroundColor($r('app.color.bg_page'))
-    .bindSheet($$this.showNewFolderSheet, this.newFolderSheetContent(), {
-      preferType: SheetType.BOTTOM,
-      height: SheetSize.MEDIUM,
-      dragBar: true,
-      onDisappear: () => {
+    NavDestination() {
+      Column({ space: 0 }) {
+        this.cloudBody()
       }
+      .width('100%')
+      .height('100%')
+      .backgroundColor($r('app.color.bg_page'))
+      .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
+      .bindSheet($$this.showNewFolderSheet, this.newFolderSheetContent(), {
+        preferType: SheetType.BOTTOM,
+        height: SheetSize.MEDIUM,
+        dragBar: true,
+        onDisappear: () => {
+        }
+      })
+    }
+    .title(Translations.t('favorite_title'), {
+      barStyle: BarStyle.STACK,
+      scrollEffectOptions: {
+        scrollEffectType: ScrollEffectType.GRADUAL_BLUR
+      },
+      systemMaterial: new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
+      })
     })
+    .menus(this.folderMenus())
+    .hideBackButton(true)
+    .backgroundColor($r('app.color.bg_page'))
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM, SafeAreaEdge.TOP])
 
   }
 }
