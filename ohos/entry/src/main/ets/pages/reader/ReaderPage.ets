@@ -673,7 +673,7 @@ export struct ReaderPage {
       }
       this.preloadInflight.add(chapter.id);
       try {
-        let pages: string[] = DownloadManager.readChapterPages(chapter.id);
+        let pages: string[] = await DownloadManager.readChapterPages(chapter.id);
         if (pages.length === 0) {
           const ch: Chapter = await JmApi.getChapter(chapter.id);
           pages = ch.imageUrls;
@@ -1220,7 +1220,7 @@ export struct ReaderPage {
       } else {
         // 本地优先：已下载章节直接读 pages.json 渲染。此前先走 getChapter，断网时要等
         // 请求超时+域名探测+重试 ≈100s 才回退本地，表现为切章/跳页后一直转圈。
-        local = DownloadManager.readChapterPages(chapterId);
+        local = await DownloadManager.readChapterPages(chapterId);
       }
       if (local.length > 0) {
         imgs = local;
@@ -1238,7 +1238,7 @@ export struct ReaderPage {
           DownloadManager.cacheChapterPages(chapterId, imgs);
         } catch (e) {
           // 联网失败回退本地（上面已查过一次，双保险）
-          imgs = DownloadManager.readChapterPages(chapterId);
+          imgs = await DownloadManager.readChapterPages(chapterId);
           Logger.info('ReaderPage', `getChapter failed, local pages: order=${order} count=${imgs.length}` +
             ` err=${Logger.describe(e)}`);
           netFailed = imgs.length === 0;

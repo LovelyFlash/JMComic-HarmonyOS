@@ -658,13 +658,13 @@ export class DownloadManager {
   }
 
   /** 离线读取章节页 URL 列表（下载时写入的 pages.json）；无文件/坏文件返回空数组。主根优先，迁移窗口期回读旧根 */
-  static readChapterPages(chapterId: string): string[] {
+  static async readChapterPages(chapterId: string): Promise<string[]> {
     if (DownloadManager.filesRoot.length === 0 || chapterId.length === 0) {
       return [];
     }
     const dirs: string[] = DownloadManager.existingChapterDirs(chapterId);
     for (const dir of dirs) {
-      const urls: string[] = DownloadManager.readPagesFile(dir);
+      const urls: string[] = await DownloadManager.readPagesFile(dir);
       if (urls.length > 0) {
         return urls;
       }
@@ -672,23 +672,23 @@ export class DownloadManager {
     return [];
   }
 
-  private static readPagesFile(dir: string): string[] {
+  private static async readPagesFile(dir: string): Promise<string[]> {
     if (dir.length === 0) {
       return [];
     }
     const path: string = `${dir}/${DownloadManager.PAGES_FILE}`;
     let file: fs.File | null = null;
     try {
-      if (!fs.accessSync(path)) {
+      if (!await fs.access(path)) {
         return [];
       }
-      file = fs.openSync(path, fs.OpenMode.READ_ONLY);
-      const size: number = fs.statSync(path).size;
+      const size: number = (await fs.stat(path)).size;
       if (size <= 0) {
         return [];
       }
+      file = await fs.open(path, fs.OpenMode.READ_ONLY);
       const buf: ArrayBuffer = new ArrayBuffer(size);
-      const read: number = fs.readSync(file.fd, buf, { offset: 0 });
+      const read: number = await fs.read(file.fd, buf);
       if (read <= 0) {
         return [];
       }
@@ -712,7 +712,7 @@ export class DownloadManager {
     } finally {
       if (file !== null) {
         try {
-          fs.closeSync(file);
+          await fs.close(file);
         } catch (e) {
         }
       }
