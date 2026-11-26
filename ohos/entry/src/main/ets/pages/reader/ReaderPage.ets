@@ -89,6 +89,8 @@ export struct ReaderPage {
   @State stripEdgeReady: boolean = false;
   private chapterHintTimer: number = -1;
   private stripScrollBarTimer: number = -1;
+  /** onScroll 可能在首帧 build 期间触发；显示状态延迟到下一轮事件循环，避免渲染期改 @State */
+  private stripScrollBarShowTimer: number = -1;
   private stripAtStartFlag: boolean = true;
   private stripAtEndFlag: boolean = false;
   /** 连续模式是否有手指按住（惯性滑动时已松手，不得在滚动停止时误触发切章） */
@@ -236,6 +238,10 @@ export struct ReaderPage {
     if (this.stripScrollBarTimer >= 0) {
       clearTimeout(this.stripScrollBarTimer);
       this.stripScrollBarTimer = -1;
+    }
+    if (this.stripScrollBarShowTimer >= 0) {
+      clearTimeout(this.stripScrollBarShowTimer);
+      this.stripScrollBarShowTimer = -1;
     }
     if (this.chapterHintTimer >= 0) {
       clearTimeout(this.chapterHintTimer);
@@ -1045,8 +1051,13 @@ export struct ReaderPage {
 
   /** 连续模式滚动条：滑动时显示，600ms 后自动隐藏 */
   private pulseStripScrollBar(): void {
-    if (!this.stripScrollBarVisible) {
-      this.stripScrollBarVisible = true;
+    if (!this.stripScrollBarVisible && this.stripScrollBarShowTimer < 0) {
+      this.stripScrollBarShowTimer = setTimeout(() => {
+        this.stripScrollBarShowTimer = -1;
+        if (this.alive) {
+          this.stripScrollBarVisible = true;
+        }
+      }, 0);
     }
     if (this.stripScrollBarTimer >= 0) {
       clearTimeout(this.stripScrollBarTimer);
@@ -1059,6 +1070,10 @@ export struct ReaderPage {
 
   /** 滚动停止后更快隐藏滚动条 */
   private scheduleStripScrollBarHide(): void {
+    if (this.stripScrollBarShowTimer >= 0) {
+      clearTimeout(this.stripScrollBarShowTimer);
+      this.stripScrollBarShowTimer = -1;
+    }
     if (this.stripScrollBarTimer >= 0) {
       clearTimeout(this.stripScrollBarTimer);
     }

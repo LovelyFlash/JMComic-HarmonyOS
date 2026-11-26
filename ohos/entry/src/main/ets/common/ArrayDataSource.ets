@@ -31,15 +31,12 @@ export class ArrayDataSource<T> implements IDataSource {
     for (let i = 0; i < data.length; i++) {
       this.items.push(data[i]);
     }
-    // 批量追加必须用 onDatasetChange 的 count 语义；只发一次 onDataAdd(start)
-    // 只会通知“新增一项”，分页/评论/连续滚动拼接会出现尾部页不刷新。
-    const operations: DataOperation[] = [{
-      type: DataOperationType.ADD,
-      index: start,
-      count: data.length
-    }];
+    // LazyForEach 的 onDatasetChange 在当前运行时会对 ADD+count 抛异常；
+    // 逐索引 onDataAdd 是兼容性最稳的批量追加方式（分页/评论/连续拼接共用）。
     for (let i = 0; i < this.listeners.length; i++) {
-      this.listeners[i].onDatasetChange(operations);
+      for (let j = 0; j < data.length; j++) {
+        this.listeners[i].onDataAdd(start + j);
+      }
     }
   }
 
