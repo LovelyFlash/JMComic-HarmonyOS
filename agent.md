@@ -6,9 +6,10 @@
 单漫画源（JM），包名 `com.jmcomic.harmony`，无第三方依赖。
 
 **当前状态**：
-- master = **v1.1.5**（versionCode 19，2026-11-17，待发布）；上一个 GitHub Release 为 `releases/tag/v1.1.4`
+- master = **v1.1.6**（versionCode 20，2026-11-26，待发布）；上一个 GitHub Release 为 `releases/tag/v1.1.5`
 - 版本三处需同步：`AppScope/app.json5`（versionCode/versionName）、`Constants.APP_VERSION`（关于页/设置页动态显示）、`Changelog.ets`（应用内更新日志，倒序新增条目）
 - `feature/compat-sdk20` 分支：`compatibleSdkVersion` 降至 `6.0.0(20)` + 新 API 版本守卫与低版本降级（0 编译兼容告警，真机冒烟通过），**已推送、暂未合并且暂不发版**
+- v1.1.6 落地的主线能力：阅读器工具栏升级（进度圆环图标、进度与设置换位、打开底部 Tab 自动展开进度面板、进度条下上一章/下一章）；音量键在工具栏/半模态/加载错误遮罩/续读弹窗显示时恢复系统音量；移除侧边翻页栏与长按缩放并新增双指缩放开关；连续模式支持双指放大后继续纵向翻页，滚动条滑动显示/停止 300ms 隐藏/加深颜色；边界交互改为下拉刷新式整列表位移，松手达阈值才切章、惯性只回弹；新增自动预载下一章与 1-2 章预载数量，翻页命中缓存直接切章、连续模式自动拼接下一章页面实现跨章无缝滚动，超出设置的预载数据自动销毁
 - v1.1.5 落地的主线能力：统一 `SearchBar` 组件（首页按钮态 / 搜索入口与结果页输入态，系统沉浸材质 + 描边投影；搜索页排序改为栏内下拉，标题显示「搜索 / 搜索结果」）、阅读器工具栏改版（顶部漫画/章节标题 + 阴影，底部 HdsTabs 四按钮：自动翻页/章节/设置/进度，底栏阴影延伸至系统导航条，退出先恢复状态栏）、排行榜与每周必看标题栏统一（排序/期数/类型改为标题栏下拉 + contentStartOffset，入口迁至我的页）、收藏页改版（NavDestination STACK 标题 + 收藏夹下拉新建/删除 + 隐藏返回按钮 + 下拉刷新 + 加载时序修复）、列表缓存 `ListCache`（收藏夹/首屏漫画与发现页主页分区/最新首屏，冷启动先展示缓存再后台刷新，失败保留列表）、修复禁漫主页退出重进空白（固定 ArrayDataSource + replaceAll + 首帧加载态）
 - v1.1.4 落地的主线能力：阅读页「只能加载三页」修复（移除 LazyForEach 子项的 active 视口门控，ReaderImage 挂载即加载；第 4 页起在线/离线/已下载均正常）、下载占用统计修复（`DownloadManager.ensurePublicRootReady()` + async `statDownloads`，等待公共 Download 根授权/切换完成）、历史删除即时刷新（HistoryPage 固定 ArrayDataSource + `replaceAll`，删除/清空后直接重载）、设置页分组间距统一 24vp
 - v1.1.3 落地的主线能力：繁体转简体（`ChineseConversion` 全局开关默认开，`JmApi.safeStr` / DetailCache / Database 读取链路 `t2s`，`SettingsKeys.T2S` + 设置页开关）、历史管理（HistoryPage 长按删除单条 + 标题栏菜单清空，确认弹窗 + `removeHistory/clearHistory`）、平板横屏半模态修复（详情页 / 阅读页 / 收藏 / 设置 bindSheet 显式 `preferType: BOTTOM`，详情页嵌套滚动 PARENT_FIRST/SELF_FIRST，防 detents 失效挤出「开始下载」按钮）、下载目录授权时机修复（DocumentViewPicker 从 initAsync 移到主页 loadContent 完成后触发 + onForeground 幂等重试最多 3 次，`setupPublicRoot` 各失败分支补日志，解决启动期无窗口内容导致 `downloadRootUri` 从未持久化、文件管理不可见）、ReaderImage 加载诊断日志（enqueue/start/done 队列状态与排队耗时、doLoad 本地/磁盘/网络各阶段、组件 discard 路径）
@@ -265,6 +266,15 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 - **下拉刷新**：收藏页 `cloudComicRows` 与空态均包在 `Refresh({ refreshing: $$this.cloudRefreshing })` 中，`onRefreshing` → `refreshAll()` → `loadFolders()`（内部 `await loadCloudPage(1, true)`），完成后再置 `cloudRefreshing=false`。
 - **LazyForEach 固定实例**：主页分区 / 最新 / 收藏列表一律使用初始化时的 `ArrayDataSource` + `replaceAll`（清空用 `clearData`），不要再 `this.source = new ArrayDataSource(...)`；数据源实例替换后 LazyForEach 的监听仍挂在旧实例上，重进页面会空白。
 - **注意**：`Refresh` 的 `$$` 双向绑定会在回调前把 `cloudRefreshing` 置 true，`onRefreshing` 内不要再用 `if (this.cloudRefreshing) return` 做防重入，否则刷新会被直接跳过。
+
+## 阅读器跨章预载与边界交互
+
+- **预载配置**：`ReadingConfig.autoPreloadNext` / `preloadChapterCount`（1-2 章），设置键 `AUTO_PRELOAD_NEXT` / `PRELOAD_CHAPTER_COUNT`；阅读设置与阅读器内设置弹窗均可修改。
+- **页列表缓存**：`ReaderPage.preloadPages: Map<chapterId, string[]>` + `preloadOrder`，预载后续 1-2 章页列表；超过 `preloadChapterCount` 时按 `preloadOrder` 淘汰最早条目。每章只预热前 8 页图片，其余由现有图片缓存按需加载。
+- **切章命中**：`loadChapter` 优先读取 `preloadPages`；命中时直接使用页列表，省去网络/本地页列表读取。翻页模式下一章已预载时直接切章，不再显示过渡页。
+- **连续模式无缝滚动**：`stripSegments: StripSegment[]` 记录已拼接章节（order / 全局起始 index / pages）。接近列表末尾 `totalCount - last <= 3` 时自动 `appendNextStripChapter()`，用 `stripSource.addAll` 追加下一章；`currentIndex` 为全局索引，`images` 保持当前章页列表，`localPageIndex()` 负责章内页码与进度落盘；跨段时更新 `currentChapterOrder` 并预载下一章。
+- **边界拉动**：只有手指按住（`stripTouchActive`）时才累计 `stripEdgePull`；惯性滑动不累计，滚动停止时只回弹。拉动位移直接 `translate` 到整个 List；达到阈值后继续拉动使用 0.4 阻尼，最高 320vp；松手（`settleStripEdgePull`）才判断切章，切章也先播放 180ms 回弹，`stripEdgeSettling` 期间忽略边缘滚动避免抢帧。
+- **滚动条**：List 自带滚动条，滑动时显示，`onScrollStop` 后 300ms 隐藏；颜色 `#888888`、宽度 4vp。连续模式已取消外层 Scroll，缩放用 List `.scale`，放大后仍可纵向连续翻页。
 
 ## 常见问题
 

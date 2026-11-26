@@ -25,13 +25,36 @@ import { DEFAULT_THEME_COLOR } from '../../common/Constants';
 const MAX_ZOOM = 4.0;
 const DOUBLE_TAP_ZOOM = 2.5;
 const ZOOM_RESET_THRESHOLD = 1.05;
-/** 侧边页码条：轨道与滑块尺寸（vp） */
-const SIDE_TRACK: number = 280;
-const SIDE_THUMB: number = 36;
+/** 连续模式触发上一章/下一章的边界上滑阈值（vp） */
+const CHAPTER_EDGE_THRESHOLD: number = 80;
+/** 水平滚动条显示后自动隐藏的延时（ms） */
+const SCROLL_BAR_HIDE_MS: number = 600;
 /** 自动翻页可选间隔（秒） */
 const AUTO_TIMES: number[] = [3, 5, 8, 10, 15];
 /** 进入阅读器后隐藏状态栏的延时（ms，跨过 push 转场再切换避让） */
 const ENTRY_BAR_HIDE_DELAY: number = 400;
+
+/** onScrollFrameBegin 返回值（ArkTS 不允许对象字面量直接作为接口返回值） */
+class ScrollFrameOffset {
+  offsetRemain: number;
+
+  constructor(offsetRemain: number) {
+    this.offsetRemain = offsetRemain;
+  }
+}
+
+/** 连续滚动模式中已拼接的章节段：order + 在全局列表中的起始下标 + 页 URL */
+class StripSegment {
+  order: number;
+  start: number;
+  pages: string[];
+
+  constructor(order: number, start: number, pages: string[]) {
+    this.order = order;
+    this.start = start;
+    this.pages = pages;
+  }
+}
 
 @Builder
 export function ReaderPageBuilder(name: string, param: object) {
@@ -51,9 +74,27 @@ export struct ReaderPage {
   @State showToolbar: boolean = false;
   @State showSheet: boolean = false;
   @State sheetMode: string = 'settings';
-  /** 底部系统 TabBar 当前项：0 自动 / 1 章节 / 2 设置 / 3 进度 */
-  @State toolbarTab: number = 3;
+  /** 底部系统 TabBar 当前项：0 自动 / 1 章节 / 2 进度 / 3 设置 */
+  @State toolbarTab: number = 2;
   @State showProgressPanel: boolean = false;
+  /** 进度滑块拖动中：翻页模式临时启用翻页动画，拖动跟手过渡 */
+  @State sliderDragging: boolean = false;
+  /** 翻页模式边界提示：-1=上一章，1=下一章，0=无 */
+  @State chapterEdgeHint: number = 0;
+  /** 连续模式滚动条显隐（滑动时显示，600ms 后隐藏） */
+  @State stripScrollBarVisible: boolean = false;
+  /** 连续模式边界下拉/上拉的拉动距离与方向（-1 上一章 / 1 下一章） */
+  @State stripEdgePull: number = 0;
+  @State stripEdgeDirection: number = 0;
+  @State stripEdgeReady: boolean = false;
+  private chapterHintTimer: number = -1;
+  private stripScrollBarTimer: number = -1;
+  private stripAtStartFlag: boolean = true;
+  private stripAtEndFlag: boolean = false;
+  /** 连续模式是否有手指按住（惯性滑动时已松手，不得在滚动停止时误触发切章） */
+  private stripTouchActive: boolean = false;
+  /** 边界回弹动画进行中：忽略新的边缘拉动，避免动画与滚动相互抢帧造成卡顿 */
+  private stripEdgeSettling: boolean = false;
   private toolbarTabs: HdsTabsController = new HdsTabsController();
   @State loadingChapter: boolean = false;
   /** 首章自取（push-first 进入）失败：内容层错误态 + 点击重试 */
@@ -67,26 +108,28 @@ export struct ReaderPage {
   @State imageLayout: number = 0;
   @State keepScreenOn: boolean = false;
   @State doubleTapZoom: boolean = true;
-  @State longPressZoom: boolean = true;
+  @State pinchZoom: boolean = true;
+  @State autoPreloadNext: boolean = true;
+  @State preloadChapterCount: number = 1;
   @State volumeKeyTurnPage: boolean = true;
-  @State sidePageTurn: boolean = false;
   @State imageQuality: number = 0;
   @State autoPageTime: number = 5;
   @State autoPlay: boolean = false;
   // 缩放
   @State zoomScale: number = 1.0;
+  /** 双指触摸中：临时禁用 Swiper 滑动，保证 1x 状态也能识别双指放大 */
+  @State multiTouch: boolean = false;
   private pinchBaseScale: number = 1.0;
   // 三模式页数据源（章节/模式切换时 replaceAll 全量重建）：单页/双页 Swiper 与连续模式 List
   // 均走 LazyForEach 惰性构建——进入/切章只创建 visible+cachedCount 节点，避免整章 N 页一帧 eager 重建掉帧
   private singleSource: ArrayDataSource<string> = new ArrayDataSource<string>();
   private dualSource: ArrayDataSource<number> = new ArrayDataSource<number>();
   private stripScroller: Scroller = new Scroller();
-  /** 连续模式外层缩放 Scroll（参考项目 scroll 模式：外层 pinch 缩放 + 缩放态平移，内层 List 纵向滚动） */
-  private stripOuterScroller: Scroller = new Scroller();
-  /** 连续模式缩放值。参考项目 zoomScale 用普通字段：onDidZoom 每帧写入不触发重渲（避免
-   *  pinch/滚动期间整棵内容树按帧重渲导致卡顿不跟手），仅越过阈值时翻 stripZoomed 重渲一次 */
-  private stripZoom: number = 1.0;
-  /** 连续模式是否处于缩放态（驱动 scrollable/scrollBar 切换，参考项目 isZoomed） */
+  /** 连续模式缩放值（@State 驱动 List.scale；双指缩放时逐帧更新，List 仅更新变换属性） */
+  @State stripZoom: number = 1.0;
+  /** 连续模式双指缩放的基准值 */
+  private stripPinchBase: number = 1.0;
+  /** 连续模式是否处于缩放态 */
   @State stripZoomed: boolean = false;
   /** 连续模式数据源（LazyForEach：replaceAll→onDataReloaded 切章刷新，List cachedCount 预建屏外节点） */
   private stripSource: ArrayDataSource<string> = new ArrayDataSource<string>();
@@ -96,6 +139,13 @@ export struct ReaderPage {
   private stripGeneration: number = 0;
   /** 定位重校定时器集合 */
   private stripAnchorTimers: number[] = [];
+  /** 预载章节页列表缓存（最多保留 preloadChapterCount 章，默认 1-2 章） */
+  private preloadPages: Map<string, string[]> = new Map();
+  private preloadOrder: string[] = [];
+  private preloadInflight: Set<string> = new Set();
+  /** 连续模式已拼接的章节段（无缝跨章滚动） */
+  private stripSegments: StripSegment[] = [];
+  private stripAppending: boolean = false;
   /** 进度防抖保存定时器 */
   private stripSaveTimer: number = -1;
   /** push-first 进入：首章自取完成后触发一次续读检查（期间禁止落盘，防止把已存进度覆盖为 0） */
@@ -126,11 +176,10 @@ export struct ReaderPage {
   private volumeDownCallback: (event: KeyEvent) => void = () => {
   };
   private volumeRegistered: boolean = false;
+  /** 续读确认弹窗可见：视作覆盖层，音量键交还系统 */
+  private resumeDialogVisible: boolean = false;
   // 自动翻页定时器
   private autoTimer: number = -1;
-  // 侧边页码条拖动基准（PanGesture offset 为相对手势起点的位移）
-  private sideBarDragBase: number = 0;
-  private sideBarDragOffset: number = 0;
   
   @StorageProp('themeColor') themeColor: string = DEFAULT_THEME_COLOR
   @StorageProp('topAvoidHeight') topAvoid: number = 0
@@ -155,6 +204,7 @@ export struct ReaderPage {
       this.preloadAround(this.currentIndex);
       if (this.images.length > 0) {
         this.restoreProgress();
+        void this.preloadNextChapters();
       } else {
         // push-first 进入：详情页同步转场后由阅读器自取首章（内容层 loading overlay），
         // 取到图片再做续读检查（restoreProgress 依赖 images.length 判定）
@@ -183,6 +233,23 @@ export struct ReaderPage {
       clearTimeout(this.statusBarHideTimer);
       this.statusBarHideTimer = -1;
     }
+    if (this.stripScrollBarTimer >= 0) {
+      clearTimeout(this.stripScrollBarTimer);
+      this.stripScrollBarTimer = -1;
+    }
+    if (this.chapterHintTimer >= 0) {
+      clearTimeout(this.chapterHintTimer);
+      this.chapterHintTimer = -1;
+    }
+    this.chapterEdgeHint = 0;
+    this.stripEdgePull = 0;
+    this.stripEdgeDirection = 0;
+    this.stripEdgeReady = false;
+    this.stripTouchActive = false;
+    this.stripEdgeSettling = false;
+    this.preloadPages.clear();
+    this.preloadOrder = [];
+    this.preloadInflight.clear();
     // 离开阅读器：解除 pin，恢复可淘汰
     ImageCache.unpinComic(this.comicId);
     if (ImageCache.readingComicId === this.comicId) {
@@ -207,9 +274,10 @@ export struct ReaderPage {
     this.imageLayout = ReadingConfig.imageLayout;
     this.keepScreenOn = ReadingConfig.keepScreenOn;
     this.doubleTapZoom = ReadingConfig.doubleTapZoom;
-    this.longPressZoom = ReadingConfig.longPressZoom;
+    this.pinchZoom = ReadingConfig.pinchZoom;
+    this.autoPreloadNext = ReadingConfig.autoPreloadNext;
+    this.preloadChapterCount = Math.min(2, Math.max(1, ReadingConfig.preloadChapterCount));
     this.volumeKeyTurnPage = ReadingConfig.volumeKeyTurnPage;
-    this.sidePageTurn = ReadingConfig.sidePageTurn;
     this.imageQuality = ReadingConfig.imageQuality;
     this.autoPageTime = ReadingConfig.autoPageTime;
     this.setKeepScreenOn(this.keepScreenOn);
@@ -217,16 +285,23 @@ export struct ReaderPage {
   }
 
   // ---------- 音量键翻页（inputConsumer 优先响应系统功能键，API16+） ----------
+  /** 漫画上方是否有覆盖层：工具栏 / 进度面板 / 半模态 / 加载或错误遮罩 / 续读弹窗 */
+  private hasOverlay(): boolean {
+    return this.showToolbar || this.showProgressPanel || this.showSheet ||
+      this.loadingChapter || this.chapterError || this.resumeDialogVisible;
+  }
+
   private updateVolumeKeySubscription(): void {
-    if (this.volumeKeyTurnPage && !this.volumeRegistered) {
+    const shouldRegister: boolean = this.volumeKeyTurnPage && !this.hasOverlay();
+    if (shouldRegister && !this.volumeRegistered) {
       this.volumeUpCallback = (_event: KeyEvent) => {
-        if (this.showSheet || this.loadingChapter) {
+        if (this.hasOverlay()) {
           return;
         }
         this.prevPage();
       };
       this.volumeDownCallback = (_event: KeyEvent) => {
-        if (this.showSheet || this.loadingChapter) {
+        if (this.hasOverlay()) {
           return;
         }
         this.nextPage();
@@ -239,7 +314,8 @@ export struct ReaderPage {
         Logger.warn('ReaderPage', `volume key subscribe failed: ${Logger.describe(e)}`);
         this.volumeRegistered = false;
       }
-    } else if (!this.volumeKeyTurnPage && this.volumeRegistered) {
+    } else if (!shouldRegister && this.volumeRegistered) {
+      // 有覆盖层时注销监听，让音量键恢复系统音量调节
       this.unregisterVolumeKey();
     }
   }
@@ -270,7 +346,9 @@ export struct ReaderPage {
       if (this.showSheet || this.loadingChapter) {
         return;
       }
-      if (this.currentIndex >= this.images.length - 1 && this.nextChapterOrder() === 0) {
+      if (this.currentIndex >= this.stripTotalCount() - 1 &&
+        this.nextOrderAfter(this.isStrip() && this.stripSegments.length > 0
+          ? this.stripSegments[this.stripSegments.length - 1].order : this.currentChapterOrder) === 0) {
         // 漫画末页：自动翻页停止
         this.stopAutoPlay();
         return;
@@ -319,12 +397,16 @@ export struct ReaderPage {
       progress.lastChapter.length === 0 || Number(progress.lastChapter) === this.currentChapterOrder;
     if (progress.lastPage > 0 && progress.lastPage < this.images.length && chapterMatches) {
       const page: number = progress.lastPage;
+      this.resumeDialogVisible = true;
+      this.updateVolumeKeySubscription();
       this.getUIContext().showAlertDialog({
         title: Translations.t('resume_reading'),
         message: `${Translations.t('resume_hint_prefix')}${page + 1}${Translations.t('resume_hint_suffix')}`,
         primaryButton: {
           value: Translations.t('from_start'),
           action: () => {
+            this.resumeDialogVisible = false;
+            this.updateVolumeKeySubscription();
             this.navigateToIndex(0);
             this.saveProgress();
           }
@@ -333,12 +415,18 @@ export struct ReaderPage {
           value: Translations.t('resume_reading'),
           fontColor: this.themeColor,
           action: () => {
+            this.resumeDialogVisible = false;
+            this.updateVolumeKeySubscription();
             this.navigateToIndex(page);
             if (this.isStrip()) {
               // 连续模式：START 对齐 + 80/400ms 重校（解码前后高度变化需重复校正落点）
               this.stripAnchor(page);
             }
           }
+        },
+        cancel: () => {
+          this.resumeDialogVisible = false;
+          this.updateVolumeKeySubscription();
         }
       });
     }
@@ -349,7 +437,8 @@ export struct ReaderPage {
       return;
     }
     const chapter: string = this.chapters.length > 0 ? String(this.currentChapterOrder) : '';
-    await Database.updateReadingProgress(this.comicId, this.source, chapter, this.currentIndex);
+    const page: number = this.isStrip() ? this.localPageIndex() : this.currentIndex;
+    await Database.updateReadingProgress(this.comicId, this.source, chapter, page);
   }
 
   /** 进度防抖保存（参考项目 scheduleSavePosition：索引变化 500ms 后落盘，快速滑动不频繁写库） */
@@ -433,7 +522,8 @@ export struct ReaderPage {
   /** 预取当前页：普通前向 6 页/后向 2 页；连续模式双向各 10 页（与 cachedCount 对齐，保证向上/向下滚动进场前比例已缓存，
    *  占位高度不跳变——这是不做锚点补偿的前提，参考项目 ±10 窗口）。入队尾顺序消化、可见页优先插队，队列限流防加载风暴 */
   private preloadAround(idx: number): void {
-    if (this.images.length === 0) {
+    const total: number = this.stripTotalCount();
+    if (total === 0) {
       return;
     }
     const forward: number = this.isStrip() ? 10 : 6;
@@ -441,14 +531,14 @@ export struct ReaderPage {
     const targets: string[] = [];
     for (let d = 1; d <= forward; d++) {
       const after: number = idx + d;
-      if (after < this.images.length) {
-        targets.push(this.images[after]);
+      if (after < total) {
+        targets.push(this.isStrip() ? this.stripSource.getData(after) : this.images[after]);
       }
     }
     for (let d = 1; d <= backward; d++) {
       const before: number = idx - d;
       if (before >= 0) {
-        targets.push(this.images[before]);
+        targets.push(this.isStrip() ? this.stripSource.getData(before) : this.images[before]);
       }
     }
     if (targets.length > 0) {
@@ -456,22 +546,172 @@ export struct ReaderPage {
     }
   }
 
-  /** 统一跳页入口：翻页模式驱动 Swiper.index 属性，连续模式驱动 Scroller */
-  private navigateToIndex(target: number): void {
-    const idx: number = Math.max(0, Math.min(target, this.images.length - 1));
+  private preloadCount(): number {
+    return Math.min(2, Math.max(1, this.preloadChapterCount));
+  }
+
+  /** 连续模式已拼接列表的总页数；翻页模式为当前章页数 */
+  private stripTotalCount(): number {
+    return this.isStrip() && this.stripSegments.length > 0 ? this.stripSource.totalCount() : this.images.length;
+  }
+
+  /** 当前全局索引所在的章节段 */
+  private segmentAt(index: number): StripSegment | undefined {
+    for (let i = this.stripSegments.length - 1; i >= 0; i--) {
+      const seg: StripSegment = this.stripSegments[i];
+      if (index >= seg.start && index < seg.start + seg.pages.length) {
+        return seg;
+      }
+    }
+    return this.stripSegments.length > 0 ? this.stripSegments[0] : undefined;
+  }
+
+  /** 当前章内页码（连续模式全局索引 → 章内索引） */
+  private localPageIndex(): number {
+    const seg: StripSegment | undefined = this.segmentAt(this.currentIndex);
+    return seg !== undefined ? this.currentIndex - seg.start : this.currentIndex;
+  }
+
+  private nextOrderAfter(order: number): number {
+    let result: number = 0;
+    for (let i = 0; i < this.chapters.length; i++) {
+      if (this.chapters[i].order > order && (result === 0 || this.chapters[i].order < result)) {
+        result = this.chapters[i].order;
+      }
+    }
+    return result;
+  }
+
+  /** 连续模式下无缝拼接下一章：滚动到末尾前提前追加，避免出现边界切换 */
+  private async appendNextStripChapter(): Promise<number> {
+    if (!this.isStrip() || !this.autoPreloadNext || this.stripAppending || this.stripSegments.length === 0) {
+      return -1;
+    }
+    const lastSeg: StripSegment = this.stripSegments[this.stripSegments.length - 1];
+    const nextOrder: number = this.nextOrderAfter(lastSeg.order);
+    if (nextOrder <= 0) {
+      return -1;
+    }
+    let chapterId: string = '';
+    for (let i = 0; i < this.chapters.length; i++) {
+      if (this.chapters[i].order === nextOrder) {
+        chapterId = this.chapters[i].id;
+        break;
+      }
+    }
+    const pages: string[] | undefined = this.preloadPages.get(chapterId);
+    if (pages === undefined || pages.length === 0) {
+      void this.preloadNextChapters();
+      return -1;
+    }
+    this.stripAppending = true;
+    this.preloadPages.delete(chapterId);
+    const cacheIdx: number = this.preloadOrder.indexOf(chapterId);
+    if (cacheIdx >= 0) {
+      this.preloadOrder.splice(cacheIdx, 1);
+    }
+    const start: number = this.stripSource.totalCount();
+    this.stripSegments.push(new StripSegment(nextOrder, start, pages));
+    this.stripSource.addAll(pages);
+    this.stripAtEndFlag = false;
+    this.stripAppending = false;
+    Logger.info('ReaderPage', `seamless append chapter order=${nextOrder} start=${start} pages=${pages.length}`);
+    void this.preloadNextChapters();
+    return start;
+  }
+
+  /** 后台预载接下来 N 章（1-2 章）的页列表与首屏图片，切章命中缓存即可无缝衔接 */
+  private async preloadNextChapters(): Promise<void> {
+    if (!this.autoPreloadNext || this.chapters.length === 0 || !this.alive) {
+      return;
+    }
+    const keep: number = this.preloadCount();
+    const baseOrder: number = this.isStrip() && this.stripSegments.length > 0
+      ? this.stripSegments[this.stripSegments.length - 1].order : this.currentChapterOrder;
+    const sorted: Chapter[] = this.chapters.slice();
+    sorted.sort((a: Chapter, b: Chapter) => a.order - b.order);
+    const targets: Chapter[] = [];
+    for (let i = 0; i < sorted.length && targets.length < keep; i++) {
+      if (sorted[i].order > baseOrder) {
+        targets.push(sorted[i]);
+      }
+    }
+    for (const chapter of targets) {
+      if (this.preloadPages.has(chapter.id) || this.preloadInflight.has(chapter.id)) {
+        continue;
+      }
+      this.preloadInflight.add(chapter.id);
+      try {
+        let pages: string[] = DownloadManager.readChapterPages(chapter.id);
+        if (pages.length === 0) {
+          const ch: Chapter = await JmApi.getChapter(chapter.id);
+          pages = ch.imageUrls;
+        }
+        if (pages.length > 0 && this.alive) {
+          this.preloadPages.set(chapter.id, pages);
+          this.preloadOrder.push(chapter.id);
+          this.evictPreloadCache();
+          // 只预热每章前 8 页，后续页由阅读时按需加载
+          ReaderImageCache.preload(pages.slice(0, 8), this.imageQuality, this.getUIContext());
+          Logger.info('ReaderPage', `preload chapter order=${chapter.order} pages=${pages.length}`);
+        }
+      } catch (e) {
+        Logger.warn('ReaderPage', `preload chapter failed order=${chapter.order}: ${Logger.describe(e)}`);
+      }
+      this.preloadInflight.delete(chapter.id);
+    }
+  }
+
+  /** 超出用户设置章数的预载页列表直接销毁（最大保留 2 章） */
+  private evictPreloadCache(): void {
+    const keep: number = this.preloadCount();
+    while (this.preloadOrder.length > keep) {
+      const oldId: string | undefined = this.preloadOrder.shift();
+      if (oldId !== undefined) {
+        this.preloadPages.delete(oldId);
+        Logger.info('ReaderPage', `preload evict chapterId=${oldId} keep=${keep}`);
+      }
+    }
+  }
+
+  private isNextChapterPreloaded(): boolean {
+    const nextOrder: number = this.nextChapterOrder();
+    if (nextOrder <= 0) {
+      return false;
+    }
+    for (let i = 0; i < this.chapters.length; i++) {
+      if (this.chapters[i].order === nextOrder) {
+        return this.preloadPages.has(this.chapters[i].id);
+      }
+    }
+    return false;
+  }
+
+  /** 统一跳页入口：翻页模式驱动 Swiper.index 属性，连续模式驱动 Scroller；smooth=true 用于进度条拖动过渡 */
+  private navigateToIndex(target: number, smooth: boolean = false): void {
+    this.clearChapterEdgeHint();
+    const total: number = this.stripTotalCount();
+    const idx: number = Math.max(0, Math.min(target, total - 1));
     this.zoomScale = 1.0;
     this.resetStripZoom();
     this.currentIndex = idx;
+    this.stripAtStartFlag = idx <= 0;
+    this.stripAtEndFlag = idx >= total - 1;
+    if (!this.stripEdgeSettling) {
+      this.stripEdgePull = 0;
+      this.stripEdgeDirection = 0;
+      this.stripEdgeReady = false;
+    }
     if (this.isStrip()) {
-      this.stripScrollTo(idx);
+      this.stripScrollTo(idx, smooth);
     }
     this.preloadAround(idx);
   }
 
   /** 连续模式滚动到指定页（START 顶部对齐：默认 AUTO 在图片矮于视口时贴底，导致首可见项退 1 页，参考项目踩坑注释） */
-  private stripScrollTo(idx: number): void {
+  private stripScrollTo(idx: number, smooth: boolean = false): void {
     try {
-      this.stripScroller.scrollToIndex(idx, false, ScrollAlign.START);
+      this.stripScroller.scrollToIndex(idx, smooth, ScrollAlign.START);
     } catch (e) {
       Logger.warn('ReaderPage', `scrollToIndex failed: ${Logger.describe(e)}`);
     }
@@ -526,15 +766,23 @@ export struct ReaderPage {
   // ---------- 交互 ----------
   /** 连续模式缩放复位（普通字段 + 单个 @State 开关，两次属性切换完成复位） */
   private resetStripZoom(): void {
-    this.stripZoom = 1.0;
-    this.stripZoomed = false;
+    this.getUIContext().animateTo({ duration: 150, curve: Curve.FastOutSlowIn }, () => {
+      this.stripZoom = 1.0;
+      this.stripZoomed = false;
+    });
+  }
+
+  /** 连续模式双击缩放：200ms 过渡，避免瞬间跳变 */
+  private animateStripZoom(target: number, zoomed: boolean): void {
+    this.getUIContext().animateTo({ duration: 200, curve: Curve.FastOutSlowIn }, () => {
+      this.stripZoom = target;
+      this.stripZoomed = zoomed;
+    });
   }
 
   private resetZoom(): void {
     this.resetStripZoom();
-    this.getUIContext().animateTo({ duration: 150, curve: Curve.FastOutSlowIn }, () => {
-      this.zoomScale = 1.0;
-    });
+    this.zoomScale = 1.0;
   }
 
   private handleDoubleTap(): void {
@@ -542,46 +790,48 @@ export struct ReaderPage {
       return;
     }
     if (this.isStrip()) {
-      // 连续模式：双击切换外层 Scroll 缩放（参考项目无双击缩放，字段模式同 pinch 路径）
+      // 连续模式：双击切换外层 Scroll 缩放（与 pinch 共用 stripZoom/stripZoomed 状态）
       if (this.stripZoom > 1.0) {
         this.resetStripZoom();
       } else {
-        this.stripZoom = DOUBLE_TAP_ZOOM;
-        this.stripZoomed = true;
+        this.animateStripZoom(DOUBLE_TAP_ZOOM, true);
       }
       return;
     }
     if (this.zoomScale > 1.0) {
       this.resetZoom();
     } else {
-      this.getUIContext().animateTo({ duration: 200, curve: Curve.FastOutSlowIn }, () => {
-        this.zoomScale = DOUBLE_TAP_ZOOM;
-      });
+      this.zoomScale = DOUBLE_TAP_ZOOM;
     }
   }
 
   private toggleToolbar(): void {
     if (this.showSheet) {
       this.showSheet = false;
+      this.updateVolumeKeySubscription();
       return;
     }
     if (this.showToolbar) {
       // 先撤浮层；阅读器内状态栏本就隐藏，内容容器不读避让高度 → 高度不变
       this.showToolbar = false;
       this.showProgressPanel = false;
+      this.updateVolumeKeySubscription();
       return;
     }
-    // 每次打开工具栏回到进度项，避免动作项（自动/章节/设置）处于选中态后再次点击不触发
-    this.toolbarTab = 3;
-    this.showProgressPanel = false;
+    // 每次打开工具栏回到进度项并自动展开进度面板
+    this.clearChapterEdgeHint();
+    this.toolbarTab = 2;
+    this.showProgressPanel = true;
     this.showToolbar = true;
+    this.updateVolumeKeySubscription();
   }
 
-  /** 底部 TabBar 动作分发：自动翻页 / 章节 / 设置 / 进度 */
+  /** 底部 TabBar 动作分发：自动翻页 / 章节 / 进度 / 设置 */
   private onToolbarTab(index: number): void {
     this.toolbarTab = index;
     if (index === 0) {
       this.showProgressPanel = false;
+      this.updateVolumeKeySubscription();
       this.toggleAutoPlay();
       return;
     }
@@ -590,16 +840,19 @@ export struct ReaderPage {
       this.showToolbar = false;
       this.sheetMode = 'chapters';
       this.showSheet = true;
+      this.updateVolumeKeySubscription();
       return;
     }
     if (index === 2) {
-      this.showProgressPanel = false;
-      this.showToolbar = false;
-      this.sheetMode = 'settings';
-      this.showSheet = true;
+      this.showProgressPanel = !this.showProgressPanel;
+      this.updateVolumeKeySubscription();
       return;
     }
-    this.showProgressPanel = !this.showProgressPanel;
+    this.showProgressPanel = false;
+    this.showToolbar = false;
+    this.sheetMode = 'settings';
+    this.showSheet = true;
+    this.updateVolumeKeySubscription();
   }
 
   /**
@@ -653,7 +906,84 @@ export struct ReaderPage {
       this.navigateToIndex(this.currentIndex - this.pageStep());
       return;
     }
-    // 首页：尝试上一章
+    // 首页：尝试上一章（翻页模式先进入过渡页，再点一次才切章）
+    const prevOrder: number = this.prevChapterOrder();
+    if (prevOrder > 0) {
+      if (this.isStrip()) {
+        this.loadChapter(prevOrder, true);
+        return;
+      }
+      if (this.chapterEdgeHint === -1) {
+        this.clearChapterEdgeHint();
+        this.loadChapter(prevOrder, true);
+      } else {
+        this.showChapterEdgeHint(-1);
+      }
+    } else {
+      ToastUtil.show(Translations.t('start_of_chapter'), 1200);
+    }
+  }
+
+  private nextPage(): void {
+    const total: number = this.stripTotalCount();
+    if (this.currentIndex + this.pageStep() < total) {
+      this.navigateToIndex(this.currentIndex + this.pageStep());
+      return;
+    }
+    // 末页：尝试下一章
+    const nextOrder: number = this.nextChapterOrder();
+    if (nextOrder > 0) {
+      if (this.isStrip()) {
+        // 连续模式优先无缝拼接；预载未就绪时回退为直接切章
+        void this.appendNextStripChapter().then((start: number) => {
+          if (start >= 0) {
+            this.navigateToIndex(start);
+          } else {
+            this.loadChapter(nextOrder, false);
+          }
+        });
+        return;
+      }
+      if (this.autoPreloadNext && this.isNextChapterPreloaded()) {
+        this.clearChapterEdgeHint();
+        this.loadChapter(nextOrder, false);
+        return;
+      }
+      if (this.chapterEdgeHint === 1) {
+        this.clearChapterEdgeHint();
+        this.loadChapter(nextOrder, false);
+      } else {
+        this.showChapterEdgeHint(1);
+      }
+    } else {
+      ToastUtil.show(Translations.t('end_of_chapter'), 1200);
+    }
+  }
+
+  private showChapterEdgeHint(direction: number): void {
+    this.chapterEdgeHint = direction;
+    if (this.chapterHintTimer >= 0) {
+      clearTimeout(this.chapterHintTimer);
+    }
+    this.chapterHintTimer = setTimeout(() => {
+      this.chapterEdgeHint = 0;
+      this.chapterHintTimer = -1;
+    }, 3000);
+  }
+
+  private clearChapterEdgeHint(): void {
+    this.chapterEdgeHint = 0;
+    if (this.chapterHintTimer >= 0) {
+      clearTimeout(this.chapterHintTimer);
+      this.chapterHintTimer = -1;
+    }
+  }
+
+  /** 连续模式：顶/底继续上滑超过阈值后切上一章 / 下一章 */
+  private loadPrevChapterFromEdge(): void {
+    if (this.loadingChapter) {
+      return;
+    }
     const prevOrder: number = this.prevChapterOrder();
     if (prevOrder > 0) {
       this.loadChapter(prevOrder, true);
@@ -662,18 +992,114 @@ export struct ReaderPage {
     }
   }
 
-  private nextPage(): void {
-    if (this.currentIndex + this.pageStep() < this.images.length) {
-      this.navigateToIndex(this.currentIndex + this.pageStep());
+  private loadNextChapterFromEdge(): void {
+    if (this.loadingChapter) {
       return;
     }
-    // 末页：尝试下一章
     const nextOrder: number = this.nextChapterOrder();
     if (nextOrder > 0) {
       this.loadChapter(nextOrder, false);
     } else {
       ToastUtil.show(Translations.t('end_of_chapter'), 1200);
     }
+  }
+
+  /** 连续模式滚动条：滑动时显示，600ms 后自动隐藏 */
+  private pulseStripScrollBar(): void {
+    if (!this.stripScrollBarVisible) {
+      this.stripScrollBarVisible = true;
+    }
+    if (this.stripScrollBarTimer >= 0) {
+      clearTimeout(this.stripScrollBarTimer);
+    }
+    this.stripScrollBarTimer = setTimeout(() => {
+      this.stripScrollBarVisible = false;
+      this.stripScrollBarTimer = -1;
+    }, SCROLL_BAR_HIDE_MS);
+  }
+
+  /** 滚动停止后更快隐藏滚动条 */
+  private scheduleStripScrollBarHide(): void {
+    if (this.stripScrollBarTimer >= 0) {
+      clearTimeout(this.stripScrollBarTimer);
+    }
+    this.stripScrollBarTimer = setTimeout(() => {
+      this.stripScrollBarVisible = false;
+      this.stripScrollBarTimer = -1;
+    }, 300);
+  }
+
+  /** 连续模式边界拉动松手：达到阈值才切章；未达到则平滑回弹 */
+  private settleStripEdgePull(): void {
+    if (this.stripEdgePull <= 0 || this.stripEdgeSettling) {
+      return;
+    }
+    const direction: number = this.stripEdgeDirection;
+    const trigger: boolean = this.stripEdgeReady && this.stripEdgePull >= CHAPTER_EDGE_THRESHOLD;
+    if (trigger) {
+      this.stripEdgeSettling = true;
+      // 触发切章也先播放回弹动画，再/同时开始加载
+      this.getUIContext().animateTo({ duration: 180, curve: Curve.FastOutSlowIn }, () => {
+        this.stripEdgePull = 0;
+        this.stripEdgeDirection = 0;
+        this.stripEdgeReady = false;
+      });
+      if (direction < 0) {
+        this.loadPrevChapterFromEdge();
+      } else if (direction > 0) {
+        this.loadNextChapterFromEdge();
+      }
+      setTimeout(() => {
+        this.stripEdgeSettling = false;
+      }, 220);
+    } else {
+      this.cancelStripEdgePull();
+    }
+  }
+
+  /** 未达到切章条件下的回弹（惯性滚动停止时也只回弹，不触发切章） */
+  private cancelStripEdgePull(): void {
+    if (this.stripEdgePull <= 0 || this.stripEdgeSettling) {
+      return;
+    }
+    this.stripEdgeSettling = true;
+    this.getUIContext().animateTo({ duration: 180, curve: Curve.FastOutSlowIn }, () => {
+      this.stripEdgePull = 0;
+      this.stripEdgeDirection = 0;
+      this.stripEdgeReady = false;
+    });
+    setTimeout(() => {
+      this.stripEdgeSettling = false;
+    }, 200);
+  }
+
+  /** 增加边界拉动：达到阈值后带阻尼继续增长，允许继续拉动列表 */
+  private addEdgePull(delta: number): void {
+    const threshold: number = CHAPTER_EDGE_THRESHOLD;
+    const maxPull: number = 320;
+    const cur: number = this.stripEdgePull;
+    let next: number = cur + delta;
+    if (cur < threshold && next > threshold) {
+      next = threshold + (next - threshold) * 0.4;
+    } else if (cur >= threshold) {
+      next = cur + delta * 0.4;
+    }
+    this.stripEdgePull = Math.min(maxPull, next);
+    this.stripEdgeReady = this.stripEdgePull >= threshold;
+  }
+
+  /** 回拖：超过阈值部分同样带阻尼，回落到阈值以下后 1:1 跟随 */
+  private reduceEdgePull(delta: number): void {
+    const threshold: number = CHAPTER_EDGE_THRESHOLD;
+    const cur: number = this.stripEdgePull;
+    let next: number;
+    if (cur > threshold) {
+      next = cur - delta * 0.4;
+    } else {
+      next = cur - delta;
+    }
+    this.stripEdgePull = Math.max(0, next);
+    this.stripEdgeReady = this.stripEdgePull >= threshold;
   }
 
   private prevChapterOrder(): number {
@@ -714,8 +1140,10 @@ export struct ReaderPage {
     }
     this.loadingChapter = true;
     this.chapterError = false;
+    this.clearChapterEdgeHint();
     // 立即关 sheet：关闭动画与内容大重建不叠在同一帧
     this.showSheet = false;
+    this.updateVolumeKeySubscription();
     const t0: number = Date.now();
     try {
       // 按章节 order 找到章节 id（JM）
@@ -728,9 +1156,22 @@ export struct ReaderPage {
       }
       let imgs: string[] = [];
       let netFailed: boolean = false;
-      // 本地优先：已下载章节直接读 pages.json 渲染。此前先走 getChapter，断网时要等
-      // 请求超时+域名探测+重试 ≈100s 才回退本地，表现为切章/跳页后一直转圈。
-      const local: string[] = DownloadManager.readChapterPages(chapterId);
+      // 命中预载缓存：直接使用，避免切章网络等待
+      let local: string[] = [];
+      const cached: string[] | undefined = this.preloadPages.get(chapterId);
+      if (cached !== undefined && cached.length > 0) {
+        local = cached;
+        this.preloadPages.delete(chapterId);
+        const cacheIdx: number = this.preloadOrder.indexOf(chapterId);
+        if (cacheIdx >= 0) {
+          this.preloadOrder.splice(cacheIdx, 1);
+        }
+        Logger.info('ReaderPage', `chapter preload-hit: order=${order} count=${local.length}`);
+      } else {
+        // 本地优先：已下载章节直接读 pages.json 渲染。此前先走 getChapter，断网时要等
+        // 请求超时+域名探测+重试 ≈100s 才回退本地，表现为切章/跳页后一直转圈。
+        local = DownloadManager.readChapterPages(chapterId);
+      }
       if (local.length > 0) {
         imgs = local;
         Logger.info('ReaderPage', `chapter local-first: order=${order} count=${local.length}` +
@@ -771,7 +1212,18 @@ export struct ReaderPage {
         this.clearStripAnchorTimers();
         this.images = imgs;
         this.currentChapterOrder = order;
+        if (this.isStrip()) {
+          this.stripSegments = [new StripSegment(order, 0, imgs)];
+          this.stripAppending = false;
+        }
         this.currentIndex = startAtEnd ? imgs.length - 1 : 0;
+        this.stripAtStartFlag = this.currentIndex <= 0;
+        this.stripAtEndFlag = this.currentIndex >= imgs.length - 1;
+        if (!this.stripEdgeSettling) {
+          this.stripEdgePull = 0;
+          this.stripEdgeDirection = 0;
+          this.stripEdgeReady = false;
+        }
         this.zoomScale = 1.0;
         this.resetStripZoom();
         this.refreshDataSources();
@@ -781,6 +1233,8 @@ export struct ReaderPage {
         }
         this.preloadAround(this.currentIndex);
         Logger.info('ReaderPage', `chapter ready order=${order} totalMs=${Date.now() - t0}`);
+        // 后台预载下一章（受「自动预载下一章」开关与预载章节数限制）
+        void this.preloadNextChapters();
         if (this.pendingRestore) {
           this.pendingRestore = false;
           this.restoreProgress();
@@ -805,12 +1259,15 @@ export struct ReaderPage {
       }
     }
     this.loadingChapter = false;
+    this.updateVolumeKeySubscription();
   }
 
   private onZoneTap(zone: number): void {
     if (this.showToolbar) {
       // 工具栏可见时任意点按关闭（对齐原版交互）
       this.showToolbar = false;
+      this.showProgressPanel = false;
+      this.updateVolumeKeySubscription();
       return;
     }
     if (!this.tapTurnPage && zone !== 1) {
@@ -867,55 +1324,26 @@ export struct ReaderPage {
           x: idx === this.toDisplay(this.currentIndex) ? this.zoomScale : 1,
           y: idx === this.toDisplay(this.currentIndex) ? this.zoomScale : 1
         })
-        .gesture(
-          GestureGroup(GestureMode.Parallel,
-            PinchGesture({ fingers: 2 })
-              .onActionStart(() => {
-                if (idx !== this.toDisplay(this.currentIndex)) {
-                  return;
-                }
-                this.pinchBaseScale = this.zoomScale;
-              })
-              .onActionUpdate((event: GestureEvent) => {
-                if (idx !== this.toDisplay(this.currentIndex)) {
-                  return;
-                }
-                this.zoomScale = Math.min(MAX_ZOOM, Math.max(1.0, this.pinchBaseScale * event.scale));
-              })
-              .onActionEnd(() => {
-                if (idx !== this.toDisplay(this.currentIndex)) {
-                  return;
-                }
-                if (this.zoomScale < ZOOM_RESET_THRESHOLD) {
-                  this.resetZoom();
-                }
-              }),
-            LongPressGesture({ repeat: false })
-              .onAction(() => {
-                if (!this.longPressZoom || idx !== this.toDisplay(this.currentIndex)) {
-                  return;
-                }
-                this.zoomScale = DOUBLE_TAP_ZOOM;
-              })
-              .onActionEnd(() => {
-                if (idx !== this.toDisplay(this.currentIndex)) {
-                  return;
-                }
-                this.resetZoom();
-              })
-          )
-        )
+        .animation({ duration: this.multiTouch ? 0 : 200, curve: Curve.FastOutSlowIn })
       }, (url: string, idx: number) => `${idx}-${url}`)
     }
     .index(this.toDisplay(this.currentIndex))
     .vertical(this.isVerticalPaging())
     .cachedCount(2)
-    .disableSwipe(this.zoomScale > ZOOM_RESET_THRESHOLD)
+    .disableSwipe(this.zoomScale > ZOOM_RESET_THRESHOLD || this.multiTouch)
+    .onTouch((event: TouchEvent) => {
+      // 第二根手指落下即禁用 Swiper 滑动，避免双指放大被翻页手势抢占
+      const multi: boolean = this.pinchZoom && event.touches.length > 1;
+      if (this.multiTouch !== multi) {
+        this.multiTouch = multi;
+      }
+    })
     .indicator(false)
     .loop(false)
-    .duration(this.pageAnimation ? 250 : 0)
+    .duration(this.pageAnimation || this.sliderDragging ? 250 : 0)
     .onChange((index: number) => {
       this.zoomScale = 1.0;
+      this.clearChapterEdgeHint();
       this.currentIndex = this.toReal(index);
       this.preloadAround(this.currentIndex);
     })
@@ -966,54 +1394,24 @@ export struct ReaderPage {
           x: p === Math.floor(this.currentIndex / 2) ? this.zoomScale : 1,
           y: p === Math.floor(this.currentIndex / 2) ? this.zoomScale : 1
         })
-        .gesture(
-          GestureGroup(GestureMode.Parallel,
-            PinchGesture({ fingers: 2 })
-              .onActionStart(() => {
-                if (p !== Math.floor(this.currentIndex / 2)) {
-                  return;
-                }
-                this.pinchBaseScale = this.zoomScale;
-              })
-              .onActionUpdate((event: GestureEvent) => {
-                if (p !== Math.floor(this.currentIndex / 2)) {
-                  return;
-                }
-                this.zoomScale = Math.min(MAX_ZOOM, Math.max(1.0, this.pinchBaseScale * event.scale));
-              })
-              .onActionEnd(() => {
-                if (p !== Math.floor(this.currentIndex / 2)) {
-                  return;
-                }
-                if (this.zoomScale < ZOOM_RESET_THRESHOLD) {
-                  this.resetZoom();
-                }
-              }),
-            LongPressGesture({ repeat: false })
-              .onAction(() => {
-                if (!this.longPressZoom || p !== Math.floor(this.currentIndex / 2)) {
-                  return;
-                }
-                this.zoomScale = DOUBLE_TAP_ZOOM;
-              })
-              .onActionEnd(() => {
-                if (p !== Math.floor(this.currentIndex / 2)) {
-                  return;
-                }
-                this.resetZoom();
-              })
-          )
-        )
+        .animation({ duration: this.multiTouch ? 0 : 200, curve: Curve.FastOutSlowIn })
       }, (p: number) => `${p}`)
     }
     .index(Math.floor(this.currentIndex / 2))
     .cachedCount(2)
-    .disableSwipe(this.zoomScale > ZOOM_RESET_THRESHOLD)
+    .disableSwipe(this.zoomScale > ZOOM_RESET_THRESHOLD || this.multiTouch)
+    .onTouch((event: TouchEvent) => {
+      const multi: boolean = this.pinchZoom && event.touches.length > 1;
+      if (this.multiTouch !== multi) {
+        this.multiTouch = multi;
+      }
+    })
     .indicator(false)
     .loop(false)
-    .duration(this.pageAnimation ? 250 : 0)
+    .duration(this.pageAnimation || this.sliderDragging ? 250 : 0)
     .onChange((index: number) => {
       this.zoomScale = 1.0;
+      this.clearChapterEdgeHint();
       this.currentIndex = Math.min(index * 2, this.images.length - 1);
       this.preloadAround(this.currentIndex);
     })
@@ -1023,8 +1421,9 @@ export struct ReaderPage {
 
   @Builder
   buildStripList() {
-    // 外层 Scroll 负责 pinch 缩放/缩放态平移，内层 List 负责纵向滚动（参考项目 scroll 模式逐属性对齐）
-    Scroll(this.stripOuterScroller) {
+    // 连续模式：List 直接承担纵向翻页；缩放只作用于 List 的绘制变换，
+    // 不再让外层 Scroll 接管纵向手势，避免放大后只能在同一页内上下移动。
+    Stack() {
       List({ scroller: this.stripScroller, initialIndex: this.currentIndex }) {
         LazyForEach(this.stripSource, (url: string, idx: number) => {
           ListItem() {
@@ -1060,51 +1459,131 @@ export struct ReaderPage {
       .clip(false)
       .listDirection(Axis.Vertical)
       .cachedCount(10)
-      .scrollBar(BarState.Off)
-      .nestedScroll({
-        scrollForward: NestedScrollMode.PARENT_FIRST,
-        scrollBackward: NestedScrollMode.PARENT_FIRST
+      // 关闭 List 自带边缘弹性，边界拉动完全由 translate 控制，避免回弹抢帧
+      .edgeEffect(EdgeEffect.None)
+      // 上下滚动条：滑动时显示，600ms 后自动隐藏
+      .scrollBar(this.stripScrollBarVisible ? BarState.On : BarState.Off)
+      .scrollBarColor('#888888')
+      .scrollBarWidth(4)
+      .onScroll(() => { this.pulseStripScrollBar(); })
+      .onScrollStart(() => {
+        this.stripAtStartFlag = this.stripScroller.currentOffset().yOffset <= 0;
+        this.stripEdgePull = 0;
+        this.stripEdgeDirection = 0;
+        this.stripEdgeReady = false;
       })
-      .onScrollIndex((first: number) => {
+      .onReachStart(() => {
+        this.stripAtStartFlag = true;
+        this.stripAtEndFlag = false;
+      })
+      .onReachEnd(() => {
+        this.stripAtEndFlag = true;
+        this.stripAtStartFlag = false;
+      })
+      .onScrollStop(() => {
+        this.scheduleStripScrollBarHide();
+        // 惯性滑动停止时手指已不在屏上：只回弹，不触发切章
+        if (!this.stripTouchActive && !this.stripEdgeSettling) {
+          this.cancelStripEdgePull();
+        }
+      })
+      // 边界拉动：只累计拉动距离并显示指示器，松手时在 settleStripEdgePull 中判断是否切章
+      .onScrollFrameBegin((offset: number, state: ScrollState) => {
+        if (this.stripEdgeSettling) {
+          return new ScrollFrameOffset(0);
+        }
+        if (this.loadingChapter) {
+          return new ScrollFrameOffset(offset);
+        }
+        // 惯性滑动（手指已松开）不再累计边界位移；已有拉动量则平滑回弹
+        if (!this.stripTouchActive && this.stripEdgePull > 0 && !this.stripEdgeSettling) {
+          this.cancelStripEdgePull();
+          return new ScrollFrameOffset(0);
+        }
+        // 顶部继续下拉
+        if (offset < 0 && this.stripAtStartFlag && this.stripScroller.currentOffset().yOffset <= 0) {
+          if (!this.stripTouchActive) {
+            return new ScrollFrameOffset(0);
+          }
+          this.stripEdgeDirection = -1;
+          this.addEdgePull(-offset);
+          this.pulseStripScrollBar();
+          return new ScrollFrameOffset(0);
+        }
+        // 顶部回拖（未松手时慢慢放回）
+        if (offset > 0 && this.stripAtStartFlag && this.stripEdgeDirection === -1 && this.stripEdgePull > 0) {
+          this.reduceEdgePull(offset);
+          if (this.stripEdgePull <= 0) {
+            this.stripEdgeDirection = 0;
+            this.stripAtStartFlag = false;
+          }
+          return new ScrollFrameOffset(0);
+        }
+        // 底部继续上拉
+        if (offset > 0 && this.stripAtEndFlag) {
+          if (!this.stripTouchActive) {
+            return new ScrollFrameOffset(0);
+          }
+          this.stripEdgeDirection = 1;
+          this.addEdgePull(offset);
+          this.pulseStripScrollBar();
+          return new ScrollFrameOffset(0);
+        }
+        // 底部回拖
+        if (offset < 0 && this.stripAtEndFlag && this.stripEdgeDirection === 1 && this.stripEdgePull > 0) {
+          this.reduceEdgePull(-offset);
+          if (this.stripEdgePull <= 0) {
+            this.stripEdgeDirection = 0;
+            this.stripAtEndFlag = false;
+          }
+          return new ScrollFrameOffset(0);
+        }
+        if ((offset > 0 && this.stripAtStartFlag) || (offset < 0 && this.stripAtEndFlag)) {
+          this.stripAtStartFlag = false;
+          this.stripAtEndFlag = false;
+          this.stripEdgePull = 0;
+          this.stripEdgeDirection = 0;
+          this.stripEdgeReady = false;
+        }
+        return new ScrollFrameOffset(offset);
+      })
+      .scale({ x: this.stripZoom, y: this.stripZoom })
+      .animation({ duration: this.multiTouch ? 0 : 200, curve: Curve.FastOutSlowIn })
+      .onScrollIndex((first: number, last: number) => {
         if (this.stripGuard) {
           // 定位重校期：忽略瞬时首项，防止污染 currentIndex/预热/进度（参考 restoreGuard）
           return;
         }
-        if (first >= 0 && first !== this.currentIndex) {
-          Logger.debug('ReaderPage', `strip first index -> ${first}`);
-          this.currentIndex = first;
-          this.preloadAround(first);
-          this.scheduleStripSave();
+        if (first >= 0) {
+          const seg: StripSegment | undefined = this.segmentAt(first);
+          if (seg !== undefined && seg.order !== this.currentChapterOrder) {
+            // 跨章：先落盘旧章进度，再切换当前章（images 用于章内页码/保存）
+            this.saveProgress();
+            this.currentChapterOrder = seg.order;
+            this.images = seg.pages;
+            this.clearChapterEdgeHint();
+            void this.preloadNextChapters();
+          }
+          if (first !== this.currentIndex) {
+            Logger.debug('ReaderPage', `strip first index -> ${first}`);
+            this.currentIndex = first;
+            this.preloadAround(first);
+            this.scheduleStripSave();
+          }
+          // 接近已拼接列表末尾时提前追加下一章，实现无缝连续下滑
+          if (this.autoPreloadNext && this.stripSource.totalCount() - last <= 3) {
+            void this.appendNextStripChapter();
+          }
         }
       })
     }
     .width('100%').height('100%')
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-    // 官方示例7：外层滚动容器 clip(false)（内容绘制可越过滚动容器边界进入避让区）
     .clip(false)
-    // 未缩放时纵向滚动交给内层 List（外层禁滚），放大后交给外层 Scroll 平移（参考项目）
-    .scrollable(this.stripZoomed ? ScrollDirection.FREE : ScrollDirection.None)
-    .maxZoomScale(MAX_ZOOM)
-    .minZoomScale(1.0)
-    .zoomScale(this.stripZoom)
-    .enableBouncesZoom(true)
-    .edgeEffect(EdgeEffect.None)
-    // 放大后由外层 Scroll 接管（PARENT_FIRST），滑条常显便于横向平移定位；未缩放隐藏
-    .scrollBar(this.stripZoomed ? BarState.On : BarState.Off)
-    .scrollBarColor('#BBBBBB')
-    .scrollBarWidth(6)
-    .onDidZoom((scale: number) => {
-      // 普通字段逐帧记录（不重渲）；仅越 1.0 阈值翻 stripZoomed 触发一次属性切换（参考 onDidZoom→isZoomed）
-      this.stripZoom = scale;
-      const zoomed: boolean = scale > 1.0;
-      if (this.stripZoomed !== zoomed) {
-        this.stripZoomed = zoomed;
-      }
-    })
-    .onZoomStop(() => {
-      if (this.stripZoom < ZOOM_RESET_THRESHOLD) {
-        this.resetStripZoom();
-      }
+    // 边界拉动时整体位移整个漫画列表（类似下拉刷新），而不是只移动提示组件
+    .translate({
+      y: this.stripEdgeDirection < 0 ? this.stripEdgePull :
+        (this.stripEdgeDirection > 0 ? -this.stripEdgePull : 0)
     })
   }
 
@@ -1140,7 +1619,7 @@ export struct ReaderPage {
   }
 
   @Builder
-  buildTapZones() {
+  tapZonesContent() {
     if (this.isVerticalZones()) {
       // 纵向（从上至下/连续）：上=上一页，中=工具栏，下=下一页
       Column({ space: 0 }) {
@@ -1163,82 +1642,173 @@ export struct ReaderPage {
     }
   }
 
-  // ---------- 侧边页码条（悬浮，拖动快速跳页） ----------
-  private sideBarThumbY(): number {
-    const max: number = Math.max(this.images.length - 1, 1);
-    const ratio: number = Math.min(1, Math.max(0, this.currentIndex / max));
-    return ratio * (SIDE_TRACK - SIDE_THUMB);
-  }
-
-  private sideBarSeek(ratio: number): void {
-    const max: number = Math.max(this.images.length - 1, 0);
-    const clamped: number = Math.min(1, Math.max(0, ratio));
-    const target: number = Math.round(clamped * max);
-    if (target !== this.currentIndex) {
-      this.navigateToIndex(target);
-    }
-  }
-
   @Builder
-  buildSidePageBar() {
-    Column({ space: 6 }) {
-      if (this.showPageInfo) {
-        Text(this.pageLabel())
-          .fontSize(10)
-          .fontColor($r('app.color.text_on_reader'))
-          .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-          .backgroundColor($r('app.color.reader_overlay'))
-          .borderRadius(8)
+  buildTapZones() {
+    // 连续滚动模式：List 负责纵向翻页，缩放由点按层双指手势直接改 List.scale；
+    // 翻页模式：双指手势改当前页 zoomScale，并临时禁用 Swiper 滑动。
+    if (this.isStrip()) {
+      Stack() {
+        this.tapZonesContent()
       }
-      Stack({ alignContent: Alignment.Top }) {
-        Column()
-          .width(4)
-          .height(SIDE_TRACK)
-          .borderRadius(2)
-          .backgroundColor($r('app.color.reader_sidebar_track'))
-          .position({ x: 10 })
-        Column()
-          .width(4)
-          .height(SIDE_THUMB)
-          .borderRadius(2)
-          .backgroundColor(this.themeColor)
-          .position({ x: 10, y: this.sideBarThumbY() })
-      }
-      .width(24)
-      .height(SIDE_TRACK)
-      .gesture(
-        PanGesture({ fingers: 1, distance: 1, direction: PanDirection.Vertical })
-          .onActionStart((event: GestureEvent) => {
-            this.sideBarDragBase = this.images.length > 1 ?
-              this.currentIndex / (this.images.length - 1) : 0;
-            this.sideBarDragOffset = event.offsetY;
+      .width('100%').height('100%')
+      .hitTestBehavior(HitTestMode.Transparent)
+      .onTouch((event: TouchEvent) => {
+        const multi: boolean = this.pinchZoom && event.touches.length > 1;
+        if (this.multiTouch !== multi) {
+          this.multiTouch = multi;
+        }
+        if (event.type === TouchType.Down || event.type === TouchType.Move) {
+          this.stripTouchActive = true;
+          if (event.type === TouchType.Down) {
+            this.stripEdgeSettling = false;
+          }
+        }
+        if (event.type === TouchType.Up || event.type === TouchType.Cancel) {
+          this.stripTouchActive = false;
+          this.settleStripEdgePull();
+        }
+      })
+      .priorityGesture(
+        PinchGesture({ fingers: 2 })
+          .onActionStart(() => {
+            if (!this.pinchZoom) {
+              return;
+            }
+            this.multiTouch = true;
+            this.stripPinchBase = this.stripZoom;
           })
           .onActionUpdate((event: GestureEvent) => {
-            const delta: number = (event.offsetY - this.sideBarDragOffset) / (SIDE_TRACK - SIDE_THUMB);
-            this.sideBarSeek(this.sideBarDragBase + delta);
+            if (!this.pinchZoom) {
+              return;
+            }
+            this.stripZoom = Math.min(MAX_ZOOM, Math.max(1.0, this.stripPinchBase * event.scale));
+            const zoomed: boolean = this.stripZoom > 1.0;
+            if (this.stripZoomed !== zoomed) {
+              this.stripZoomed = zoomed;
+            }
+          })
+          .onActionEnd(() => {
+            if (!this.pinchZoom) {
+              return;
+            }
+            this.multiTouch = false;
+            if (this.stripZoom < ZOOM_RESET_THRESHOLD) {
+              this.resetStripZoom();
+            } else if (this.stripZoom > 1.0 && !this.stripZoomed) {
+              this.stripZoomed = true;
+            }
+          })
+          .onActionCancel(() => {
+            this.multiTouch = false;
           })
       )
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+    } else {
+      Stack() {
+        this.tapZonesContent()
+      }
+      .width('100%').height('100%')
+      .hitTestBehavior(HitTestMode.Transparent)
+      // 双指开始触摸时禁用 Swiper 滑动，避免翻页手势抢占放大；缩放手势挂最上层点按层，
+      // 保证 1x 状态也能识别双指放大（Swiper 内部手势无法优先于翻页）。
+      .onTouch((event: TouchEvent) => {
+        const multi: boolean = this.pinchZoom && event.touches.length > 1;
+        if (this.multiTouch !== multi) {
+          this.multiTouch = multi;
+        }
+      })
+      .priorityGesture(
+        PinchGesture({ fingers: 2 })
+          .onActionStart(() => {
+            if (!this.pinchZoom) {
+              return;
+            }
+            this.multiTouch = true;
+            this.pinchBaseScale = this.zoomScale;
+          })
+          .onActionUpdate((event: GestureEvent) => {
+            if (!this.pinchZoom) {
+              return;
+            }
+            this.zoomScale = Math.min(MAX_ZOOM, Math.max(1.0, this.pinchBaseScale * event.scale));
+          })
+          .onActionEnd(() => {
+            if (!this.pinchZoom) {
+              return;
+            }
+            this.multiTouch = false;
+            if (this.zoomScale < ZOOM_RESET_THRESHOLD) {
+              this.resetZoom();
+            }
+          })
+          .onActionCancel(() => {
+            this.multiTouch = false;
+          })
+      )
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     }
-    .padding({ right: 4 })
-    .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
   }
 
+  /** 连续模式边界拉动指示器（类似下拉刷新）：随拉动距离滑入，松手达标才切章 */
   @Builder
-  buildSidePageBarLayer() {
-    Row() {
-      this.buildSidePageBar()
+  stripEdgePullIndicator() {
+    if (this.stripEdgePull > 0 && this.stripEdgeDirection !== 0) {
+      Stack({ alignContent: this.stripEdgeDirection < 0 ? Alignment.Top : Alignment.Bottom }) {
+        Row({ space: 8 }) {
+          SymbolGlyph(this.stripEdgeDirection < 0 ? $r('sys.symbol.arrow_down') : $r('sys.symbol.arrow_up'))
+            .fontSize(18)
+            .fontColor([this.stripEdgeReady ? this.themeColor : $r('app.color.text_on_reader')])
+          Text(Translations.t(this.stripEdgeDirection < 0
+            ? (this.stripEdgeReady ? 'release_prev_hint' : 'pull_prev_hint')
+            : (this.stripEdgeReady ? 'release_next_hint' : 'pull_next_hint')))
+            .fontSize(13)
+            .fontColor(this.stripEdgeReady ? this.themeColor : $r('app.color.text_on_reader'))
+            .maxLines(1)
+        }
+        .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+        .backgroundColor(this.stripEdgeReady ? $r('app.color.reader_overlay_button') : $r('app.color.reader_overlay'))
+        .borderRadius(18)
+        .margin({ top: this.stripEdgeDirection < 0 ? Math.max(this.topAvoid, 20) : 0,
+          bottom: this.stripEdgeDirection > 0 ? Math.max(this.bottomAvoid, 20) : 0 })
+        .opacity(Math.min(1, this.stripEdgePull / 40))
+      }
+      .width('100%').height('100%')
+      .hitTestBehavior(HitTestMode.None)
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+      .id('stripEdgePullIndicator')
     }
-    .width('100%').height('100%')
-    .justifyContent(FlexAlign.End)
-    .alignItems(VerticalAlign.Center)
-    .hitTestBehavior(HitTestMode.Transparent)
-    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 
   // ---------- 工具栏 ----------
   private pageLabel(): string {
+    if (this.isStrip()) {
+      return `${this.localPageIndex() + 1} / ${this.images.length}`;
+    }
     return `${this.currentIndex + 1} / ${this.images.length}`;
+  }
+
+  /** 翻页模式到边界时的过渡页：再点一次对应翻页区才切章 */
+  @Builder
+  chapterEdgeHintOverlay() {
+    if (this.chapterEdgeHint !== 0) {
+      Column({ space: 12 }) {
+        SymbolGlyph(this.chapterEdgeHint > 0 ? $r('sys.symbol.chevron_right') : $r('sys.symbol.chevron_left'))
+          .fontSize(48)
+          .fontColor([$r('app.color.text_on_reader')])
+        Text(Translations.t(this.chapterEdgeHint > 0 ? 'next_chapter_hint' : 'prev_chapter_hint'))
+          .fontSize(15)
+          .fontColor($r('app.color.text_on_reader'))
+          .textAlign(TextAlign.Center)
+          .maxLines(3)
+          .padding({ left: 36, right: 36 })
+      }
+      .width('100%').height('100%')
+      .justifyContent(FlexAlign.Center)
+      .backgroundColor($r('app.color.reader_overlay'))
+      .hitTestBehavior(HitTestMode.None)
+      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+      .id('chapterEdgeHint')
+    }
   }
 
   @Builder
@@ -1264,10 +1834,12 @@ export struct ReaderPage {
     Column({ space: 2 }) {
       SymbolGlyph(icon)
         .fontSize(22)
-        .fontColor([this.toolbarTab === index ? this.themeColor : $r('app.color.text_tertiary')])
+        .fontColor([index === 2 ? $r('app.color.text_tertiary') :
+          (this.toolbarTab === index ? this.themeColor : $r('app.color.text_tertiary'))])
       Text(label)
         .fontSize(10)
-        .fontColor(this.toolbarTab === index ? this.themeColor : $r('app.color.text_tertiary'))
+        .fontColor(index === 2 ? $r('app.color.text_tertiary') :
+          (this.toolbarTab === index ? this.themeColor : $r('app.color.text_tertiary')))
         .maxLines(1)
     }
     .width('100%').height('100%')
@@ -1285,16 +1857,59 @@ export struct ReaderPage {
       Slider({
         value: this.currentIndex,
         min: 0,
-        max: Math.max(this.images.length - 1, 1),
+        max: Math.max((this.isStrip() ? this.stripTotalCount() : this.images.length) - 1, 1),
         step: 1,
         style: SliderStyle.OutSet
       })
       .selectedColor(this.themeColor)
       .trackColor($r('app.color.reader_slider_track'))
       .width('100%')
-      .onChange((value: number) => {
-        this.navigateToIndex(Math.floor(value));
+      .onChange((value: number, mode: SliderChangeMode) => {
+        if (mode === SliderChangeMode.Begin || mode === SliderChangeMode.Moving) {
+          this.sliderDragging = true;
+        }
+        this.navigateToIndex(Math.floor(value), true);
+        if (mode === SliderChangeMode.End || mode === SliderChangeMode.Click) {
+          this.sliderDragging = false;
+        }
       })
+      // 进度条下方：上一章 / 下一章快捷切换
+      Row({ space: 12 }) {
+        Button(Translations.t('prev_chapter'))
+          .layoutWeight(1)
+          .height(36)
+          .fontSize(13)
+          .fontColor($r('app.color.text_on_reader'))
+          .backgroundColor($r('app.color.reader_overlay_button'))
+          .borderRadius(18)
+          .enabled(this.prevChapterOrder() > 0 && !this.loadingChapter)
+          .opacity(this.prevChapterOrder() > 0 && !this.loadingChapter ? 1 : 0.4)
+          .onClick(() => {
+            const order: number = this.prevChapterOrder();
+            if (order > 0) {
+              this.loadChapter(order, true);
+            }
+          })
+          .id('progressPrevChapter')
+        Button(Translations.t('next_chapter'))
+          .layoutWeight(1)
+          .height(36)
+          .fontSize(13)
+          .fontColor($r('app.color.text_on_reader'))
+          .backgroundColor($r('app.color.reader_overlay_button'))
+          .borderRadius(18)
+          .enabled(this.nextChapterOrder() > 0 && !this.loadingChapter)
+          .opacity(this.nextChapterOrder() > 0 && !this.loadingChapter ? 1 : 0.4)
+          .onClick(() => {
+            const order: number = this.nextChapterOrder();
+            if (order > 0) {
+              this.loadChapter(order, false);
+            }
+          })
+          .id('progressNextChapter')
+      }
+      .width('100%')
+      .margin({ top: 2 })
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 10, bottom: 10 })
@@ -1353,13 +1968,14 @@ export struct ReaderPage {
         .onClick(() => {
           this.showToolbar = false;
           this.showProgressPanel = false;
+          this.updateVolumeKeySubscription();
         })
 
       if (this.showProgressPanel) {
         this.progressPanel()
       }
 
-      // 底部系统 TabBar：自动翻页 / 章节 / 设置 / 进度
+      // 底部系统 TabBar：自动翻页 / 章节 / 进度 / 设置
       Stack({ alignContent: Alignment.Bottom }) {
         HdsTabs({ controller: this.toolbarTabs, index: this.toolbarTab }) {
           TabContent() {
@@ -1372,10 +1988,10 @@ export struct ReaderPage {
           }.tabBar(this.bottomTabItem(1, $r('sys.symbol.list_bullet'), Translations.t('chapters')))
           TabContent() {
             Column()
-          }.tabBar(this.bottomTabItem(2, $r('sys.symbol.gearshape'), Translations.t('tab_settings')))
+          }.tabBar(this.bottomTabItem(2, $r('sys.symbol.circle'), Translations.t('reader_progress')))
           TabContent() {
             Column()
-          }.tabBar(this.bottomTabItem(3, $r('sys.symbol.list_number'), Translations.t('reader_progress')))
+          }.tabBar(this.bottomTabItem(3, $r('sys.symbol.gearshape'), Translations.t('tab_settings')))
         }
         .height(92)
         .margin({ bottom: this.bottomAvoid })
@@ -1422,7 +2038,15 @@ export struct ReaderPage {
   }
 
   private imageQualityLabels(): string[] {
-    return ['Original', 'High', 'Medium'];
+    return [
+      Translations.t('quality_original'),
+      Translations.t('quality_high'),
+      Translations.t('quality_medium')
+    ];
+  }
+
+  private preloadCountLabels(): string[] {
+    return [Translations.t('preload_one'), Translations.t('preload_two')];
   }
 
   private autoPageTimeLabels(): string[] {
@@ -1497,7 +2121,7 @@ export struct ReaderPage {
             }
           })
           SettingSwitch({
-            corner: SettingCorner.MIDDLE,
+            corner: SettingCorner.LAST,
             icon: $r('sys.symbol.speaker_wave_2'),
             title: Translations.t('volume_key'),
             isOn: this.volumeKeyTurnPage,
@@ -1506,17 +2130,6 @@ export struct ReaderPage {
               ReadingConfig.volumeKeyTurnPage = v;
               ReadingConfig.saveAll();
               this.updateVolumeKeySubscription();
-            }
-          })
-          SettingSwitch({
-            corner: SettingCorner.LAST,
-            icon: $r('sys.symbol.rectangle_3_group'),
-            title: Translations.t('side_page_turn'),
-            isOn: this.sidePageTurn,
-            onToggle: (v: boolean) => {
-              this.sidePageTurn = v;
-              ReadingConfig.sidePageTurn = v;
-              ReadingConfig.saveAll();
             }
           })
         }
@@ -1576,13 +2189,44 @@ export struct ReaderPage {
           })
           SettingSwitch({
             corner: SettingCorner.LAST,
-            icon: $r('sys.symbol.hand_tap'),
-            title: Translations.t('long_press_zoom'),
-            isOn: this.longPressZoom,
+            icon: $r('sys.symbol.hand_raised_fingers_spread'),
+            title: Translations.t('pinch_zoom'),
+            isOn: this.pinchZoom,
             onToggle: (v: boolean) => {
-              this.longPressZoom = v;
-              ReadingConfig.longPressZoom = v;
+              this.pinchZoom = v;
+              ReadingConfig.pinchZoom = v;
               ReadingConfig.saveAll();
+            }
+          })
+        }
+        .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM])
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_preload')) }) {
+          SettingSwitch({
+            corner: SettingCorner.FIRST,
+            icon: $r('sys.symbol.rectangle_stack'),
+            title: Translations.t('auto_preload_next'),
+            isOn: this.autoPreloadNext,
+            onToggle: (v: boolean) => {
+              this.autoPreloadNext = v;
+              ReadingConfig.autoPreloadNext = v;
+              ReadingConfig.saveAll();
+              void this.preloadNextChapters();
+            }
+          })
+          SettingSelect({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.list_number'),
+            title: Translations.t('preload_chapter_count'),
+            options: this.preloadCountLabels(),
+            selectedIndex: this.preloadChapterCount - 1,
+            onSelect: (index: number) => {
+              this.preloadChapterCount = index + 1;
+              ReadingConfig.preloadChapterCount = this.preloadChapterCount;
+              ReadingConfig.saveAll();
+              this.evictPreloadCache();
+              void this.preloadNextChapters();
             }
           })
         }
@@ -1678,6 +2322,7 @@ export struct ReaderPage {
                     this.loadChapter(chapter.order, false);
                   } else {
                     this.showSheet = false;
+                    this.updateVolumeKeySubscription();
                   }
                 })
             }
@@ -1713,10 +2358,13 @@ export struct ReaderPage {
   build() {
     NavDestination() {
       Stack({ alignContent: Alignment.Top }) {
+        if (this.isStrip()) {
+          this.stripEdgePullIndicator()
+        }
         this.buildContent()
         this.buildTapZones()
-        if (this.sidePageTurn && !this.showToolbar && !this.showSheet && this.images.length > 1) {
-          this.buildSidePageBarLayer()
+        if (!this.isStrip()) {
+          this.chapterEdgeHintOverlay()
         }
         if (this.images.length === 0 && this.chapterError) {
           // 首章自取失败：内容层错误态（盖住点按区，点击重试）
@@ -1788,6 +2436,11 @@ export struct ReaderPage {
         scrollSizeMode: ScrollSizeMode.CONTINUOUS,
         shouldDismiss: () => {
           this.showSheet = false;
+          this.updateVolumeKeySubscription();
+        },
+        onDisappear: () => {
+          this.showSheet = false;
+          this.updateVolumeKeySubscription();
         },
         systemMaterial: new uiMaterial.ImmersiveMaterial({
           style: uiMaterial.ImmersiveStyle.ULTRA_THIN,

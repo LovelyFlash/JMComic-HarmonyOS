@@ -46,7 +46,7 @@ export class ApiConstants {
   static readonly JM_PACKAGE_NAME = 'com.example.app';
 
   // App
-  static readonly APP_VERSION = '1.1.5';
+  static readonly APP_VERSION = '1.1.6';
   static readonly APP_NAME = 'JMComic';
 }
 
@@ -89,11 +89,12 @@ export class SettingsKeys {
   static readonly TAP_TURN_PAGE = 'tapTurnPage';
   static readonly INVERT_TAP = 'invertTap';
   static readonly VOLUME_KEY_TURN = 'volumeKeyTurnPage';
-  static readonly SIDE_PAGE_TURN = 'sidePageTurn';
   static readonly PAGE_ANIMATION = 'pageAnimation';
   static readonly SHOW_PAGE_INFO = 'showPageInfo';
   static readonly DOUBLE_TAP_ZOOM = 'doubleTapZoom';
-  static readonly LONG_PRESS_ZOOM = 'longPressZoom';
+  static readonly PINCH_ZOOM = 'pinchZoom';
+  static readonly AUTO_PRELOAD_NEXT = 'autoPreloadNext';
+  static readonly PRELOAD_CHAPTER_COUNT = 'preloadChapterCount';
   static readonly IMAGE_LAYOUT = 'imageLayout';
   static readonly AUTO_PAGE_TIME = 'autoPageTime';
   static readonly SEARCH_HISTORY = 'searchHistory';

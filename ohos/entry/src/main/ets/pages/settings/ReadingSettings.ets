@@ -26,12 +26,12 @@ export struct ReadingSettings {
   @State imageLayout: number = 0
   @State invertTap: boolean = false
   @State doubleTapZoom: boolean = true
-  @State longPressZoom: boolean = true
-  @State sidePageTurn: boolean = false
+  @State pinchZoom: boolean = true
+  @State autoPreloadNext: boolean = true
+  @State preloadChapterCount: number = 1
   @State showPageInfo: boolean = true
 
   private readModeKeys: string[] = ['mode_ltr', 'mode_rtl', 'mode_ttb', 'mode_continuous', 'mode_dual', 'mode_dual_rtl'];
-  private imageQualities: string[] = ['Original', 'High', 'Medium'];
   private imageLayoutKeys: string[] = ['layout_contain', 'layout_fill', 'layout_cover'];
   private autoPageTimes: number[] = [3, 5, 8, 10, 15];
 
@@ -47,8 +47,9 @@ export struct ReadingSettings {
       this.imageLayout = ReadingConfig.imageLayout;
       this.invertTap = ReadingConfig.invertTap;
       this.doubleTapZoom = ReadingConfig.doubleTapZoom;
-      this.longPressZoom = ReadingConfig.longPressZoom;
-      this.sidePageTurn = ReadingConfig.sidePageTurn;
+      this.pinchZoom = ReadingConfig.pinchZoom;
+      this.autoPreloadNext = ReadingConfig.autoPreloadNext;
+      this.preloadChapterCount = Math.min(2, Math.max(1, ReadingConfig.preloadChapterCount));
       this.showPageInfo = ReadingConfig.showPageInfo;
     });
   }
@@ -64,8 +65,9 @@ export struct ReadingSettings {
     ReadingConfig.imageLayout = this.imageLayout;
     ReadingConfig.invertTap = this.invertTap;
     ReadingConfig.doubleTapZoom = this.doubleTapZoom;
-    ReadingConfig.longPressZoom = this.longPressZoom;
-    ReadingConfig.sidePageTurn = this.sidePageTurn;
+    ReadingConfig.pinchZoom = this.pinchZoom;
+    ReadingConfig.autoPreloadNext = this.autoPreloadNext;
+    ReadingConfig.preloadChapterCount = this.preloadChapterCount;
     ReadingConfig.showPageInfo = this.showPageInfo;
     ReadingConfig.saveAll();
   }
@@ -76,6 +78,18 @@ export struct ReadingSettings {
       labels.push(Translations.t(this.readModeKeys[i]));
     }
     return labels;
+  }
+
+  private imageQualityLabels(): string[] {
+    return [
+      Translations.t('quality_original'),
+      Translations.t('quality_high'),
+      Translations.t('quality_medium')
+    ];
+  }
+
+  private preloadCountLabels(): string[] {
+    return [Translations.t('preload_one'), Translations.t('preload_two')];
   }
 
   private imageLayoutLabels(): string[] {
@@ -134,12 +148,8 @@ export struct ReadingSettings {
             this.invertTap = v; this.save();
           }})
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-          SettingSwitch({ corner: SettingCorner.MIDDLE, icon: $r('sys.symbol.speaker_wave_2'), title: Translations.t('volume_key'), isOn: this.volumeKeyTurnPage, onToggle: (v: boolean) => {
+          SettingSwitch({ corner: SettingCorner.LAST, icon: $r('sys.symbol.speaker_wave_2'), title: Translations.t('volume_key'), isOn: this.volumeKeyTurnPage, onToggle: (v: boolean) => {
             this.volumeKeyTurnPage = v; this.save();
-          }})
-          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-          SettingSwitch({ corner: SettingCorner.LAST, icon: $r('sys.symbol.rectangle_3_group'), title: Translations.t('side_page_turn'), isOn: this.sidePageTurn, onToggle: (v: boolean) => {
-            this.sidePageTurn = v; this.save();
           }})
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
@@ -166,9 +176,29 @@ export struct ReadingSettings {
             this.doubleTapZoom = v; this.save();
           }})
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
-          SettingSwitch({ corner: SettingCorner.LAST, icon: $r('sys.symbol.hand_tap'), title: Translations.t('long_press_zoom'), isOn: this.longPressZoom, onToggle: (v: boolean) => {
-            this.longPressZoom = v; this.save();
+          SettingSwitch({ corner: SettingCorner.LAST, icon: $r('sys.symbol.hand_raised_fingers_spread'), title: Translations.t('pinch_zoom'), isOn: this.pinchZoom, onToggle: (v: boolean) => {
+            this.pinchZoom = v; this.save();
           }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+        }
+        .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
+
+        ListItemGroup({ header: this.groupHeader(Translations.t('section_preload')) }) {
+          SettingSwitch({ corner: SettingCorner.FIRST, icon: $r('sys.symbol.rectangle_stack'), title: Translations.t('auto_preload_next'), isOn: this.autoPreloadNext, onToggle: (v: boolean) => {
+            this.autoPreloadNext = v; this.save();
+          }})
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          SettingSelect({
+            corner: SettingCorner.LAST,
+            icon: $r('sys.symbol.list_number'),
+            title: Translations.t('preload_chapter_count'),
+            options: this.preloadCountLabels(),
+            selectedIndex: this.preloadChapterCount - 1,
+            onSelect: (index: number) => {
+              this.preloadChapterCount = index + 1;
+              this.save();
+            }
+          })
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
         }
         .divider({ strokeWidth: 0.5, color: $r('app.color.divider')})
@@ -178,7 +208,7 @@ export struct ReadingSettings {
             corner: SettingCorner.FIRST,
             icon: $r('sys.symbol.camera'),
             title: Translations.t('image_quality'),
-            options: this.imageQualities,
+            options: this.imageQualityLabels(),
             selectedIndex: this.imageQuality,
             onSelect: (index: number) => {
               this.imageQuality = index;
