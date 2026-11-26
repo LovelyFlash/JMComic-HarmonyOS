@@ -27,7 +27,9 @@ export struct JmWeekPage {
   @State categories: JmWeekCategory[] = []
   @State currentId: string = ''
   @State currentType: string = ''
-  @State dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
+  /** LazyForEach 数据源必须固定实例；刷新只走 replaceAll/clearData */
+  private dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
+  @State itemCount: number = 0
   @State catLoading: boolean = true
   @State catError: string = ''
   @State loading: boolean = false
@@ -148,10 +150,13 @@ export struct JmWeekPage {
     this.loading = true;
     this.error = '';
     try {
-      this.dataSource = new ArrayDataSource<Comic>(await JmApi.getWeekComics(this.currentId, this.currentType));
+      const list: Comic[] = await JmApi.getWeekComics(this.currentId, this.currentType);
+      this.dataSource.replaceAll(list);
+      this.itemCount = list.length;
     } catch (e) {
       this.error = String(e);
-      this.dataSource = new ArrayDataSource<Comic>();
+      this.dataSource.clearData();
+      this.itemCount = 0;
     }
     this.loading = false;
   }
@@ -287,7 +292,7 @@ export struct JmWeekPage {
                   .onClick(() => { this.loadComics(); })
               }
               .layoutWeight(1).justifyContent(FlexAlign.Center)
-            } else if (this.dataSource.totalCount() === 0) {
+            } else if (this.itemCount === 0) {
               Column({ space: 8 }) {
                 Text(Translations.t('no_data'))
                   .fontSize(14).fontColor($r('app.color.text_secondary'))

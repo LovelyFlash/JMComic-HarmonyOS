@@ -19,7 +19,9 @@ export struct CommentsPage {
   pageParam: object | undefined = undefined;
   @State comicId: string = ''
   @State title: string = ''
-  @State dataSource: ArrayDataSource<JmComment> = new ArrayDataSource<JmComment>()
+  /** LazyForEach 数据源必须固定实例；刷新只走 replaceAll/clearData/addAll */
+  private dataSource: ArrayDataSource<JmComment> = new ArrayDataSource<JmComment>()
+  @State itemCount: number = 0
   @State inputText: string = ''
   @State loading: boolean = true
   @State loadingMore: boolean = false
@@ -54,9 +56,11 @@ export struct CommentsPage {
       this.maxPage = cached.maxPage > 0 ? cached.maxPage : 1;
       this.currentPage = page;
       if (replace) {
-        this.dataSource = new ArrayDataSource<JmComment>(cached.comments);
+        this.dataSource.replaceAll(cached.comments);
+        this.itemCount = cached.comments.length;
       } else {
         this.dataSource.addAll(cached.comments);
+        this.itemCount += cached.comments.length;
       }
       this.loading = false;
       this.error = '';
@@ -77,15 +81,18 @@ export struct CommentsPage {
       this.maxPage = result.maxPage > 0 ? result.maxPage : 1;
       this.currentPage = page;
       if (replace) {
-        this.dataSource = new ArrayDataSource<JmComment>(result.comments);
+        this.dataSource.replaceAll(result.comments);
+        this.itemCount = result.comments.length;
       } else {
         this.dataSource.addAll(result.comments);
+        this.itemCount += result.comments.length;
       }
       DetailCache.saveCommentsPage(this.comicId, 'jm', page, result.comments, this.maxPage);
     } catch (e) {
       if (replace && !fromCache) {
         this.error = String(e);
-        this.dataSource = new ArrayDataSource<JmComment>();
+        this.dataSource.clearData();
+        this.itemCount = 0;
       }
       // 已有缓存兜底（fromCache）→ 静默保留缓存内容
     }
@@ -237,7 +244,7 @@ export struct CommentsPage {
                 .onClick(() => { this.loadPage(1, true); })
             }
             .layoutWeight(1).justifyContent(FlexAlign.Center)
-          } else if (this.dataSource.totalCount() === 0) {
+          } else if (this.itemCount === 0) {
             Column({ space: 12 }) {
               SymbolGlyph($r('sys.symbol.message'))
                 .fontSize(44)

@@ -29,7 +29,9 @@ export struct SearchPage {
   pageParam: object | undefined = undefined;
   @State title: string = Translations.t('search')
   @State keyword: string = ''
-  @State dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
+  /** LazyForEach 数据源必须固定实例；刷新只走 replaceAll/clearData/addAll */
+  private dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
+  @State itemCount: number = 0
   @State loading: boolean = false
   @State loadingMore: boolean = false
   @State error: string = ''
@@ -123,7 +125,8 @@ export struct SearchPage {
     this.loading = true;
     this.error = '';
     this.title = Translations.t('search_results');
-    this.dataSource = new ArrayDataSource<Comic>();
+    this.dataSource.clearData();
+    this.itemCount = 0;
     this.currentPage = 1;
     this.searched = true;
     this.saveHistory(this.keyword);
@@ -156,9 +159,11 @@ export struct SearchPage {
     this.maxPage = result.maxPage > 0 ? result.maxPage : page;
     this.currentPage = page;
     if (replace) {
-      this.dataSource = new ArrayDataSource<Comic>(result.comics);
+      this.dataSource.replaceAll(result.comics);
+      this.itemCount = result.comics.length;
     } else {
       this.dataSource.addAll(result.comics);
+      this.itemCount += result.comics.length;
     }
   }
 
@@ -199,7 +204,7 @@ export struct SearchPage {
       }
       .layoutWeight(1).justifyContent(FlexAlign.Center)
       .id('resultsHint')
-    } else if (this.dataSource.totalCount() === 0) {
+    } else if (this.itemCount === 0) {
       Column({ space: 8 }) {
         Text(Translations.t('no_data'))
           .fontSize(14).fontColor($r('app.color.text_secondary'))
@@ -284,7 +289,8 @@ export struct SearchPage {
               onClear: () => {
                 this.keyword = '';
                 this.title = Translations.t('search');
-                this.dataSource = new ArrayDataSource<Comic>();
+                this.dataSource.clearData();
+                this.itemCount = 0;
                 this.searched = false;
               }
             })

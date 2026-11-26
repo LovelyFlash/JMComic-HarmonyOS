@@ -28,7 +28,8 @@ export struct JmCategoryPage {
   slug: string = ''
   categoryTitle: string = ''
   @State sort: string = 'mr'
-  @State dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
+  /** LazyForEach 数据源必须固定实例；刷新只走 replaceAll/addAll/clearData */
+  private dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
   @State loading: boolean = true
   @State loadingMore: boolean = false
   @State error: string = ''
@@ -74,13 +75,14 @@ export struct JmCategoryPage {
       this.maxPage = result.maxPage > 0 ? result.maxPage : page;
       this.currentPage = page;
       if (replace) {
-        this.dataSource = new ArrayDataSource<Comic>(result.comics);
+        this.dataSource.replaceAll(result.comics);
       } else {
         this.dataSource.addAll(result.comics);
       }
     } catch (e) {
       if (replace) {
         this.error = String(e);
+        this.dataSource.clearData();
       }
     }
     if (replace) {

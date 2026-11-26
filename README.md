@@ -253,10 +253,11 @@ URL → Network.getBytes(http 栈) → 魔数嗅探(looksLikeImage)
 ### 4. 列表渲染性能 —— LazyForEach 与 ArrayDataSource
 
 - 长列表 / 网格一律 `LazyForEach` + `ArrayDataSource`（历史、下载、评论、每周榜单、收藏、发现、详情章节网格）：
-  - **数据整体替换**（重新拉取）：`this.dataSource = new ArrayDataSource(data)` 重建实例；
-  - **追加加载**：`dataSource.addAll(newItems)`（去重后追加）；
+  - **数据整体替换**（重新拉取）：保持同一数据源实例，调用 `dataSource.replaceAll(data)`；禁止 `this.dataSource = new ArrayDataSource(data)` 重建实例；
+  - **清空**：`dataSource.clearData()`；
+  - **追加加载**：`dataSource.addAll(newItems)`（批量通知由数据源内部处理）；
   - **就地刷新**（章节排序、展开全部）：`chapterSource.replaceAll(list)`。
-- 空态判断用 `dataSource.totalCount() === 0`；列表尾部可挂静态 footer `ListItem`（模板参考 `JmPromotePage`）。
+- 空态/数量 UI 优先用独立 `@State itemCount`，在 `replaceAll/addAll/clearData` 后同步更新；若页面已有加载态等状态在同一时序触发重渲，也可使用 `dataSource.totalCount()`。列表尾部可挂静态 footer `ListItem`（模板参考 `JmPromotePage`）。
 - `ForEach` / `LazyForEach` 必须提供**稳定 key**（如 `historyRow{id}`、章节 `id + order`）；`@Prop` / `@State` 属性级绑定在 LazyForEach 节点创建后仍生效，因此高亮 / 主题色可安全绑定。
 
 ### 5. 沉浸光感材质（systemMaterial）
