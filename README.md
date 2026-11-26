@@ -342,11 +342,9 @@ NavUtil.push('comicDetail', { comicId, title, source })
 |------|------|------|
 | `ohos.permission.INTERNET` | normal | 访问 JM API 与图床，下载漫画图片 |
 | `ohos.permission.GET_NETWORK_INFO` | normal | 读取网络连接状态，用于在线 / 离线提示与请求失败引导 |
-| `ohos.permission.GET_WIFI_INFO` | normal | 读取 WLAN 状态，用于网络环境识别与图片线路选择参考 |
-| `ohos.permission.READ_MEDIA` | user_grant（reason：用于保存和读取漫画图片到媒体库，`when: inuse`） | 将漫画图片保存 / 读取到系统媒体库（相册），授权时机为使用期间 |
 | `ohos.permission.KEEP_BACKGROUND_RUNNING` | normal | 保证下载等任务在应用退到后台时可持续运行 |
 
-> user_grant 权限会在运行时弹窗请求，拒绝后仅影响对应功能（媒体库读写），不影响在线浏览与阅读。
+> 下载写入系统 `Download` 目录通过 `DocumentViewPicker` 授权，无需 `READ_MEDIA` / `WRITE_MEDIA` 权限；应用不读取相册。
 
 ## 构建配置
 
