@@ -34,11 +34,10 @@ export struct SettingSwitch {
       .width('100%')
       .height(52)
       .padding({ left: 16, right: 16 })
-      .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+      .backgroundColor($r('app.color.bg_surface'))
+      .borderRadius(settingCornerRadius(this.corner))
+      .clip(true)
     }
-    .backgroundColor($r('app.color.bg_surface'))
-    .borderRadius(settingCornerRadius(this.corner))
-    .clip(true)
-    .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+    .backgroundColor(Color.Transparent)
   }
 }
