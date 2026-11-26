@@ -876,7 +876,8 @@ export struct ComicDetailPage {
   }
 
   private primaryLabel(): string {
-    if (this.resumePage > 0) {
+    // 多章漫画切章后会保存为「章节 N、页 0」：只看 resumePage 会误判为没有进度
+    if (this.resumePage > 0 || this.resumeChapterOrder > 0) {
       return `${Translations.t('continue_reading_prefix')}`;
     }
     return Translations.t('start_reading');
