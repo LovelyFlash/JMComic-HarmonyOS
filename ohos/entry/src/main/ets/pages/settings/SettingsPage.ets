@@ -34,9 +34,13 @@ export struct SettingsPage {
   @State cacheSize: string = '-'
   @State downloadSize: string = '-'
   @State cacheGear: number = 0
-  @State title: string = '设置'
+  @State language: string = 'system'
+  @State title: string = Translations.t('tab_settings')
 
   aboutToAppear(): void {
+    Settings.getString(SettingsKeys.LANGUAGE, 'system').then((v: string) => {
+      this.language = v;
+    });
     Settings.getBool(SettingsKeys.SHOW_HISTORY_IMAGES, true).then((v: boolean) => {
       this.showHistoryImages = v;
       AppStorage.setOrCreate('showHistoryImages', v);
@@ -140,6 +144,41 @@ export struct SettingsPage {
     ];
   }
 
+  private languageLabels(): string[] {
+    return [
+      Translations.t('dark_mode_system'),
+      Translations.t('language_zh'),
+      Translations.t('language_en')
+    ];
+  }
+
+  private languageIndex(): number {
+    if (this.language === 'en_US') {
+      return 2;
+    }
+    if (this.language === 'zh_CN') {
+      return 1;
+    }
+    return 0;
+  }
+
+  private setLanguageByIndex(index: number): void {
+    if (index < 0 || index > 2) {
+      return;
+    }
+    const values: string[] = ['system', 'zh_CN', 'en_US'];
+    const value: string = values[index];
+    this.language = value;
+    Settings.putString(SettingsKeys.LANGUAGE, value);
+    if (value === 'zh_CN') {
+      Translations.setLocale('zh_CN');
+    } else if (value === 'en_US') {
+      Translations.setLocale('en_US');
+    }
+    // 当前页面文案在 build 时已求值，切换后统一提示重启生效
+    ToastUtil.show(Translations.t('restart_to_apply'), 2000);
+  }
+
   private async setShowHistoryImages(value: boolean): Promise<void> {
     this.showHistoryImages = value;
     AppStorage.setOrCreate('showHistoryImages', value);
@@ -231,6 +270,17 @@ export struct SettingsPage {
             selectedIndex: this.darkModeIndex(),
             onSelect: (index: number) => {
               this.setDarkModeByIndex(index);
+            }
+          })
+          .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
+          SettingSelect({
+            corner: SettingCorner.MIDDLE,
+            icon: $r('sys.symbol.gearshape'),
+            title: Translations.t('language'),
+            options: this.languageLabels(),
+            selectedIndex: this.languageIndex(),
+            onSelect: (index: number) => {
+              this.setLanguageByIndex(index);
             }
           })
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])

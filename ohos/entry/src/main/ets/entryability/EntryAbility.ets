@@ -17,6 +17,7 @@ import { ImgLineSpeedTest } from '../data/api/ImgLineSpeedTest';
 import { DownloadManager } from '../data/download/DownloadManager';
 import { Logger } from '../common/Logger';
 import { ToastUtil } from '../common/ToastUtil';
+import { Translations } from '../common/Translations';
 
 const TAG = 'JMComic';
 
@@ -56,6 +57,21 @@ export default class EntryAbility extends UIAbility {
 
   private async initAsync(): Promise<void> {
     await Settings.init(this.context);
+    // 语言：优先用户设置；system 时按系统语言决定，必须在加载页面前生效
+    const savedLanguage: string = await Settings.getString(SettingsKeys.LANGUAGE, 'system');
+    let locale: string = 'zh_CN';
+    if (savedLanguage === 'en_US' || savedLanguage === 'zh_CN') {
+      locale = savedLanguage;
+    } else {
+      let systemLanguage: string = '';
+      try {
+        systemLanguage = String(this.context.config.language ?? '');
+      } catch (e) {
+        systemLanguage = '';
+      }
+      locale = systemLanguage.toLowerCase().startsWith('en') ? 'en_US' : 'zh_CN';
+    }
+    Translations.setLocale(locale);
     // 繁转简开关（默认开）：须在首个网络解析前生效
     ChineseConversion.enabled = await Settings.getBool(SettingsKeys.T2S, true);
     await Database.init(this.context);
