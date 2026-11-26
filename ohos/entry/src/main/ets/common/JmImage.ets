@@ -199,9 +199,16 @@ export class JmImage {
     }
     const pxCount: number = w * h;
     try {
-      const srcBuf: ArrayBuffer = new ArrayBuffer(pxCount * 4);
-      await pixelMap.readAllPixelsToBuffer(srcBuf);
-      const src: Uint32Array = new Uint32Array(srcBuf);
+      let srcBuf: ArrayBuffer | null = new ArrayBuffer(pxCount * 4);
+      try {
+        await pixelMap.readAllPixelsToBuffer(srcBuf);
+      } catch (e) {
+        pixelMap.release();
+        throw new Error(`read pixels failed: ${Logger.describe(e)}`);
+      }
+      // 源像素已读出：先释放解码 PixelMap，再分配整图目标缓冲，降低峰值内存
+      pixelMap.release();
+      let src: Uint32Array | null = new Uint32Array(srcBuf);
       const dstBuf: ArrayBuffer = new ArrayBuffer(pxCount * 4);
       const dst: Uint32Array = new Uint32Array(dstBuf);
       // 对齐 jm_toolkit.py decode_and_save：源图底段（含 h%num 余数行）贴到顶部，其余段依次下移，段内不旋转
@@ -218,7 +225,9 @@ export class JmImage {
         // 段内行连续 → 整段一次原生拷贝（Uint32Array.set），避免逐像素 JS 循环阻塞主线程
         dst.set(src.subarray(srcRow * w, (srcRow + blockH) * w), dstRow * w);
       }
-      pixelMap.release();
+      // 目标缓冲已构建，断开源缓冲引用，让 GC 在重建 PixelMap 前回收整图源数据
+      src = null;
+      srcBuf = null;
       const initOpts: image.InitializationOptions = {
         size: { width: w, height: h },
         srcPixelFormat: image.PixelMapFormat.RGBA_8888,
