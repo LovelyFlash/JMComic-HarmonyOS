@@ -6,7 +6,7 @@ import { Database, HistoryItem } from '../data/database/Database';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { ToastUtil } from '../common/ToastUtil';
-import { SymbolGlyphModifier, uiMaterial } from '@kit.ArkUI';
+import { SymbolGlyphModifier } from '@kit.ArkUI';
 
 @Builder
 export function HistoryPageBuilder(name: string, param: object) {
@@ -156,9 +156,6 @@ export struct HistoryPage {
             .height('100%')
             .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
             .padding({ left: 16, right: 16})
-            .systemMaterial(new uiMaterial.ImmersiveMaterial({
-              style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-            }))
           }
         }
         .width('100%').height('100%')
@@ -181,8 +178,5 @@ export struct HistoryPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
   }
 }

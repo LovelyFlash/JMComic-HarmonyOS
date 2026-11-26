@@ -7,7 +7,7 @@ import { NetworkImage } from '../components/NetworkImage';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 import { ListCache } from '../data/cache/ListCache';
-import { SymbolGlyphModifier, uiMaterial } from '@kit.ArkUI';
+import { SymbolGlyphModifier } from '@kit.ArkUI';
 
 @Component
 export struct DiscoverPage {
@@ -376,9 +376,6 @@ export struct DiscoverPage {
     ])
     .hideBackButton(true)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
   }
 }

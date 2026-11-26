@@ -325,4 +325,4 @@ devecocli log --keyword ReaderPage --from 2m
 3. `module.json5` 缺 metadata `ohos.arkui.UIMaterial.state = "enable"`（须配在 entry 类型 module）
 4. 材质层级在不透明背景**之下**（官方 FAQ）：组件须 `.backgroundColor(Color.Transparent)`，`systemMaterial` 放样式属性之后；**勿与 `backgroundBlurStyle` 同设**（模糊层覆盖材质层，且材质自带 materialFilter 已含模糊）；勿整页 + 子组件嵌套材质
 5. 用 `uiMaterial.getMaterialInfo()` 确认 `state === 1`（ENABLE）；`type === 2` 为沉浸光感类型
-6. 遗留债务：全项目 14 个页面（HistoryPage/SettingsPage/CommentsPage 等）仍在 NavDestination **根**挂 `.systemMaterial(...)` + `hideTitleBar(true)`——同样 out of scope 无效，各刷一条警告，后续应清理或迁入 `.title()`。`feature/compat-sdk20` 分支已把这些链式调用替换为带版本守卫的 `.attributeModifier(immersiveNavModifier)`（`common/Compat.ets`，解决的是 SDK20 API 起始版本问题；**作用域是否仍告警，合并后真机复核**）
+6. 内容区 `systemMaterial` 债务已在 `feature/v1.2-optimization` 清理：移除 12 个页面根/List、SearchBar 与 ReaderPage 内容区材质；保留 Favorites/JmCategory 的 `.title()`、ComicDetail 标题按钮/`bindSheet`、MainPage TabBar、ReaderPage `bindSheet` 等合法用法。新增内容区材质仍会告警。

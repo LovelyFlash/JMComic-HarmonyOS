@@ -13,7 +13,6 @@ import { SettingSelect } from '../../components/SettingSelect';
 import { SettingInfoItem } from '../../components/SettingInfoItem';
 import { SettingCorner } from '../../components/SettingCommon';
 import { ChineseConversion } from '../../common/ChineseConversion';
-import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function SettingsPageBuilder(name: string, param: object) {
@@ -437,9 +436,6 @@ export struct SettingsPage {
       .height('100%')
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       .padding({ left: 16, right: 16})
-      .systemMaterial(new uiMaterial.ImmersiveMaterial({
-        style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-      }))
     }
     .title(this.title, {
       barStyle: BarStyle.STACK,

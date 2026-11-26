@@ -13,7 +13,7 @@ import { SettingSelect } from '../../components/SettingSelect';
 import { SettingCheckItem } from '../../components/SettingCheckItem';
 import { SettingInfoItem } from '../../components/SettingInfoItem';
 import { SettingCorner } from '../../components/SettingCommon';
-import { TitlePosition, uiMaterial } from '@kit.ArkUI';
+import { TitlePosition } from '@kit.ArkUI';
 import { TitleSize } from '@kit.UIDesignKit';
 
 const TAG = 'JmSettings';
@@ -443,9 +443,6 @@ export struct JmSettings {
       .height('100%')
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       .padding({ left: 16, right: 16})
-      .systemMaterial(new uiMaterial.ImmersiveMaterial({
-        style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-      }))
     }
     .title(this.title, {
       barStyle: BarStyle.STACK,

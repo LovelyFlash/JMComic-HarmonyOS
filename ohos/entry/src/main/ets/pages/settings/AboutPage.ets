@@ -2,7 +2,6 @@
 import { Translations } from '../../common/Translations';
 import { ApiConstants, DEFAULT_THEME_COLOR } from '../../common/Constants';
 import { Changelog, ReleaseNote } from '../../common/Changelog';
-import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function AboutPageBuilder(name: string, param: object) {
@@ -117,9 +116,6 @@ export struct AboutPage {
     })   // 标题文本 + 返回按钮
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
     .id('aboutPage')
   }
 }

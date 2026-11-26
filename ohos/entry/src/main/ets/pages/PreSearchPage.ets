@@ -4,7 +4,6 @@ import { NavUtil } from '../common/NavUtil';
 import { Settings } from '../data/preferences/Settings';
 import { JmApi } from '../data/api/JmApi';
 import { ChipTokens, DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
 import { SearchBar } from '../components/SearchBar';
 
 @Builder
@@ -165,8 +164,5 @@ export struct PreSearchPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
   }
 }

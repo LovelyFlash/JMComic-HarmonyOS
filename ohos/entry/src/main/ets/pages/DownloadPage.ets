@@ -6,7 +6,6 @@ import { ChapterDlStatus, ChapterTask, Database, DownloadItem } from '../data/da
 import { DownloadManager } from '../data/download/DownloadManager';
 import { DetailCache } from '../data/cache/DetailCache';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
 import { fileUri } from '@kit.CoreFileKit';
 
 /** 单本漫画的章节任务聚合（进度条与状态展示） */
@@ -434,9 +433,6 @@ export struct DownloadPage {
           .height('100%')
           .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
           .padding({ left: 16, right: 16})
-          .systemMaterial(new uiMaterial.ImmersiveMaterial({
-            style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-          }))
         }
       }
       .width('100%').height('100%')
@@ -451,8 +447,5 @@ export struct DownloadPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
   }
 }

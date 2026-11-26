@@ -7,7 +7,6 @@ import { Settings } from '../data/preferences/Settings';
 import { SettingsKeys } from '../common/Constants';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function CommentsPageBuilder(name: string, param: object) {
@@ -319,8 +318,5 @@ export struct CommentsPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
   }
 }

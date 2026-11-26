@@ -6,7 +6,6 @@ import { Comic } from '../data/model/Comic';
 import { JmApi } from '../data/api/JmApi';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function JmPromotePageBuilder(name: string, param: object) {
@@ -164,8 +163,5 @@ export struct JmPromotePage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
   }
 }

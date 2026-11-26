@@ -5,7 +5,6 @@ import { ReadingConfig } from '../../common/ReadingConfig';
 import { SettingSwitch } from '../../components/SettingSwitch';
 import { SettingSelect } from '../../components/SettingSelect';
 import { SettingCorner } from '../../components/SettingCommon';
-import { uiMaterial } from '@kit.ArkUI';
 
 @Builder
 export function ReadingSettingsBuilder(name: string, param: object) {
@@ -253,9 +252,6 @@ export struct ReadingSettings {
       .height('100%')
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       .padding({ left: 16, right: 16})
-      .systemMaterial(new uiMaterial.ImmersiveMaterial({
-        style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-      }))
     }
     .title(this.title, {
       barStyle: BarStyle.STACK,

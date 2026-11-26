@@ -1880,9 +1880,6 @@ export struct ReaderPage {
     }
     .width(40).height(40)
     .backgroundColor($r('app.color.reader_overlay'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
     .shadow({ radius: 10, color: '#66000000', offsetX: 0, offsetY: 2 })
     .onClick(() => {
       void this.exitReader();
@@ -1974,9 +1971,6 @@ export struct ReaderPage {
     .width('100%')
     .padding({ left: 16, right: 16, top: 10, bottom: 10 })
     .backgroundColor(Color.Transparent)
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
     .borderRadius(16)
   }
 

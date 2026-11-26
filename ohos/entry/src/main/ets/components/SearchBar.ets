@@ -1,5 +1,4 @@
-// components/SearchBar.ets - 统一搜索栏（按钮态/输入态 + 系统材质 + 可选尾部控件）
-import { uiMaterial } from '@kit.ArkUI';
+// components/SearchBar.ets - 统一搜索栏（按钮态/输入态 + 可选尾部控件）
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
 
 @Component
@@ -84,9 +83,6 @@ export struct SearchBar {
     .border({ width: 0.5, color: $r('app.color.divider') })
     .shadow({ radius: 8, color: '#1F000000', offsetX: 0, offsetY: 2 })
     .clip(true)
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
     .id(this.itemId)
   }
 

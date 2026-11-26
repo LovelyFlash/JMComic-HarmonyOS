@@ -7,7 +7,6 @@ import { JmApi } from '../data/api/JmApi';
 import { Settings } from '../data/preferences/Settings';
 import { ArrayDataSource } from '../common/ArrayDataSource';
 import { DEFAULT_THEME_COLOR } from '../common/Constants';
-import { uiMaterial } from '@kit.ArkUI';
 import { SearchBar } from '../components/SearchBar';
 
 class SortOption {
@@ -330,8 +329,5 @@ export struct SearchPage {
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .hideTitleBar(false)
     .backgroundColor($r('app.color.bg_page'))
-    .systemMaterial(new uiMaterial.ImmersiveMaterial({
-      style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-    }))
   }
 }
