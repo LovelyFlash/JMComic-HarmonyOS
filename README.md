@@ -34,7 +34,7 @@
 
 ## 项目简介
 
-JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）漫画客户端，覆盖「浏览 → 搜索 → 详情 → 阅读 → 收藏/追更」完整链路，重点投入阅读器的沉浸体验与渲染性能。
+JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）漫画客户端，覆盖「浏览 → 搜索 → 详情 → 阅读 → 收藏」完整链路，重点投入阅读器的沉浸体验与渲染性能。
 
 | 项目 | 说明 |
 |------|------|
@@ -108,10 +108,10 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 │   LaunchPage → MainPage(底部 4 Tab: 主页/收藏/发现/分类)     │
 │   DiscoverPage · SearchPage · CategoryPage · ComicDetailPage │
 │   reader/ReaderPage · history/download/account…              │
-│   settings/* · ComicTile/ComicGrid/ReaderImage/Setting*      │
+│   settings/* · ReaderImage/NetworkImage/Setting*              │
 ├──────────────────────────────────────────────────────────────┤
-│ 状态层  viewmodel/ + AppStorage                              │
-│   AppData（全局状态）· @StorageProp(themeColor/darkMode…)    │
+│ 状态层  AppStorage + ArrayDataSource                         │
+│   @StorageProp(themeColor/darkMode…)                         │
 │   ArrayDataSource（LazyForEach 数据源，replaceAll / addAll）  │
 ├──────────────────────────────────────────────────────────────┤
 │ 数据层  data/                                                 │
@@ -127,7 +127,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 
 - **路由**：`main_pages.json` 仅含 `LaunchPage`（首帧）与 `MainPage`；其余 15 个页面通过 `router_map.json`（`buildFunction` 声明式路由）注册，由 `NavUtil.push(name, params)` 跳转。
 - **启动流**：`LaunchPage` 首帧 → `Database.queryHistory()` 预热 → 600ms 最短展示 → `MainPage`；`setupWindow` 幂等，启动页与主页共用。
-- **全局状态**：`AppData` 持有漫画源等全局信息；主题色 / 深色策略走 `AppStorage`，组件用 `@StorageProp` 响应。
+- **全局状态**：主题色 / 深色策略走 `AppStorage`，组件用 `@StorageProp` 响应；列表状态由各页面持有的 `ArrayDataSource` 管理。
 
 ## 技术栈
 
@@ -139,9 +139,9 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 | 网络 | `@ohos.net.http` | 统一收敛在 `common/Network.ets`（get / getWithStatus / getBytes / getBytesViaDownload / post） |
 | 关系型数据库 | `@ohos.data.relationalStore` | SQLite `pica_comic.db`，安全级别 S1 |
 | 键值存储 | `@ohos.data.preferences` | `data/preferences/Settings.ets` 封装的设置项 |
-| 图片 | Image Kit（`@kit.ImageKit`） | 解码显式 `desiredPixelFormat: RGBA_8888`，PixelMap LRU 缓存（12 张） |
+| 图片 | Image Kit（`@kit.ImageKit`） | 解码显式 `desiredPixelFormat: RGBA_8888`，ReaderImage 像素 LRU（12 张 / 96MB 预算） |
 | 加密 | `@ohos.security.cryptoFramework` + 纯 ArkTS md5 | AES256-ECB 数据解密；md5Hex 已与 Python/Node hashlib 逐位对拍 |
-| 日志 | `@ohos.hilog` | `Logger.ets` 按 TAG 过滤（JmApi / JmImage / ReaderImage / ReaderPage / Network…） |
+| 日志 | `@ohos.hilog` | `Logger.ets` 按 TAG 过滤，发布版默认 INFO（排障可 `setLevel(DEBUG)`） |
 | 材质 | `systemMaterial` 沉浸光感 | API 26 UIMaterial，见[核心模块深度解析](#核心模块深度解析) §5 |
 | 构建 | hvigor（DevEco Studio / devecocli） | `modelVersion 5.0.0`，`assembleHap --mode module` |
 | 单元测试 | `@ohos/hypium` 1.0.19 | devDependency，随 DevEco 模板生成 |
@@ -155,8 +155,6 @@ JMComic-HarmonyOS/
 ├── scripts/
 │   ├── build-verify.ps1               -- 构建验证：文件清单 → 编码 → ArkTS 合规 → 设计令牌 → hvigor 构建
 │   └── code-audit.ps1                 -- 代码质量审计：ForEach/LazyForEach、硬编码色、any、emoji 图标等统计
-├── convert_icons.* / create_icons.py  -- 图标（SVG → rawfile）转换辅助脚本
-├── doc/                               -- 文档资料目录
 └── ohos/                              -- DevEco 工程根（构建在此执行）
     ├── AppScope/
     │   ├── app.json5                  -- 应用级配置：包名、版本、targetAPIVersion
@@ -170,24 +168,21 @@ JMComic-HarmonyOS/
             ├── resources/
             │   ├── base/element/      -- 浅色颜色令牌 color.json、字符串
             │   ├── dark/element/      -- 深色颜色令牌（同名自动切换）
-            │   ├── rawfile/           -- SVG 图标、字体等原始资源
             │   └── profile/           -- main_pages.json、router_map.json
             └── ets/
                 ├── entryability/      -- EntryAbility：窗口配置、状态栏、避让区广播
-                ├── common/            -- 11 个基础模块（见下表）
+                ├── common/            -- 12 个基础模块（见下表）
                 ├── data/
                 │   ├── api/           -- JmApi.ets：禁漫 API 客户端
                 │   ├── database/      -- Database.ets：SQLite 封装
                 │   ├── download/      -- DownloadManager.ets：章节下载队列（系统下载目录落盘与旧数据迁移、后台任务/进度/离线页列表）
                 │   ├── cache/         -- ImageCache.ets：图片持久缓存（先缓存后网络）；DetailCache.ets：已下载详情/封面/多页评论本地缓存；ListCache.ets：收藏/发现列表首屏缓存；CacheManager.ets：占用统计/挡位淘汰/清理
                 │   ├── preferences/   -- Settings.ets：键值存储封装
-                │   └── model/         -- Chapter / Comic / ComicPageData / Comment / ReaderParam
-                ├── viewmodel/         -- AppData.ets：全局状态
-                ├── components/        -- 13 个复用组件
+                │   └── model/         -- Chapter / Comic / ReaderParam
+                ├── components/        -- 9 个复用组件
                 ├── pages/             -- 16 个业务页面
                 │   ├── reader/        -- ReaderPage.ets：阅读器
                 │   └── settings/      -- SettingsPage / ReadingSettings / JmSettings / AboutPage
-                └── plugin/            -- 预留插件目录
 ```
 
 **`common/` 基础模块**
@@ -202,16 +197,15 @@ JMComic-HarmonyOS/
 | `Translations.ets` | 中英文案（`Translations.t(key)`） |
 | `ReadingConfig.ets` | 阅读配置（模式 / 翻页 / 缩放等） |
 | `NavUtil.ets` | 路由跳转工具（push / pushSilent / back） |
-| `ArrayDataSource.ets` | `IDataource` 实现：`replaceAll`（重建）/ `addAll`（追加）/ `clearData` |
+| `ArrayDataSource.ets` | `IDataource` 实现：`replaceAll`（整体替换）/ `addAll`（批量追加，onDatasetChange）/ `clearData` |
 | `Changelog.ets` | 应用内更新日志数据（`ReleaseNote` 倒序，关于页展示） |
 | `ToastUtil.ets` | Toast 统一封装（`UIContext.getPromptAction().showToast`） |
 
 **`components/` 复用组件**
 
-- 内容类：`ComicTile`、`ComicGrid`、`AppIcon`
 - 搜索类：`SearchBar`（按钮态 / 输入态 + 系统材质 + 可选排序下拉）
 - 图片类：`NetworkImage`（封面，无需反打乱）、`ReaderImage`（阅读器图片：下载 → 解码 → 反打乱 → LRU，失败可重试）
-- 设置类：`SettingSection` / `SettingItem` / `SettingSwitch` / `SettingSelect` / `SettingCheckItem` / `SettingInfoItem` / `SettingCommon`
+- 设置类：`SettingItem` / `SettingSwitch` / `SettingSelect` / `SettingCheckItem` / `SettingInfoItem` / `SettingCommon`
 
 ## 核心模块深度解析
 
@@ -238,7 +232,7 @@ URL → Network.getBytes(http 栈) → 魔数嗅探(looksLikeImage)
 - **分段数 `getSegmentationNum`**：`aid < scrambleId → 0`；`< 268850 → 10`；否则 `md5(aid + 文件名去扩展名)` 的**末字符取 ASCII 码**，`< 421926 → ord % 10 * 2 + 2`，否则 `ord % 8 * 2 + 2`。
 - **反打乱 `recombine`**：对齐 `decode_and_save` / `_segmentationPicture` / `stitch_img` —— 源图按 `floor(h / num)` 切段、末段附带 `h % num` 余数行；目标图从末段开始**整段逆序**贴合，**段内不旋转**；全量读像素后重建 PixelMap（显式 `srcPixelFormat: RGBA_8888`）。
 - **坑位**：`createPixelMap()` 默认 `editable: false`，不能对解码产物原地 `writePixels`，必须重建。
-- **缓存与 GIF**：`ReaderImage` 内置 LRU（12 张 PixelMap，按 URL）；GIF 跳过反打乱直接显示。
+- **缓存与 GIF**：`ReaderImage` 内置像素 LRU（12 张 / 96MB 预算，按 URL）；GIF 跳过反打乱直接显示。
 
 ### 3. ReaderPage —— 阅读器
 
@@ -248,7 +242,7 @@ URL → Network.getBytes(http 栈) → 魔数嗅探(looksLikeImage)
 - **状态栏全程隐藏**：进入后 400ms（跨过 push 转场）隐藏、退出恢复，世代号 `statusBarGen` 防乱序；打开工具栏 / 半模态**不恢复**状态栏（恢复会回写 `topAvoidHeight` → `@StorageProp` 整树重渲染导致图片错位），工具栏 padding 直接联动 `topAvoidHeight`。
 - **连续滚动稳定**：外层 `Scroll`（pinch 缩放 + 缩放态平移）+ 内层 `List`（`cachedCount` + 嵌套滚动 PARENT_FIRST）；`onDidZoom` 写普通字段避免逐帧重渲；锚点 `scrollToIndex` + 80/400ms 两次重校；护栏期间屏蔽页码上报；进度 500ms 防抖落盘、退出前强制 flush。
 - **expandSafeArea 整链**：图片 → 占位 Column → ListItem → 内层 List 全链设置，且滚动容器必须 `clip(false)`，否则出现避让缺口。
-- 阅读器 PixelMap LRU 缓存 12 张，诊断日志 TAG=`ReaderPage`（`fetchMs` / `totalMs` / `strip anchor`…）。
+- 阅读器 PixelMap LRU 缓存（12 张 / 96MB 预算），诊断日志 TAG=`ReaderPage`（`fetchMs` / `totalMs` / `strip anchor`…）。
 
 ### 4. 列表渲染性能 —— LazyForEach 与 ArrayDataSource
 
@@ -277,7 +271,7 @@ URL → Network.getBytes(http 栈) → 魔数嗅探(looksLikeImage)
 
 ### 7. Database / Settings —— 持久化
 
-- SQLite `pica_comic.db`（S1）7 张表：`history`（阅读进度与作者，author 列幂等迁移）、`downloads`（下载记录）、`follows`（追更）、`comments`（评论缓存）、`download_chapters`（下载章节）、`comic_cache`（详情缓存，评论为多页 v2 包装）、`image_cache`（图片持久缓存元数据，含漫画归因），`Database.init` 后 `CREATE TABLE IF NOT EXISTS`。
+- SQLite `pica_comic.db`（S1）5 张表：`history`（阅读进度与作者，author 列幂等迁移）、`downloads`（下载记录）、`download_chapters`（下载章节）、`comic_cache`（详情缓存，评论为多页 v2 包装）、`image_cache`（图片持久缓存元数据，含漫画归因），`Database.init` 后 `CREATE TABLE IF NOT EXISTS`，并为历史/下载/缓存热查询建立索引。
 - `Settings.ets` 封装 preferences：深色 / 主题色 / 语言 / 阅读相关 / JM 域名与账号等键值（`SettingsKeys` 统一定义）。
 
 ### 8. ThemeManager 与国际化
@@ -298,7 +292,7 @@ URL → Network.getBytes(http 栈) → 魔数嗅探(looksLikeImage)
       └─ 域名选择：内置 → 远端(密文, 24h 缓存) → 回退列表
   → Network.get/post（@ohos.net.http）
   → 响应 data(Base64) → AES256-ECB 解密 → 去尾部 padding → JSON.parse
-  → Model（Comic/Chapter/Comment/ComicPageData…）
+  → Model（Comic/Chapter…）
   → 回写 @State 或 new ArrayDataSource(data) / addAll
   → LazyForEach 局部刷新 → UI
 ```
@@ -317,8 +311,8 @@ ReaderImage(onAppear/预热窗口)
 **③ 持久化流**
 
 ```
-写：收藏 / 历史 / 追更 / 下载 / 评论操作 → Database(SQLite pica_comic.db)
-    阅读进度 → strip 500ms 防抖 + 退出 flush → Database.insertHistory
+写：收藏 / 历史 / 下载操作 → Database(SQLite pica_comic.db)
+    阅读进度 → strip 500ms 防抖 + 退出 flush → Database.updateReadingProgress
     设置项 / 收藏与发现列表首屏 → Settings(preferences；列表走 ListCache)
 读：启动 LaunchPage → Database.queryHistory() 预热 → MainPage 各 Tab 按需查询
     收藏 / 发现页 → ListCache 先展示首屏缓存 → 后台请求刷新
@@ -330,7 +324,7 @@ ReaderImage(onAppear/预热窗口)
 ```
 NavUtil.push('comicDetail', { comicId, title, source })
   → router_map.json 解析 → buildFunction 构建 NavDestination
-  → 页面内再 push（reader / comments / settings / follows …）
+  → 页面内再 push（reader / comments / settings …）
   → back 栈逐层返回；底部 Tab 由 MainPage(Swiper + TabBar) 承载
 ```
 

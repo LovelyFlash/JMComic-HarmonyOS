@@ -35,35 +35,34 @@
 ```
 ohos/entry/src/main/ets/
 ├── common/
-│   ├── Constants.ets      -- ApiConstants（JM 密钥/域名/UA）、SettingsKeys、DatabaseConstants
+│   ├── Constants.ets      -- ApiConstants（JM 密钥/域名/UA）、SettingsKeys、UI 令牌
+│   ├── ChineseConversion.ets -- 繁转简全局开关
 │   ├── JmImage.ets        -- JM 图片管线：请求头、魔数嗅探、分段数、decode、recombine（反打乱）
 │   ├── Network.ets        -- HTTP 封装：get/getWithStatus/getBytes/getBytesViaDownload/post
-│   ├── Logger.ets         -- hilog 封装（LogLevel 级别控制、describe/exception、崩溃捕获；TAG 过滤：JmApi/JmImage/ReaderImage/ReaderPage/Network/Database）
+│   ├── Logger.ets         -- hilog 封装（默认 INFO、LogLevel 级别控制、describe/exception、崩溃捕获）
 │   ├── ThemeManager.ets   -- 深色策略 + 主题色（UI 颜色一律走 $r 资源令牌）
 │   ├── Translations.ets   -- 中英文案
-│   ├── ReadingConfig.ets  -- 阅读配置
+│   ├── ReadingConfig.ets  -- 阅读配置（批量写入 preferences）
 │   ├── NavUtil.ets        -- 导航工具
 │   ├── Changelog.ets      -- 应用内更新日志数据（ReleaseNote 倒序，关于页展示）
 │   ├── ToastUtil.ets      -- Toast 统一封装（UIContext.getPromptAction）
-│   └── ArrayDataSource.ets-- LazyForEach 数据源
+│   └── ArrayDataSource.ets-- LazyForEach 数据源（批量追加 onDatasetChange）
 ├── data/
 │   ├── api/JmApi.ets      -- 禁漫 API 客户端（token/data 加解密对照 jm_toolkit.py）
 │   ├── api/ImgLineSpeedTest.ets -- 图片线路测速与自动切换（并发探测最快图床，启动/兜底/手动三触发）
-│   ├── database/Database.ets   -- SQLite（pica_comic.db: history/downloads/follows/comments/download_chapters/comic_cache/image_cache）
+│   ├── database/Database.ets   -- SQLite（pica_comic.db：history/downloads/download_chapters/comic_cache/image_cache + 热查询索引）
 │   ├── download/DownloadManager.ets -- 章节下载队列（后台任务/页级进度/暂停重试/离线页列表）
 │   ├── cache/DetailCache.ets -- 已下载漫画详情/封面/评论本地缓存（详情页秒开）
 │   ├── cache/ImageCache.ets -- 图片持久磁盘缓存（URL→字节，先缓存后网络写穿；仅超挡位上限淘汰，页图先于缩略图，阅读中漫画 pin 保护）
 │   ├── cache/ListCache.ets -- 收藏/发现列表首屏 JSON 缓存（收藏夹+首屏漫画、发现主页分区+最新首屏，冷启动先展示后刷新）
 │   ├── cache/CacheManager.ets -- 缓存占用统计/上限挡位分阶段淘汰（含 pin 保护）/清理（设置页缓存管理）
-│   ├── model/             -- Comic, Chapter, Comment, ComicPageData, ReaderParam
+│   ├── model/             -- Comic, Chapter, ReaderParam
 │   └── preferences/Settings.ets -- 键值存储
-├── viewmodel/AppData.ets  -- 全局状态
 ├── components/
 │   ├── ReaderImage.ets    -- 阅读器图片（下载→解码→反打乱→LRU 缓存，失败可重试）
 │   ├── NetworkImage.ets   -- 普通网络图片（封面等，无需反打乱）
 │   ├── SearchBar.ets      -- 统一搜索栏（按钮态/输入态 + 系统材质 + 可选排序下拉，首页/搜索入口/搜索结果页共用）
-│   ├── ComicTile/ComicGrid/AppIcon
-│   └── SettingItem/SettingSection/SettingSwitch/SettingSelect/SettingCommon/SettingCheckItem/SettingInfoItem
+│   └── SettingItem/SettingSwitch/SettingSelect/SettingCommon/SettingCheckItem/SettingInfoItem
 ├── pages/
 │   ├── MainPage.ets       -- 底部 Tab 主页
 │   ├── LaunchPage.ets     -- 启动页（首帧 + 历史数据预热 + 600ms 最短展示，main_pages 首位）
@@ -206,7 +205,7 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 - **分段数 getSegmentationNum**: `aid < scrambleId → 0`；`< 268850 → 10`；否则 md5(`aid+文件名去扩展名`) 的**末字符取 ASCII 码（ord）**，`< 421926 → ord%10*2+2`，否则 `ord%8*2+2`
 - **反打乱 recombine**: 对齐 `decode_and_save` / `_segmentationPicture` / `stitch_img`——源图按 `floor(h/num)` 切段，末段附带 `h%num` 余数行；目标图从末段开始**整段逆序**贴合，**段内不旋转**；全量 `readAllPixelsToBuffer` 后 `createPixelMapFromPixels` 重建（显式 `srcPixelFormat: RGBA_8888`）
 - **注意**: `createPixelMap()` 默认 `editable: false`，`writePixels` 会失败 —— 不要对解码产物原地写像素，必须重建
-- **缓存**: ReaderImage 内置 LRU（12 张 PixelMap，按 URL）
+- **缓存**: ReaderImage 内置像素 LRU（12 张 / 96MB 预算，按 URL）
 - **GIF**: 跳过反打乱直接 `Image(url)` 显示
 
 ## 阅读器工程要点（ReaderPage.ets + ReaderImage.ets）

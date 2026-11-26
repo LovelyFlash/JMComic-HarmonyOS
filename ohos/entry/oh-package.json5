@@ -2,6 +2,5 @@
   "name": "entry",
   "version": "1.0.0",
   "description": "JMComic HarmonyOS entry module",
-  "main": "Index.ets",
   "dependencies": {}
 }
