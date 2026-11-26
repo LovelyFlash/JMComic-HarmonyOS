@@ -177,8 +177,19 @@ export struct ComicDetailPage {
       if (this.source !== 'jm') {
         return;
       }
+      const favBefore: boolean = this.isFavorite;
+      const likeBefore: boolean = this.isLiked;
       const fresh: Comic = await JmApi.getComicInfo(this.comicId);
+      // 请求期间用户可能已经点了收藏/点赞：不能被迟到的详情响应覆盖
+      const favAfter: boolean = this.isFavorite;
+      const likeAfter: boolean = this.isLiked;
       this.applyDetail(fresh);
+      if (favAfter !== favBefore) {
+        this.isFavorite = favAfter;
+      }
+      if (likeAfter !== likeBefore) {
+        this.isLiked = likeAfter;
+      }
       await this.applyRelated(fresh, true);
       await Database.insertHistory(this.comicId, this.title, fresh.coverUrl, this.source, '', 0,
         fresh.author);
