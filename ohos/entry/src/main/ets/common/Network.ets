@@ -334,11 +334,9 @@ export class Network {
       });
       task!.on('fail', (err: number) => {
         Logger.error(TAG, `download task fail: ${err}, ${url}`);
-        try {
-          fs.unlinkSync(filePath);
-        } catch (e) {
+        fs.unlink(filePath).catch((e: Object) => {
           Logger.debug(TAG, `unlink temp file failed: ${Logger.describe(e)}`);
-        }
+        });
         task!.delete().catch(() => {
         });
         finish(null);

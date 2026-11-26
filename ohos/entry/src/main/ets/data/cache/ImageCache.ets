@@ -129,9 +129,12 @@ export class ImageCache {
     }
     try {
       const dir: string = `${ImageCache.ctx.filesDir}/${ImageCache.DIR}`;
-      // mkdirSync 递归模式在目录已存在时也会抛 EEXIST，先探测再建
-      if (!fs.accessSync(dir)) {
-        fs.mkdirSync(dir, true);
+      // mkdir 递归模式在目录已存在时也会抛 EEXIST，先探测再建；并发创建失败由后续 open 兜底
+      try {
+        if (!await fs.access(dir)) {
+          await fs.mkdir(dir, true);
+        }
+      } catch (e) {
       }
       const file: fs.File = await fs.open(path,
         fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
@@ -181,8 +184,8 @@ export class ImageCache {
     for (const row of rows) {
       try {
         const path: string = ImageCache.pathOf(row.key);
-        if (path.length > 0 && fs.accessSync(path)) {
-          fs.unlinkSync(path);
+        if (path.length > 0 && await fs.access(path)) {
+          await fs.unlink(path);
         }
       } catch (e) {
         Logger.warn(TAG, `removeByComic unlink failed: ${row.key} ${Logger.describe(e)}`);
@@ -231,7 +234,7 @@ export class ImageCache {
       return mem;
     }
     // ② 已下载优先：该漫画的本地封面文件命中即用（无需网络/磁盘缓存，离线可显示）
-    const localBytes: Uint8Array | null = ImageCache.readLocalCover(comicId);
+    const localBytes: Uint8Array | null = await ImageCache.readLocalCover(comicId);
     if (localBytes !== null) {
       try {
         const lpm: image.PixelMap = await JmImage.decode(localBytes, ImageCache.COVER_MAX_EDGE);
@@ -268,25 +271,32 @@ export class ImageCache {
   }
 
   /** 读已下载漫画的本地封面文件（路径由 DetailCache 确定性推导；不存在/读失败返回 null） */
-  private static readLocalCover(comicId: string): Uint8Array | null {
-    const path: string = DetailCache.localCoverPath(comicId);
+  private static async readLocalCover(comicId: string): Promise<Uint8Array | null> {
+    const path: string = await DetailCache.localCoverPathAsync(comicId);
     if (path.length === 0) {
       return null;
     }
+    let file: fs.File | null = null;
     try {
-      const stat: fs.Stat = fs.statSync(path);
+      const stat: fs.Stat = await fs.stat(path);
       const buf: ArrayBuffer = new ArrayBuffer(stat.size);
-      const file: fs.File = fs.openSync(path, fs.OpenMode.READ_ONLY);
-      try {
-        fs.readSync(file.fd, buf);
-      } finally {
-        fs.closeSync(file);
+      file = await fs.open(path, fs.OpenMode.READ_ONLY);
+      const read: number = await fs.read(file.fd, buf);
+      if (read <= 0) {
+        return null;
       }
-      const bytes: Uint8Array = new Uint8Array(buf);
+      const bytes: Uint8Array = new Uint8Array(buf, 0, read);
       return JmImage.looksLikeImage(bytes) ? bytes : null;
     } catch (e) {
       Logger.debug(TAG, `read local cover failed: ${Logger.describe(e)}`);
       return null;
+    } finally {
+      if (file !== null) {
+        try {
+          await fs.close(file);
+        } catch (e) {
+        }
+      }
     }
   }
 
@@ -317,7 +327,7 @@ export class ImageCache {
     if (ImageCache.memGet(url) !== undefined) {
       return true;
     }
-    if (comicId.length > 0 && DetailCache.localCoverPath(comicId).length > 0) {
+    if (comicId.length > 0 && (await DetailCache.localCoverPathAsync(comicId)).length > 0) {
       return true;
     }
     const key: string = JmApi.md5Hex(url);
@@ -330,7 +340,7 @@ export class ImageCache {
     }
     const path: string = ImageCache.pathOf(key);
     try {
-      return path.length > 0 && fs.accessSync(path);
+      return path.length > 0 && await fs.access(path);
     } catch (e) {
       return false;
     }
@@ -381,8 +391,8 @@ export class ImageCache {
       }
       try {
         const path: string = ImageCache.pathOf(row.key);
-        if (path.length > 0 && fs.accessSync(path)) {
-          fs.unlinkSync(path);
+        if (path.length > 0 && await fs.access(path)) {
+          await fs.unlink(path);
         }
       } catch (e) {
         Logger.warn(TAG, `unlink failed: ${row.key} ${Logger.describe(e)}`);
@@ -426,8 +436,8 @@ export class ImageCache {
     if (ImageCache.ctx !== null) {
       const dir: string = `${ImageCache.ctx.filesDir}/${ImageCache.DIR}`;
       try {
-        if (fs.accessSync(dir)) {
-          fs.rmdirSync(dir);
+        if (await fs.access(dir)) {
+          await fs.rmdir(dir);
         }
       } catch (e) {
         Logger.warn(TAG, `remove dir failed: ${Logger.describe(e)}`);

@@ -44,12 +44,13 @@ export class DetailCache {
 
   /** 封面自愈：本地文件缺失时（旧版本下载）后台补抓一次，已有文件直接跳过 */
   static async ensureCover(comicId: string, coverUrl: string): Promise<void> {
-    if (comicId.length === 0 || coverUrl.length === 0 || DetailCache.localCoverPath(comicId).length > 0) {
+    if (comicId.length === 0 || coverUrl.length === 0 ||
+      (await DetailCache.localCoverPathAsync(comicId)).length > 0) {
       return;
     }
     const bytes: Uint8Array | null = await DetailCache.fetchImage(coverUrl);
     if (bytes !== null) {
-      DetailCache.writeCover(comicId, bytes);
+      await DetailCache.writeCover(comicId, bytes);
       Logger.info(TAG, `cover healed ${comicId} len=${bytes.length}`);
     }
   }
@@ -315,6 +316,19 @@ export class DetailCache {
     }
   }
 
+  /** 封面本地路径异步版：供异步链路探测，避免 UI 线程同步 access */
+  static async localCoverPathAsync(comicId: string): Promise<string> {
+    if (DetailCache.ctx === null || comicId.length === 0) {
+      return '';
+    }
+    const path: string = `${DetailCache.ctx.filesDir}/${ROOT_DIR}/detail/${comicId}/cover`;
+    try {
+      return await fs.access(path) ? path : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
   /** 删除整本缓存：DB 行 + 封面目录（下载删除时一并调用） */
   static async remove(comicId: string, source: string): Promise<void> {
     await Database.removeComicCache(comicId, source);
@@ -323,8 +337,8 @@ export class DetailCache {
     }
     const dir: string = `${DetailCache.ctx.filesDir}/${ROOT_DIR}/detail/${comicId}`;
     try {
-      if (fs.accessSync(dir)) {
-        fs.rmdirSync(dir);
+      if (await fs.access(dir)) {
+        await fs.rmdir(dir);
       }
     } catch (e) {
       Logger.warn(TAG, `remove cover dir failed: ${dir} ${Logger.describe(e)}`);
@@ -343,7 +357,7 @@ export class DetailCache {
     row.commentsJson = JSON.stringify(wrapper);
     row.commentMaxPage = maxPage > 0 ? maxPage : 1;
     if (coverBytes !== null) {
-      DetailCache.writeCover(comic.id, coverBytes);
+      await DetailCache.writeCover(comic.id, coverBytes);
     }
     await Database.upsertComicCache(row);
   }
@@ -364,32 +378,35 @@ export class DetailCache {
     return row;
   }
 
-  private static writeCover(comicId: string, bytes: Uint8Array): void {
+  private static async writeCover(comicId: string, bytes: Uint8Array): Promise<void> {
     if (DetailCache.ctx === null || comicId.length === 0) {
       return;
     }
     const dir: string = `${DetailCache.ctx.filesDir}/${ROOT_DIR}/detail/${comicId}`;
     const path: string = `${dir}/cover`;
     try {
-      // mkdirSync 递归模式在目录已存在时也会抛 EEXIST，先探测再建
-      if (!fs.accessSync(dir)) {
-        fs.mkdirSync(dir, true);
+      // mkdir 递归模式在目录已存在时也会抛 EEXIST，先探测再建；并发创建失败由后续 open 兜底
+      try {
+        if (!await fs.access(dir)) {
+          await fs.mkdir(dir, true);
+        }
+      } catch (e) {
       }
-      const file: fs.File = fs.openSync(path,
+      const file: fs.File = await fs.open(path,
         fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
       try {
         let offset: number = 0;
         while (offset < bytes.byteLength) {
           const buf: ArrayBuffer = bytes.buffer.slice(bytes.byteOffset + offset,
             bytes.byteOffset + bytes.byteLength);
-          const written: number = fs.writeSync(file.fd, buf);
+          const written: number = await fs.write(file.fd, buf);
           if (written <= 0) {
             throw new Error('write returned 0');
           }
           offset += written;
         }
       } finally {
-        fs.closeSync(file);
+        await fs.close(file);
       }
     } catch (e) {
       Logger.warn(TAG, `write cover failed: ${comicId} ${Logger.describe(e)}`);
