@@ -145,14 +145,14 @@ export class DownloadManager {
     return `${DownloadManager.filesRoot}/${chapterId}`;
   }
 
-  /** 解析已下载图片的本地路径：主根命中 → 旧根回退 → 都无返回 ''（迁移窗口期回读靠旧根） */
-  static localHit(url: string): string {
+  /** 解析已下载图片的本地路径（异步探测）：主根命中 → 旧根回退 → 都无返回 ''（迁移窗口期回读靠旧根） */
+  static async localHit(url: string): Promise<string> {
     const primary: string = DownloadManager.localPathFor(url);
-    if (primary.length > 0 && DownloadManager.localExists(primary)) {
+    if (primary.length > 0 && await DownloadManager.existsAsync(primary)) {
       return primary;
     }
     const legacy: string = DownloadManager.pathFor(url, DownloadManager.legacyRoot);
-    if (legacy.length > 0 && legacy !== primary && DownloadManager.localExists(legacy)) {
+    if (legacy.length > 0 && legacy !== primary && await DownloadManager.existsAsync(legacy)) {
       return legacy;
     }
     return '';
@@ -512,7 +512,7 @@ export class DownloadManager {
       paths.push(stored.localDir);
     }
     for (const path of paths) {
-      DownloadManager.removeDirQuiet(path);
+      await DownloadManager.removeDirQuiet(path);
     }
     await Database.removeChapterTask(chapterId, comicId);
     DownloadManager.notify();
@@ -571,6 +571,18 @@ export class DownloadManager {
     }
   }
 
+  /** 异步存在性探测（失败按不存在处理） */
+  private static async existsAsync(path: string): Promise<boolean> {
+    if (path.length === 0) {
+      return false;
+    }
+    try {
+      return await fs.access(path);
+    } catch (e) {
+      return false;
+    }
+  }
+
   static async readLocal(path: string): Promise<Uint8Array | null> {
     if (path.length === 0) {
       return null;
@@ -605,7 +617,7 @@ export class DownloadManager {
   }
 
   /** 下载启动时把章节页 URL 列表写入 pages.json（离线阅读兜底），失败不阻断下载 */
-  private static writePagesFile(localDir: string, urls: string[]): void {
+  private static async writePagesFile(localDir: string, urls: string[]): Promise<void> {
     if (localDir.length === 0) {
       return;
     }
@@ -617,29 +629,22 @@ export class DownloadManager {
         bytes[i] = text.charCodeAt(i) & 0xFF;
       }
       const path: string = `${localDir}/${DownloadManager.PAGES_FILE}`;
-      const file: fs.File = fs.openSync(path,
-        fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
-      try {
-        const buf: ArrayBuffer = bytes.buffer.slice(0);
-        fs.writeSync(file.fd, buf);
-      } finally {
-        fs.closeSync(file);
-      }
+      await DownloadManager.writeBuffer(path, bytes);
     } catch (e) {
       Logger.warn(TAG, `write pages.json failed: ${localDir} ${Logger.describe(e)}`);
     }
   }
 
   /** 章节目录候选（主根优先、旧沙箱根在后，仅含实际存在的；读取/回填/删除遍历用） */
-  private static existingChapterDirs(chapterId: string): string[] {
+  private static async existingChapterDirs(chapterId: string): Promise<string[]> {
     const out: string[] = [];
     const primary: string = DownloadManager.chapterDir(chapterId);
-    if (primary.length > 0 && DownloadManager.localExists(primary)) {
+    if (primary.length > 0 && await DownloadManager.existsAsync(primary)) {
       out.push(primary);
     }
     if (DownloadManager.legacyRoot.length > 0 && DownloadManager.legacyRoot !== DownloadManager.filesRoot) {
       const legacy: string = `${DownloadManager.legacyRoot}/${chapterId}`;
-      if (DownloadManager.localExists(legacy)) {
+      if (await DownloadManager.existsAsync(legacy)) {
         out.push(legacy);
       }
     }
@@ -647,13 +652,13 @@ export class DownloadManager {
   }
 
   /** 在线取章成功后回填 pages.json（旧版本下载的章节补写离线页列表）；章节目录不存在=未下载，跳过 */
-  static cacheChapterPages(chapterId: string, urls: string[]): void {
+  static async cacheChapterPages(chapterId: string, urls: string[]): Promise<void> {
     if (DownloadManager.filesRoot.length === 0 || chapterId.length === 0 || urls.length === 0) {
       return;
     }
-    const dirs: string[] = DownloadManager.existingChapterDirs(chapterId);
+    const dirs: string[] = await DownloadManager.existingChapterDirs(chapterId);
     for (const dir of dirs) {
-      DownloadManager.writePagesFile(dir, urls);
+      await DownloadManager.writePagesFile(dir, urls);
     }
   }
 
@@ -662,7 +667,7 @@ export class DownloadManager {
     if (DownloadManager.filesRoot.length === 0 || chapterId.length === 0) {
       return [];
     }
-    const dirs: string[] = DownloadManager.existingChapterDirs(chapterId);
+    const dirs: string[] = await DownloadManager.existingChapterDirs(chapterId);
     for (const dir of dirs) {
       const urls: string[] = await DownloadManager.readPagesFile(dir);
       if (urls.length > 0) {
@@ -740,7 +745,7 @@ export class DownloadManager {
         await Database.updateChapterTask(task);
       }
       DownloadManager.ensureDir(task.localDir);
-      DownloadManager.writePagesFile(task.localDir, urls);
+      await DownloadManager.writePagesFile(task.localDir, urls);
       let failed: boolean = false;
       for (let i: number = 0; i < urls.length; i++) {
         if (task.status !== ChapterDlStatus.RUNNING) {
@@ -749,7 +754,7 @@ export class DownloadManager {
         const url: string = urls[i];
         const dest: string = DownloadManager.localPathFor(url);
         // 已存在（含迁移窗口期还在旧沙箱根的同名文件）直接跳过，避免重复下载
-        let ok: boolean = dest.length > 0 && DownloadManager.localHit(url).length > 0;
+        let ok: boolean = dest.length > 0 && (await DownloadManager.localHit(url)).length > 0;
         if (!ok && dest.length > 0) {
           ok = await DownloadManager.savePage(url, dest);
           if (!ok) {
@@ -796,7 +801,7 @@ export class DownloadManager {
         return false;
       }
       if (JmImage.isGif(url)) {
-        DownloadManager.writeBuffer(tmp, bytes);
+        await DownloadManager.writeBuffer(tmp, bytes);
       } else {
         let pm: image.PixelMap | null = await JmImage.decode(bytes, 0);
         let combined: image.PixelMap | null = null;
@@ -806,7 +811,7 @@ export class DownloadManager {
           pm = null;
           const opts: image.PackingOption = { format: 'image/jpeg', quality: PACK_QUALITY };
           const out: ArrayBuffer = await packer.packToData(combined, opts);
-          DownloadManager.writeBuffer(tmp, new Uint8Array(out));
+          await DownloadManager.writeBuffer(tmp, new Uint8Array(out));
         } finally {
           packer.release();
           if (combined !== null) {
@@ -816,11 +821,11 @@ export class DownloadManager {
           }
         }
       }
-      fs.renameSync(tmp, dest);
+      await fs.rename(tmp, dest);
       return true;
     } catch (e) {
       Logger.error(TAG, `save page failed: ${url} ${Logger.describe(e)}`);
-      DownloadManager.removeFileQuiet(tmp);
+      await DownloadManager.removeFileQuiet(tmp);
       return false;
     }
   }
@@ -1038,41 +1043,41 @@ export class DownloadManager {
     }
   }
 
-  private static writeBuffer(path: string, data: Uint8Array): void {
+  private static async writeBuffer(path: string, data: Uint8Array): Promise<void> {
     try {
-      const file: fs.File = fs.openSync(path,
+      const file: fs.File = await fs.open(path,
         fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
       try {
         let offset: number = 0;
         while (offset < data.byteLength) {
           const buf: ArrayBuffer = data.buffer.slice(data.byteOffset + offset, data.byteOffset + data.byteLength);
-          const written: number = fs.writeSync(file.fd, buf);
+          const written: number = await fs.write(file.fd, buf);
           if (written <= 0) {
             throw new Error('write returned 0');
           }
           offset += written;
         }
       } finally {
-        fs.closeSync(file);
+        await fs.close(file);
       }
     } catch (e) {
       throw new Error(`writeBuffer failed: ${Logger.describe(e)}`);
     }
   }
 
-  private static removeFileQuiet(path: string): void {
+  private static async removeFileQuiet(path: string): Promise<void> {
     try {
-      if (DownloadManager.localExists(path)) {
-        fs.unlinkSync(path);
+      if (await DownloadManager.existsAsync(path)) {
+        await fs.unlink(path);
       }
     } catch (e) {
     }
   }
 
-  private static removeDirQuiet(path: string): void {
+  private static async removeDirQuiet(path: string): Promise<void> {
     try {
-      if (path.length > 0 && DownloadManager.localExists(path)) {
-        fs.rmdirSync(path);
+      if (await DownloadManager.existsAsync(path)) {
+        await fs.rmdir(path);
       }
     } catch (e) {
     }

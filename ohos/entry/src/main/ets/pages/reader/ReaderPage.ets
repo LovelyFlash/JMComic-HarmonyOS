@@ -1234,8 +1234,10 @@ export struct ReaderPage {
         try {
           const ch: Chapter = await JmApi.getChapter(chapterId);
           imgs = ch.imageUrls;
-          // 已下载章节在线取章成功后回填 pages.json（旧版本下载缺失时的离线兑底）
-          DownloadManager.cacheChapterPages(chapterId, imgs);
+          // 已下载章节在线取章成功后回填 pages.json（旧版本下载缺失时的离线兜底），后台写不阻塞渲染
+          DownloadManager.cacheChapterPages(chapterId, imgs).catch((e: Object) => {
+            Logger.warn('ReaderPage', `backfill pages.json failed: ${Logger.describe(e)}`);
+          });
         } catch (e) {
           // 联网失败回退本地（上面已查过一次，双保险）
           imgs = await DownloadManager.readChapterPages(chapterId);

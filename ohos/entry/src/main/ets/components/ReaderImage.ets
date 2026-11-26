@@ -72,7 +72,7 @@ export struct ReaderImage {
       return;
     }
     if (JmImage.isGif(url)) {
-      const hit: string = DownloadManager.localHit(url);
+      const hit: string = await DownloadManager.localHit(url);
       this.rawUrl = hit.length > 0 ? fileUri.getUriFromPath(hit) : url;
       this.useRaw = true;
       return;

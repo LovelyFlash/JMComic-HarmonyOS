@@ -242,6 +242,7 @@ URL → Network.getBytes(http 栈) → 魔数嗅探(looksLikeImage)
 - **状态栏全程隐藏**：进入后 400ms（跨过 push 转场）隐藏、退出恢复，世代号 `statusBarGen` 防乱序；打开工具栏 / 半模态**不恢复**状态栏（恢复会回写 `topAvoidHeight` → `@StorageProp` 整树重渲染导致图片错位），工具栏 padding 直接联动 `topAvoidHeight`。
 - **连续滚动稳定**：外层 `Scroll`（pinch 缩放 + 缩放态平移）+ 内层 `List`（`cachedCount` + 嵌套滚动 PARENT_FIRST）；`onDidZoom` 写普通字段避免逐帧重渲；锚点 `scrollToIndex` + 80/400ms 两次重校；护栏期间屏蔽页码上报；进度 500ms 防抖落盘、退出前强制 flush。
 - **expandSafeArea 整链**：图片 → 占位 Column → ListItem → 内层 List 全链设置，且滚动容器必须 `clip(false)`，否则出现避让缺口。
+- **热路径 I/O 全异步**：本地命中探测（`localHit`）、`pages.json` 读写、图片原子落盘、封面读写、缓存统计与淘汰统一走 Promise 版 `fs`；仅一次性的旧目录迁移保留同步实现，并主动 `setTimeout(0)` 让出事件循环。
 - 阅读器 PixelMap LRU 缓存（12 张 / 96MB 预算），诊断日志 TAG=`ReaderPage`（`fetchMs` / `totalMs` / `strip anchor`…）。
 
 ### 4. 列表渲染性能 —— LazyForEach 与 ArrayDataSource

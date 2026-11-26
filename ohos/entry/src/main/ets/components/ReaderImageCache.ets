@@ -263,7 +263,7 @@ export class ReaderImageCache {
     }
     // 离线优先：已下载页面直读本地文件（下载时已反打乱并落盘，无需重组）；解码失败则回退网络
     // localHit 含旧沙箱根回退（公共目录迁移窗口期同名文件仍可读）
-    const localPath: string = DownloadManager.localHit(url);
+    const localPath: string = await DownloadManager.localHit(url);
     if (localPath.length > 0) {
       const localBytes: Uint8Array | null = await DownloadManager.readLocal(localPath);
       if (localBytes !== null && localBytes.length > 0) {
