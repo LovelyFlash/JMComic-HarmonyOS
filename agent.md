@@ -162,6 +162,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-verify.ps1
 ```
 七步：文件清单 → 严格 UTF-8/U+FFFD → 版本三处一致性 → base/dark 颜色令牌 → 翻译四段一致性 → router_map/ArkTS/固定数据源规则 → hvigor 构建；任一失败 `exit 1`，全绿才可打包上传 Release。GitHub Actions（`.github/workflows/static-check.yml`）用 `-SkipBuild` 只跑静态检查。
 
+本地单元测试（无需设备，`ohos/entry/src/test`）：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-local.ps1
+```
+
+当前覆盖 `Translations`（中英切换/未知 key）与 `ArrayDataSource`（逐索引追加/替换/清空通知）。
+
 ### 调试工具
 
 ```powershell

@@ -14,3 +14,4 @@ ohos/oh-package-lock.json5
 .deveco/
 ohos/.appanalyzer/
 ohos/.codegenie/
+ohos/entry/.test/

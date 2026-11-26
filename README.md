@@ -373,6 +373,7 @@ NavUtil.push('comicDetail', { comicId, title, source })
 |------|------|
 | `build-verify.ps1` | 文件清单 → 严格 UTF-8/U+FFFD → 版本三处一致性 → base/dark 颜色令牌 → 翻译四段一致性 → router_map 页面与 buildFunction → ArkTS/固定数据源规则 → `hvigorw assembleHap` 构建；任一失败 `exit 1`；`-SkipBuild` 供 CI 只跑静态检查 |
 | `.github/workflows/static-check.yml` | GitHub Actions：每次 push / PR 在 Windows runner 执行 `build-verify.ps1 -SkipBuild` |
+| `test-local.ps1` | 本地 hypium 单元测试（无需设备）：`hvigorw test -p module=entry` |
 | `code-audit.ps1` | 统计 ForEach vs LazyForEach、硬编码色、嵌套三元、emoji 图标、SVG 引用、编码错误等质量指标 |
 
 ## 安装调试
@@ -428,8 +429,12 @@ devecocli ui layout --format json                # UI 树检查
 **1. 环境与本地校验**
 
 ```powershell
-# 仓库根目录：一键校验（编码 / ArkTS / 设计令牌 / 构建）
+# 仓库根目录：一键校验（编码 / 版本 / 颜色 / 翻译 / 路由 / ArkTS / 构建）
 powershell -File scripts\build-verify.ps1
+# 仅静态检查（CI 同款）
+powershell -File scripts\build-verify.ps1 -SkipBuild
+# 本地单元测试（翻译 / ArrayDataSource，无需设备）
+powershell -File scripts\test-local.ps1
 # 代码质量统计
 powershell -File scripts\code-audit.ps1
 ```
