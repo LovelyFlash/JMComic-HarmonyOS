@@ -13,8 +13,8 @@ export enum LogLevel {
 }
 
 export class Logger {
-  /** 全局最低输出级别（排障时调低；正式版可 setLevel(INFO) 降噪） */
-  static minLevel: LogLevel = LogLevel.DEBUG;
+  /** 全局日志级别：发布版默认 INFO（DEBUG 会逐图打印队列/解码日志，影响热路径性能）；排障时用 setLevel(DEBUG) */
+  static minLevel: LogLevel = LogLevel.INFO;
 
   static setLevel(level: LogLevel): void {
     Logger.minLevel = level;
