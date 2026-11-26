@@ -24,12 +24,22 @@ export class ArrayDataSource<T> implements IDataSource {
   }
 
   addAll(data: T[]): void {
+    if (data.length === 0) {
+      return;
+    }
     const start = this.items.length;
     for (let i = 0; i < data.length; i++) {
       this.items.push(data[i]);
     }
+    // 批量追加必须用 onDatasetChange 的 count 语义；只发一次 onDataAdd(start)
+    // 只会通知“新增一项”，分页/评论/连续滚动拼接会出现尾部页不刷新。
+    const operations: DataOperation[] = [{
+      type: DataOperationType.ADD,
+      index: start,
+      count: data.length
+    }];
     for (let i = 0; i < this.listeners.length; i++) {
-      this.listeners[i].onDataAdd(start);
+      this.listeners[i].onDatasetChange(operations);
     }
   }
 
