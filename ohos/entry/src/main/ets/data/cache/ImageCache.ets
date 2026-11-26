@@ -79,28 +79,38 @@ export class ImageCache {
       return null;
     }
     const path: string = ImageCache.pathOf(key);
+    let file: fs.File | null = null;
     try {
-      if (path.length === 0 || !fs.accessSync(path)) {
+      if (path.length === 0 || !await fs.access(path)) {
         Database.removeImageCache(key).catch((e: Object) => {
           Logger.warn(TAG, `remove orphan row failed: ${Logger.describe(e)}`);
         });
         return null;
       }
-      const stat: fs.Stat = fs.statSync(path);
+      const stat: fs.Stat = await fs.stat(path);
+      if (stat.size <= 0) {
+        return null;
+      }
       const buf: ArrayBuffer = new ArrayBuffer(stat.size);
-      const file: fs.File = fs.openSync(path, fs.OpenMode.READ_ONLY);
-      try {
-        fs.readSync(file.fd, buf);
-      } finally {
-        fs.closeSync(file);
+      file = await fs.open(path, fs.OpenMode.READ_ONLY);
+      const read: number = await fs.read(file.fd, buf);
+      if (read <= 0) {
+        return null;
       }
       Database.touchImageCache(key).catch((e: Object) => {
         Logger.debug(TAG, `touch failed: ${Logger.describe(e)}`);
       });
-      return new Uint8Array(buf);
+      return new Uint8Array(buf, 0, read);
     } catch (e) {
       Logger.warn(TAG, `get failed: ${Logger.describe(e)}`);
       return null;
+    } finally {
+      if (file !== null) {
+        try {
+          await fs.close(file);
+        } catch (e) {
+        }
+      }
     }
   }
 
@@ -123,22 +133,22 @@ export class ImageCache {
       if (!fs.accessSync(dir)) {
         fs.mkdirSync(dir, true);
       }
-      const file: fs.File = fs.openSync(path,
+      const file: fs.File = await fs.open(path,
         fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
       try {
-        // writeSync 可能部分写入，按实际返回值推进，避免大图缓存被截断
+        // write 可能部分写入，按实际返回值推进，避免大图缓存被截断
         let offset: number = 0;
         while (offset < bytes.byteLength) {
           const chunk: ArrayBuffer = bytes.buffer.slice(bytes.byteOffset + offset,
             bytes.byteOffset + bytes.byteLength);
-          const written: number = fs.writeSync(file.fd, chunk);
+          const written: number = await fs.write(file.fd, chunk);
           if (written <= 0) {
             throw new Error('write returned 0');
           }
           offset += written;
         }
       } finally {
-        fs.closeSync(file);
+        await fs.close(file);
       }
       const row = new ImageCacheRow();
       row.key = key;

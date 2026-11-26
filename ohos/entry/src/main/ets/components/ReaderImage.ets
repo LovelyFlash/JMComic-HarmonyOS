@@ -269,7 +269,7 @@ export class ReaderImageCache {
     // localHit 含旧沙箱根回退（公共目录迁移窗口期同名文件仍可读）
     const localPath: string = DownloadManager.localHit(url);
     if (localPath.length > 0) {
-      const localBytes: Uint8Array | null = DownloadManager.readLocal(localPath);
+      const localBytes: Uint8Array | null = await DownloadManager.readLocal(localPath);
       if (localBytes !== null && localBytes.length > 0) {
         try {
           const pm: image.PixelMap = await JmImage.decode(localBytes, JmImage.maxEdgeForQuality(quality));

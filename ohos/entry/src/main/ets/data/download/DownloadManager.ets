@@ -571,22 +571,22 @@ export class DownloadManager {
     }
   }
 
-  static readLocal(path: string): Uint8Array | null {
+  static async readLocal(path: string): Promise<Uint8Array | null> {
     if (path.length === 0) {
       return null;
     }
     let file: fs.File | null = null;
     try {
-      if (!fs.accessSync(path)) {
+      if (!await fs.access(path)) {
         return null;
       }
-      const size: number = fs.statSync(path).size;
+      const size: number = (await fs.stat(path)).size;
       if (size <= 0) {
         return null;
       }
-      file = fs.openSync(path, fs.OpenMode.READ_ONLY);
+      file = await fs.open(path, fs.OpenMode.READ_ONLY);
       const buf: ArrayBuffer = new ArrayBuffer(size);
-      const read: number = fs.readSync(file.fd, buf, { offset: 0 });
+      const read: number = await fs.read(file.fd, buf);
       if (read <= 0) {
         return null;
       }
@@ -597,7 +597,7 @@ export class DownloadManager {
     } finally {
       if (file !== null) {
         try {
-          fs.closeSync(file);
+          await fs.close(file);
         } catch (e) {
         }
       }
