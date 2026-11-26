@@ -159,7 +159,7 @@ $env:DEVECO_SDK_HOME = "D:\DevEco Studio\sdk"
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-verify.ps1
 ```
-七步：文件清单 → 严格 UTF-8/U+FFFD → 版本三处一致性 → base/dark 颜色令牌 → 翻译四段一致性 → router_map/ArkTS/固定数据源规则 → hvigor 构建；任一失败 `exit 1`，全绿才可打包上传 Release。
+七步：文件清单 → 严格 UTF-8/U+FFFD → 版本三处一致性 → base/dark 颜色令牌 → 翻译四段一致性 → router_map/ArkTS/固定数据源规则 → hvigor 构建；任一失败 `exit 1`，全绿才可打包上传 Release。GitHub Actions（`.github/workflows/static-check.yml`）用 `-SkipBuild` 只跑静态检查。
 
 ### 调试工具
 

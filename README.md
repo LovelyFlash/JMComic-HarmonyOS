@@ -371,7 +371,8 @@ NavUtil.push('comicDetail', { comicId, title, source })
 
 | 脚本 | 作用 |
 |------|------|
-| `build-verify.ps1` | 文件清单 → 严格 UTF-8/U+FFFD → 版本三处一致性 → base/dark 颜色令牌 → 翻译四段一致性 → router_map 页面与 buildFunction → ArkTS/固定数据源规则 → `hvigorw assembleHap` 构建；任一失败 `exit 1` |
+| `build-verify.ps1` | 文件清单 → 严格 UTF-8/U+FFFD → 版本三处一致性 → base/dark 颜色令牌 → 翻译四段一致性 → router_map 页面与 buildFunction → ArkTS/固定数据源规则 → `hvigorw assembleHap` 构建；任一失败 `exit 1`；`-SkipBuild` 供 CI 只跑静态检查 |
+| `.github/workflows/static-check.yml` | GitHub Actions：每次 push / PR 在 Windows runner 执行 `build-verify.ps1 -SkipBuild` |
 | `code-audit.ps1` | 统计 ForEach vs LazyForEach、硬编码色、嵌套三元、emoji 图标、SVG 引用、编码错误等质量指标 |
 
 ## 安装调试

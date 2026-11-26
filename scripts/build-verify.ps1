@@ -1,6 +1,10 @@
 # PicaComic HarmonyOS - Build Verification Script
-# Usage: .\scripts\build-verify.ps1
+# Usage: .\scripts\build-verify.ps1 [-SkipBuild]
 # Exit code: 0 = all checks/build passed; 1 = any check/build failed.
+
+param(
+    [switch]$SkipBuild
+)
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -199,6 +203,9 @@ try {
 
 # 7. Build
 Write-Host "`n[7/7] Build" -ForegroundColor Yellow
+if ($SkipBuild) {
+    Write-Host "  SKIPPED (-SkipBuild)" -ForegroundColor Yellow
+} else {
 $devEcoHome = $env:DEVECO_HOME
 if ([string]::IsNullOrEmpty($devEcoHome)) {
     foreach ($candidate in @("D:\DevEco Studio", "F:\DevEco Studio")) {
@@ -236,6 +243,7 @@ if ($hvigor -eq "" -or -not (Test-Path $hvigor)) {
     } else {
         Write-Host "  BUILD SUCCESSFUL" -ForegroundColor Green
     }
+}
 }
 
 Write-Host "`n=== Verification Complete ===" -ForegroundColor Cyan
