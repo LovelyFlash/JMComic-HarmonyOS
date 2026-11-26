@@ -126,9 +126,17 @@ export class ImageCache {
       const file: fs.File = fs.openSync(path,
         fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
       try {
-        const ab: ArrayBuffer = bytes.buffer.slice(bytes.byteOffset,
-          bytes.byteOffset + bytes.byteLength);
-        fs.writeSync(file.fd, ab);
+        // writeSync 可能部分写入，按实际返回值推进，避免大图缓存被截断
+        let offset: number = 0;
+        while (offset < bytes.byteLength) {
+          const chunk: ArrayBuffer = bytes.buffer.slice(bytes.byteOffset + offset,
+            bytes.byteOffset + bytes.byteLength);
+          const written: number = fs.writeSync(file.fd, chunk);
+          if (written <= 0) {
+            throw new Error('write returned 0');
+          }
+          offset += written;
+        }
       } finally {
         fs.closeSync(file);
       }

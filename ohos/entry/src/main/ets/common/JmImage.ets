@@ -145,27 +145,29 @@ export class JmImage {
   static async decode(bytes: Uint8Array, maxEdge: number = 0): Promise<image.PixelMap> {
     const data: ArrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
     const source: image.ImageSource = image.createImageSource(data);
-    const opts: image.DecodingOptions = { desiredPixelFormat: image.PixelMapFormat.RGBA_8888 };
-    if (maxEdge > 0) {
-      try {
-        const info: image.ImageInfo = await source.getImageInfo();
-        const w: number = info.size.width;
-        const h: number = info.size.height;
-        const longest: number = Math.max(w, h);
-        if (w > 0 && h > 0 && longest > maxEdge) {
-          const scale: number = maxEdge / longest;
-          opts.desiredSize = {
-            width: Math.max(1, Math.round(w * scale)),
-            height: Math.max(1, Math.round(h * scale))
-          };
+    try {
+      const opts: image.DecodingOptions = { desiredPixelFormat: image.PixelMapFormat.RGBA_8888 };
+      if (maxEdge > 0) {
+        try {
+          const info: image.ImageInfo = await source.getImageInfo();
+          const w: number = info.size.width;
+          const h: number = info.size.height;
+          const longest: number = Math.max(w, h);
+          if (w > 0 && h > 0 && longest > maxEdge) {
+            const scale: number = maxEdge / longest;
+            opts.desiredSize = {
+              width: Math.max(1, Math.round(w * scale)),
+              height: Math.max(1, Math.round(h * scale))
+            };
+          }
+        } catch (e) {
+          Logger.warn(TAG, `getImageInfo for desiredSize failed: ${Logger.describe(e)}`);
         }
-      } catch (e) {
-        Logger.warn(TAG, `getImageInfo for desiredSize failed: ${Logger.describe(e)}`);
       }
+      return await source.createPixelMap(opts);
+    } finally {
+      source.release();
     }
-    const pixelMap: image.PixelMap = await source.createPixelMap(opts);
-    source.release();
-    return pixelMap;
   }
 
   /**
