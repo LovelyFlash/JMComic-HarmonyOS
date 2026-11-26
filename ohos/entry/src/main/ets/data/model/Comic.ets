@@ -28,15 +28,3 @@ export class Comic {
   chapters: Chapter[] = [];
   relatedComics: Comic[] = [];
 }
-
-export class ComicBrief {
-  id: string = '';
-  title: string = '';
-  subTitle: string = '';
-  cover: string = '';
-  author: string = '';
-  tags: string[] = [];
-  pages: number = 0;
-  language: string = '';
-  source: string = '';
-}

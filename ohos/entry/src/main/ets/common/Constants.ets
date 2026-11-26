@@ -50,12 +50,6 @@ export class ApiConstants {
   static readonly APP_NAME = 'JMComic';
 }
 
-export class DatabaseConstants {
-  static readonly DB_NAME = 'pica_comic.db';
-  static readonly TABLE_HISTORY = 'history';
-  static readonly TABLE_DOWNLOADS = 'downloads';
-}
-
 export class SettingsKeys {
   static readonly DARK_MODE = 'darkMode';
   static readonly THEME_COLOR = 'themeColor';
