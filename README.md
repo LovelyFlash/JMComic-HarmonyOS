@@ -173,7 +173,7 @@ JMComic-HarmonyOS/
                 ├── entryability/      -- EntryAbility：窗口配置、状态栏、避让区广播
                 ├── common/            -- 12 个基础模块（见下表）
                 ├── data/
-                │   ├── api/           -- JmApi.ets：禁漫 API 客户端
+                │   ├── api/           -- JmApi.ets：禁漫 API 客户端；JmCrypto.ets：md5/token/base64/AES
                 │   ├── database/      -- Database.ets：SQLite 封装
                 │   ├── download/      -- DownloadManager.ets：章节下载队列（系统下载目录落盘与旧数据迁移、后台任务/进度/离线页列表）
                 │   ├── cache/         -- ImageCache.ets：图片持久缓存（先缓存后网络）；DetailCache.ets：已下载详情/封面/多页评论本地缓存；ListCache.ets：收藏/发现列表首屏缓存；CacheManager.ets：占用统计/挡位淘汰/清理
@@ -211,7 +211,7 @@ JMComic-HarmonyOS/
 
 ### 1. JmApi —— API 客户端与加解密
 
-对照 `jm_toolkit.py` 的 `JmCryptoTool` 与 `jm_config.py` 密钥参数实现：
+加解密实现拆在 `JmCrypto.ets`（md5 / token / base64 / AES），`JmApi` 负责请求、域名与会话。对照 `jm_toolkit.py` 的 `JmCryptoTool` 与 `jm_config.py` 密钥参数实现：
 
 - **请求 token**：普通接口 `md5Hex(time + APP_TOKEN_SECRET)`；`/chapter_view_template` 必须使用 `md5Hex(time + APP_TOKEN_SECRET_2)`，混用会 403。
 - **响应解密**：响应 `data` 字段为 Base64 密文 → key = `md5Hex(time + APP_DATA_SECRET)`（time 与请求头一致）→ AES256-ECB 解密 → 按 Python 语义 `data[:-data[-1]]` 去尾部 padding → UTF-8 解码。

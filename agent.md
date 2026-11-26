@@ -49,7 +49,8 @@ ohos/entry/src/main/ets/
 │   ├── ToastUtil.ets      -- Toast 统一封装（UIContext.getPromptAction）
 │   └── ArrayDataSource.ets-- LazyForEach 数据源（逐索引 onDataAdd 追加）
 ├── data/
-│   ├── api/JmApi.ets      -- 禁漫 API 客户端（token/data 加解密对照 jm_toolkit.py）
+│   ├── api/JmApi.ets      -- 禁漫 API 客户端（请求/域名/会话）
+│   ├── api/JmCrypto.ets   -- JM 加解密（md5/token/base64/AES）
 │   ├── api/ImgLineSpeedTest.ets -- 图片线路测速与自动切换（并发探测最快图床，启动/兜底/手动三触发）
 │   ├── database/Database.ets   -- SQLite（pica_comic.db：history/downloads/download_chapters/comic_cache/image_cache + 热查询索引）
 │   ├── download/DownloadManager.ets -- 章节下载队列（后台任务/页级进度/暂停重试/离线页列表）
