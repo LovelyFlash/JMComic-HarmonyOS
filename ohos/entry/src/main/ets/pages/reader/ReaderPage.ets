@@ -599,6 +599,8 @@ export struct ReaderPage {
   /** 连续模式下无缝拼接下一章：滚动到末尾前提前追加，避免出现边界切换 */
   private async appendNextStripChapter(): Promise<number> {
     if (!this.isStrip() || !this.autoPreloadNext || this.stripAppending || this.stripSegments.length === 0) {
+      Logger.info('ReaderPage', `append skip: strip=${this.isStrip()} auto=${this.autoPreloadNext}` +
+        ` appending=${this.stripAppending} seg=${this.stripSegments.length}`);
       return -1;
     }
     const lastSeg: StripSegment = this.stripSegments[this.stripSegments.length - 1];
@@ -615,23 +617,31 @@ export struct ReaderPage {
     }
     const pages: string[] | undefined = this.preloadPages.get(chapterId);
     if (pages === undefined || pages.length === 0) {
+      Logger.info('ReaderPage', `append waiting preload: nextOrder=${nextOrder} chapterId=${chapterId}`);
       void this.preloadNextChapters();
       return -1;
     }
     this.stripAppending = true;
-    this.preloadPages.delete(chapterId);
-    const cacheIdx: number = this.preloadOrder.indexOf(chapterId);
-    if (cacheIdx >= 0) {
-      this.preloadOrder.splice(cacheIdx, 1);
+    try {
+      this.preloadPages.delete(chapterId);
+      const cacheIdx: number = this.preloadOrder.indexOf(chapterId);
+      if (cacheIdx >= 0) {
+        this.preloadOrder.splice(cacheIdx, 1);
+      }
+      const start: number = this.stripSource.totalCount();
+      this.stripSegments.push(new StripSegment(nextOrder, start, pages));
+      this.stripSource.addAll(pages);
+      this.stripAtEndFlag = false;
+      Logger.info('ReaderPage', `seamless append chapter order=${nextOrder} start=${start} pages=${pages.length}`);
+      return start;
+    } catch (e) {
+      Logger.warn('ReaderPage', `seamless append failed order=${nextOrder}: ${Logger.describe(e)}`);
+      return -1;
+    } finally {
+      // addAll/通知异常时也必须复位，否则后续所有拼接都会被 stripAppending 挡住
+      this.stripAppending = false;
+      void this.preloadNextChapters();
     }
-    const start: number = this.stripSource.totalCount();
-    this.stripSegments.push(new StripSegment(nextOrder, start, pages));
-    this.stripSource.addAll(pages);
-    this.stripAtEndFlag = false;
-    this.stripAppending = false;
-    Logger.info('ReaderPage', `seamless append chapter order=${nextOrder} start=${start} pages=${pages.length}`);
-    void this.preloadNextChapters();
-    return start;
   }
 
   /** 后台预载接下来 N 章（1-2 章）的页列表与首屏图片，切章命中缓存即可无缝衔接 */
@@ -680,9 +690,14 @@ export struct ReaderPage {
       const lastOrder: number = this.stripSegments[this.stripSegments.length - 1].order;
       const nextId: string = this.nextChapterIdAfter(lastOrder);
       const nearEnd: boolean = this.stripTotalCount() - this.currentIndex <= 3;
+      Logger.info('ReaderPage', `preload check: idx=${this.currentIndex} total=${this.stripTotalCount()}` +
+        ` seg=${this.stripSegments.length} next=${nextId} has=${this.preloadPages.has(nextId)} nearEnd=${nearEnd}`);
       if (nextId.length > 0 && nearEnd && this.preloadPages.has(nextId)) {
         void this.appendNextStripChapter();
       }
+    } else {
+      Logger.info('ReaderPage', `preload check skipped: strip=${this.isStrip()} auto=${this.autoPreloadNext}` +
+        ` seg=${this.stripSegments.length} alive=${this.alive}`);
     }
   }
 
@@ -1503,6 +1518,7 @@ export struct ReaderPage {
       .onReachEnd(() => {
         this.stripAtEndFlag = true;
         this.stripAtStartFlag = false;
+        Logger.info('ReaderPage', `strip reach end idx=${this.currentIndex} total=${this.stripTotalCount()}`);
       })
       .onScrollStop(() => {
         this.scheduleStripScrollBarHide();
@@ -1552,6 +1568,7 @@ export struct ReaderPage {
             this.stripEdgePull = 0;
             this.stripEdgeDirection = 0;
             this.stripEdgeReady = false;
+            Logger.info('ReaderPage', `strip scroll release: idx=${this.currentIndex} total=${this.stripTotalCount()}`);
             return new ScrollFrameOffset(offset);
           }
           if (!this.stripTouchActive) {
