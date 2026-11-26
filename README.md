@@ -153,7 +153,7 @@ JMComic HarmonyOS 是一款运行在 HarmonyOS NEXT 上的单漫画源（JM）�
 JMComic-HarmonyOS/
 ├── README.md / LICENSE / agent.md     -- 项目文档（agent.md 为开发规范与工程要点）
 ├── scripts/
-│   ├── build-verify.ps1               -- 构建验证：文件清单 → 编码 → ArkTS 合规 → 设计令牌 → hvigor 构建
+│   ├── build-verify.ps1               -- 构建验证：文件 → UTF-8 → 版本/颜色/翻译/路由一致性 → ArkTS/数据源规则 → hvigor
 │   └── code-audit.ps1                 -- 代码质量审计：ForEach/LazyForEach、硬编码色、any、emoji 图标等统计
 └── ohos/                              -- DevEco 工程根（构建在此执行）
     ├── AppScope/
@@ -371,7 +371,7 @@ NavUtil.push('comicDetail', { comicId, title, source })
 
 | 脚本 | 作用 |
 |------|------|
-| `build-verify.ps1` | 文件清单 → 编码损坏检查（U+FFFD）→ ArkTS 合规（any/unknown/V2+StorageLink）→ 设计令牌（禁止 `isDarkMode ? '#'` 硬编码）→ `hvigorw assembleHap` 构建，出现 `ArkTS:ERROR` 即失败 |
+| `build-verify.ps1` | 文件清单 → 严格 UTF-8/U+FFFD → 版本三处一致性 → base/dark 颜色令牌 → 翻译四段一致性 → router_map 页面与 buildFunction → ArkTS/固定数据源规则 → `hvigorw assembleHap` 构建；任一失败 `exit 1` |
 | `code-audit.ps1` | 统计 ForEach vs LazyForEach、硬编码色、嵌套三元、emoji 图标、SVG 引用、编码错误等质量指标 |
 
 ## 安装调试

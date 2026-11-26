@@ -1,7 +1,8 @@
 # PicaComic HarmonyOS - Code Quality Audit
 # Usage: .\scripts\code-audit.ps1
 
-$etsRoot = "F:\Programming\Code\VS_Code\ArkTS\PicaComic-HarmonyOS\ohos\entry\src\main\ets"
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$etsRoot = Join-Path $repoRoot "ohos\entry\src\main\ets"
 $files = Get-ChildItem $etsRoot -Recurse -Filter *.ets
 
 Write-Host "=== Code Quality Audit ===" -ForegroundColor Cyan
