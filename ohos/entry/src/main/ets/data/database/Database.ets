@@ -16,15 +16,6 @@ const SQL_CREATE_DOWNLOADS = `CREATE TABLE IF NOT EXISTS downloads (
   source TEXT DEFAULT '', downloadPath TEXT DEFAULT '',
   downloadTime INTEGER DEFAULT 0, status INTEGER DEFAULT 0,
   PRIMARY KEY(id, source))`;
-const SQL_CREATE_FOLLOWS = `CREATE TABLE IF NOT EXISTS follows (
-  id TEXT NOT NULL, title TEXT NOT NULL, coverUrl TEXT DEFAULT '',
-  source TEXT DEFAULT '', followTime INTEGER DEFAULT 0,
-  lastUpdate INTEGER DEFAULT 0, hasUpdate INTEGER DEFAULT 0,
-  PRIMARY KEY(id, source))`;
-const SQL_CREATE_COMMENTS = `CREATE TABLE IF NOT EXISTS comments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT, comicId TEXT NOT NULL,
-  source TEXT DEFAULT '', userName TEXT DEFAULT '我',
-  content TEXT NOT NULL, time INTEGER DEFAULT 0, likeCount INTEGER DEFAULT 0)`;
 const SQL_CREATE_DOWNLOAD_CHAPTERS = `CREATE TABLE IF NOT EXISTS download_chapters (
   chapterId TEXT NOT NULL, comicId TEXT NOT NULL, title TEXT DEFAULT '',
   sortOrder INTEGER DEFAULT 0, pageCount INTEGER DEFAULT 0,
@@ -71,8 +62,6 @@ export class Database {
       });
       await Database.store.executeSql(SQL_CREATE_HISTORY);
       await Database.store.executeSql(SQL_CREATE_DOWNLOADS);
-      await Database.store.executeSql(SQL_CREATE_FOLLOWS);
-      await Database.store.executeSql(SQL_CREATE_COMMENTS);
       await Database.store.executeSql(SQL_CREATE_DOWNLOAD_CHAPTERS);
       await Database.store.executeSql(SQL_CREATE_COMIC_CACHE);
       await Database.migrateComicCacheRelated();
@@ -789,123 +778,6 @@ export class Database {
     }
   }
 
-  // --- Follows (追更) ---
-  static async insertFollow(id: string, title: string, coverUrl: string, source: string): Promise<void> {
-    if (!Database.store) return;
-    try {
-      const bucket: relationalStore.ValuesBucket = {
-        'id': id, 'title': title, 'coverUrl': coverUrl,
-        'source': source, 'followTime': Date.now(), 'lastUpdate': 0, 'hasUpdate': 0
-      };
-      await Database.store.insert('follows', bucket);
-    } catch (e) {
-      Logger.error(TAG, `insertFollow failed: ${Logger.describe(e)}`);
-    }
-  }
-
-  static async removeFollow(id: string, source: string): Promise<void> {
-    if (!Database.store) return;
-    try {
-      const predicates = new relationalStore.RdbPredicates('follows');
-      predicates.equalTo('id', id).equalTo('source', source);
-      await Database.store.delete(predicates);
-    } catch (e) {
-      Logger.error(TAG, `removeFollow failed: ${Logger.describe(e)}`);
-    }
-  }
-
-  static async isFollowing(id: string, source: string): Promise<boolean> {
-    if (!Database.store) return false;
-    try {
-      const predicates = new relationalStore.RdbPredicates('follows');
-      predicates.equalTo('id', id).equalTo('source', source);
-      const resultSet = await Database.store.query(predicates, ['id']);
-      const exists = resultSet.goToNextRow();
-      resultSet.close();
-      return exists;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  static async queryFollows(): Promise<FollowItem[]> {
-    if (!Database.store) return [];
-    try {
-      const predicates = new relationalStore.RdbPredicates('follows');
-      predicates.equalTo('source', 'jm');
-      predicates.orderByDesc('followTime');
-      const resultSet = await Database.store.query(predicates,
-        ['id', 'title', 'coverUrl', 'source', 'followTime', 'lastUpdate', 'hasUpdate']);
-      const results: FollowItem[] = [];
-      while (resultSet.goToNextRow()) {
-        const item = new FollowItem();
-        item.id = resultSet.getString(resultSet.getColumnIndex('id'));
-        item.title = resultSet.getString(resultSet.getColumnIndex('title'));
-        item.coverUrl = JmApi.rehostUrl(resultSet.getString(resultSet.getColumnIndex('coverUrl')));
-        item.source = resultSet.getString(resultSet.getColumnIndex('source'));
-        item.followTime = resultSet.getLong(resultSet.getColumnIndex('followTime'));
-        item.hasUpdate = resultSet.getLong(resultSet.getColumnIndex('hasUpdate')) === 1;
-        results.push(item);
-      }
-      resultSet.close();
-      return results;
-    } catch (e) {
-      Logger.error(TAG, `queryFollows failed: ${Logger.describe(e)}`);
-      return [];
-    }
-  }
-
-  // --- Comments (本地评论) ---
-  static async insertComment(comicId: string, source: string, content: string): Promise<void> {
-    if (!Database.store) return;
-    try {
-      const bucket: relationalStore.ValuesBucket = {
-        'comicId': comicId, 'source': source, 'userName': '我',
-        'content': content, 'time': Date.now(), 'likeCount': 0
-      };
-      await Database.store.insert('comments', bucket);
-    } catch (e) {
-      Logger.error(TAG, `insertComment failed: ${Logger.describe(e)}`);
-    }
-  }
-
-  static async queryComments(comicId: string, source: string): Promise<CommentItem[]> {
-    if (!Database.store) return [];
-    try {
-      const predicates = new relationalStore.RdbPredicates('comments');
-      predicates.equalTo('comicId', comicId).equalTo('source', source);
-      predicates.orderByDesc('time');
-      const resultSet = await Database.store.query(predicates,
-        ['id', 'comicId', 'source', 'userName', 'content', 'time', 'likeCount']);
-      const results: CommentItem[] = [];
-      while (resultSet.goToNextRow()) {
-        const item = new CommentItem();
-        item.id = resultSet.getLong(resultSet.getColumnIndex('id'));
-        item.comicId = resultSet.getString(resultSet.getColumnIndex('comicId'));
-        item.userName = resultSet.getString(resultSet.getColumnIndex('userName'));
-        item.content = resultSet.getString(resultSet.getColumnIndex('content'));
-        item.time = resultSet.getLong(resultSet.getColumnIndex('time'));
-        item.likeCount = resultSet.getLong(resultSet.getColumnIndex('likeCount'));
-        results.push(item);
-      }
-      resultSet.close();
-      return results;
-    } catch (e) {
-      Logger.error(TAG, `queryComments failed: ${Logger.describe(e)}`);
-      return [];
-    }
-  }
-
-  static async likeComment(id: number): Promise<void> {
-    if (!Database.store) return;
-    try {
-      const predicates = new relationalStore.RdbPredicates('comments');
-      predicates.equalTo('id', id);
-      await Database.store.executeSql(`UPDATE comments SET likeCount = likeCount + 1 WHERE id = ${id}`);
-    } catch (e) {
-      Logger.error(TAG, `likeComment failed: ${Logger.describe(e)}`);
-    }
-  }
 }
 
 export class HistoryItem {
@@ -973,24 +845,6 @@ export class ImageCacheRow {
   kind: number = 0;
   bytes: number = 0;
   updateTime: number = 0;
-}
-
-export class FollowItem {
-  id: string = '';
-  title: string = '';
-  coverUrl: string = '';
-  source: string = '';
-  followTime: number = 0;
-  hasUpdate: boolean = false;
-}
-
-export class CommentItem {
-  id: number = 0;
-  comicId: string = '';
-  userName: string = '';
-  content: string = '';
-  time: number = 0;
-  likeCount: number = 0;
 }
 
 export class ReadingProgress {
