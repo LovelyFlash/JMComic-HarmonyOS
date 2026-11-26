@@ -582,6 +582,20 @@ export struct ReaderPage {
     return result;
   }
 
+  /** 下一章 chapterId（order 紧跟当前段末尾）；没有下一章返回空串 */
+  private nextChapterIdAfter(order: number): string {
+    const nextOrder: number = this.nextOrderAfter(order);
+    if (nextOrder <= 0) {
+      return '';
+    }
+    for (let i = 0; i < this.chapters.length; i++) {
+      if (this.chapters[i].order === nextOrder) {
+        return this.chapters[i].id;
+      }
+    }
+    return '';
+  }
+
   /** 连续模式下无缝拼接下一章：滚动到末尾前提前追加，避免出现边界切换 */
   private async appendNextStripChapter(): Promise<number> {
     if (!this.isStrip() || !this.autoPreloadNext || this.stripAppending || this.stripSegments.length === 0) {
@@ -659,6 +673,16 @@ export struct ReaderPage {
         Logger.warn('ReaderPage', `preload chapter failed order=${chapter.order}: ${Logger.describe(e)}`);
       }
       this.preloadInflight.delete(chapter.id);
+    }
+    // 预载异步完成时用户可能已经停在列表末尾（尤其“阅读中才开启预载”），
+    // 此时滚动回调不会再触发拼接，这里补一次检查。
+    if (this.alive && this.isStrip() && this.autoPreloadNext && this.stripSegments.length > 0) {
+      const lastOrder: number = this.stripSegments[this.stripSegments.length - 1].order;
+      const nextId: string = this.nextChapterIdAfter(lastOrder);
+      const nearEnd: boolean = this.stripTotalCount() - this.currentIndex <= 3;
+      if (nextId.length > 0 && nearEnd && this.preloadPages.has(nextId)) {
+        void this.appendNextStripChapter();
+      }
     }
   }
 
@@ -2087,8 +2111,13 @@ export struct ReaderPage {
               this.resetStripZoom();
               this.refreshDataSources();
               if (this.isStrip()) {
+                // 从翻页/双页切到连续模式时 stripSegments 可能为空；
+                // 先用当前章补齐，否则 appendNextStripChapter 永远返回 -1（无法自动拼接下一章）。
+                this.stripSegments = [new StripSegment(this.currentChapterOrder, 0, this.images)];
+                this.stripAppending = false;
                 // 切到连续模式：START 对齐 + 重校 + 屏蔽瞬时索引（新 List 挂载期间防污染）
                 this.stripAnchor(this.currentIndex);
+                void this.preloadNextChapters();
               }
               ReadingConfig.readMode = index;
               ReadingConfig.saveAll();
