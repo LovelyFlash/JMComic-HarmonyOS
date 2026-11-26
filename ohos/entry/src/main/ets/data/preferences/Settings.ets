@@ -115,6 +115,36 @@ export class Settings {
     }
   }
 
+  /** 批量写入期间使用：只 put 不 flush，最后由调用方统一 flush 一次 */
+  static async putBoolNoFlush(key: string, value: boolean): Promise<void> {
+    if (!Settings.store) return;
+    try {
+      await Settings.store.put(key, value);
+    } catch (e) {
+      Logger.error(TAG, `putBoolNoFlush failed for key=${key}: ${Logger.describe(e)}`);
+    }
+  }
+
+  /** 批量写入期间使用：只 put 不 flush，最后由调用方统一 flush 一次 */
+  static async putNumberNoFlush(key: string, value: number): Promise<void> {
+    if (!Settings.store) return;
+    try {
+      await Settings.store.put(key, value);
+    } catch (e) {
+      Logger.error(TAG, `putNumberNoFlush failed for key=${key}: ${Logger.describe(e)}`);
+    }
+  }
+
+  /** 统一落盘：配合 *NoFlush 方法使用，避免一次设置变更触发十余次磁盘 flush */
+  static async flush(): Promise<void> {
+    if (!Settings.store) return;
+    try {
+      await Settings.store.flush();
+    } catch (e) {
+      Logger.error(TAG, `flush failed: ${Logger.describe(e)}`);
+    }
+  }
+
   static async putStringList(key: string, value: string[]): Promise<void> {
     if (!Settings.store) return;
     try {

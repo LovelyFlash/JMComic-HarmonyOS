@@ -39,21 +39,22 @@ export class ReadingConfig {
   }
 
   static async saveAll(): Promise<void> {
-    await Settings.putNumber(SettingsKeys.READ_MODE, ReadingConfig.readMode);
-    await Settings.setBool(SettingsKeys.TAP_TURN_PAGE, ReadingConfig.tapTurnPage);
-    await Settings.setBool(SettingsKeys.INVERT_TAP, ReadingConfig.invertTap);
-    await Settings.setBool(SettingsKeys.VOLUME_KEY_TURN, ReadingConfig.volumeKeyTurnPage);
-    await Settings.setBool(SettingsKeys.KEEP_SCREEN_ON, ReadingConfig.keepScreenOn);
-    await Settings.setBool(SettingsKeys.PAGE_ANIMATION, ReadingConfig.pageAnimation);
-    await Settings.setBool(SettingsKeys.SHOW_PAGE_INFO, ReadingConfig.showPageInfo);
-    await Settings.setBool(SettingsKeys.DOUBLE_TAP_ZOOM, ReadingConfig.doubleTapZoom);
-    await Settings.setBool(SettingsKeys.PINCH_ZOOM, ReadingConfig.pinchZoom);
-    await Settings.setBool(SettingsKeys.AUTO_PRELOAD_NEXT, ReadingConfig.autoPreloadNext);
-    await Settings.putNumber(SettingsKeys.PRELOAD_CHAPTER_COUNT, ReadingConfig.preloadChapterCount);
-    await Settings.putNumber(SettingsKeys.IMAGE_QUALITY, ReadingConfig.imageQuality);
-    await Settings.putNumber(SettingsKeys.IMAGE_LAYOUT, ReadingConfig.imageLayout);
-    await Settings.putNumber(SettingsKeys.FONT_SIZE, ReadingConfig.fontSize);
-    await Settings.putNumber(SettingsKeys.AUTO_PAGE_TIME, ReadingConfig.autoPageTime);
+    await Settings.putNumberNoFlush(SettingsKeys.READ_MODE, ReadingConfig.readMode);
+    await Settings.putBoolNoFlush(SettingsKeys.TAP_TURN_PAGE, ReadingConfig.tapTurnPage);
+    await Settings.putBoolNoFlush(SettingsKeys.INVERT_TAP, ReadingConfig.invertTap);
+    await Settings.putBoolNoFlush(SettingsKeys.VOLUME_KEY_TURN, ReadingConfig.volumeKeyTurnPage);
+    await Settings.putBoolNoFlush(SettingsKeys.KEEP_SCREEN_ON, ReadingConfig.keepScreenOn);
+    await Settings.putBoolNoFlush(SettingsKeys.PAGE_ANIMATION, ReadingConfig.pageAnimation);
+    await Settings.putBoolNoFlush(SettingsKeys.SHOW_PAGE_INFO, ReadingConfig.showPageInfo);
+    await Settings.putBoolNoFlush(SettingsKeys.DOUBLE_TAP_ZOOM, ReadingConfig.doubleTapZoom);
+    await Settings.putBoolNoFlush(SettingsKeys.PINCH_ZOOM, ReadingConfig.pinchZoom);
+    await Settings.putBoolNoFlush(SettingsKeys.AUTO_PRELOAD_NEXT, ReadingConfig.autoPreloadNext);
+    await Settings.putNumberNoFlush(SettingsKeys.PRELOAD_CHAPTER_COUNT, ReadingConfig.preloadChapterCount);
+    await Settings.putNumberNoFlush(SettingsKeys.IMAGE_QUALITY, ReadingConfig.imageQuality);
+    await Settings.putNumberNoFlush(SettingsKeys.IMAGE_LAYOUT, ReadingConfig.imageLayout);
+    await Settings.putNumberNoFlush(SettingsKeys.FONT_SIZE, ReadingConfig.fontSize);
+    await Settings.putNumberNoFlush(SettingsKeys.AUTO_PAGE_TIME, ReadingConfig.autoPageTime);
+    await Settings.flush();
     AppStorage.setOrCreate('imageQuality', ReadingConfig.imageQuality);
   }
 }
