@@ -87,12 +87,28 @@ export class Database {
   static async insertHistory(id: string, title: string, coverUrl: string, source: string, lastChapter: string = '', lastPage: number = 0, author: string = ''): Promise<void> {
     if (!Database.store) return;
     try {
+      // 详情页打开/刷新只会传空进度：只更新元数据，绝不能覆盖已有 lastChapter/lastPage，
+      // 否则重新进入详情页会把续读进度清零（历史仍要刷新 readTime/封面/作者保持置顶）。
+      const preserveProgress: boolean = lastChapter.length === 0 && lastPage <= 0;
+      if (preserveProgress) {
+        const predicates = new relationalStore.RdbPredicates('history');
+        predicates.equalTo('id', id);
+        const meta: relationalStore.ValuesBucket = {
+          'title': title, 'coverUrl': coverUrl, 'readTime': Date.now(),
+          'source': source, 'author': author
+        };
+        const updated: number = await Database.store.update(meta, predicates);
+        if (updated > 0) {
+          Database.notifyHistoryChanged();
+          return;
+        }
+      }
       const bucket: relationalStore.ValuesBucket = {
         'id': id, 'title': title, 'coverUrl': coverUrl,
         'readTime': Date.now(), 'lastChapter': lastChapter,
         'lastPage': lastPage, 'source': source, 'author': author
       };
-      // 主键冲突静默吞错会导致二次进入同一漫画 readTime/封面永不刷新、排序不更新
+      // 新行或调用方显式提供进度时走完整写入；主键冲突时以显式进度为准
       await Database.store.insert('history', bucket,
         relationalStore.ConflictResolution.ON_CONFLICT_REPLACE);
       Database.notifyHistoryChanged();
