@@ -5,6 +5,7 @@ import { Comic } from '../model/Comic';
 import { Chapter } from '../model/Chapter';
 import { ApiConstants, SettingsKeys } from '../../common/Constants';
 import { ChineseConversion } from '../../common/ChineseConversion';
+import { Translations } from '../../common/Translations';
 import { Settings } from '../preferences/Settings';
 import cryptoFramework from '@ohos.security.cryptoFramework';
 import { util } from '@kit.ArkTS';
@@ -732,12 +733,12 @@ export class JmApi {
     const comic: Comic = new Comic();
     comic.id = id;
     comic.source = 'jm';
-    comic.title = JmApi.safeStr(data, 'name', '未知');
+    comic.title = JmApi.safeStr(data, 'name', Translations.t('unknown'));
     comic.description = JmApi.safeStr(data, 'description', '');
 
     const authorField: Object | undefined = data['author'];
     const authors: string[] = JmApi.toStringArray(authorField);
-    comic.author = authors.length > 0 ? authors.join(', ') : '未知';
+    comic.author = authors.length > 0 ? authors.join(', ') : Translations.t('unknown');
 
     comic.likes = JmApi.toInt(data['likes'], 0);
     comic.comments = JmApi.toInt(data['comment_total'], 0);

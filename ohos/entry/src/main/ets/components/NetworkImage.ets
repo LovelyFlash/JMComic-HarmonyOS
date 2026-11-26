@@ -3,6 +3,7 @@ import { image } from '@kit.ImageKit';
 import { ImageCache } from '../data/cache/ImageCache';
 import { JmImage } from '../common/JmImage';
 import { Logger } from '../common/Logger';
+import { Translations } from '../common/Translations';
 
 const TAG = 'NetworkImage';
 
@@ -48,7 +49,7 @@ export struct NetworkImage {
   build() {
     if (this.url.length === 0) {
       Column({ space: 8 }) {
-        Text('No Image')
+        Text(Translations.t('no_images'))
           .fontSize(12)
           .fontColor($r('app.color.text_secondary'))
       }

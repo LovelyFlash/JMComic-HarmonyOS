@@ -7,6 +7,7 @@ import { ImgLineSpeedTest } from '../data/api/ImgLineSpeedTest';
 import { DownloadManager } from '../data/download/DownloadManager';
 import { ImageCache, ImageCacheKind } from '../data/cache/ImageCache';
 import { Logger } from '../common/Logger';
+import { Translations } from '../common/Translations';
 
 const TAG = 'ReaderImage';
 /** 尺寸缓存未命中时的默认宽高比（典型漫画页 ≈ 0.7），用于占位高度预估 */
@@ -490,11 +491,11 @@ export struct ReaderImage {
     } else if (this.loadFailed) {
       if (this.fill) {
         Column({ space: 12 }) {
-          Text('图片加载失败')
+          Text(Translations.t('image_load_failed'))
             .fontSize(14)
             .fontColor($r('app.color.reader_text_secondary'))
             .maxLines(1)
-          Text('点击重试')
+          Text(Translations.t('tap_retry'))
             .fontSize(12)
             .fontColor($r('app.color.text_on_reader'))
             .maxLines(1)
@@ -509,11 +510,11 @@ export struct ReaderImage {
         })
       } else {
         Column({ space: 12 }) {
-          Text('图片加载失败')
+          Text(Translations.t('image_load_failed'))
             .fontSize(14)
             .fontColor($r('app.color.reader_text_secondary'))
             .maxLines(1)
-          Text('点击重试')
+          Text(Translations.t('tap_retry'))
             .fontSize(12)
             .fontColor($r('app.color.text_on_reader'))
             .maxLines(1)

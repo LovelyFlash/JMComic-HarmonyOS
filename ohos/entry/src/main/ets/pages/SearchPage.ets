@@ -141,7 +141,7 @@ export struct SearchPage {
         if (seq !== this.requestSeq) {
           return;
         }
-        if (comic.id.length > 0 && comic.title.length > 0 && comic.title !== '未知') {
+        if (comic.id.length > 0 && comic.title.length > 0 && comic.title !== Translations.t('unknown')) {
           this.loading = false;
           const param: Record<string, Object> = {
             'comicId': comic.id, 'title': comic.title, 'source': comic.source
