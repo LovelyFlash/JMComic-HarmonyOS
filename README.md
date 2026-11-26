@@ -179,7 +179,7 @@ JMComic-HarmonyOS/
                 │   ├── cache/         -- ImageCache.ets：图片持久缓存（先缓存后网络）；DetailCache.ets：已下载详情/封面/多页评论本地缓存；ListCache.ets：收藏/发现列表首屏缓存；CacheManager.ets：占用统计/挡位淘汰/清理
                 │   ├── preferences/   -- Settings.ets：键值存储封装
                 │   └── model/         -- Chapter / Comic / ReaderParam
-                ├── components/        -- 9 个复用组件
+                ├── components/        -- 10 个复用组件
                 ├── pages/             -- 16 个业务页面
                 │   ├── reader/        -- ReaderPage.ets：阅读器
                 │   └── settings/      -- SettingsPage / ReadingSettings / JmSettings / AboutPage
@@ -204,7 +204,7 @@ JMComic-HarmonyOS/
 **`components/` 复用组件**
 
 - 搜索类：`SearchBar`（按钮态 / 输入态 + 系统材质 + 可选排序下拉）
-- 图片类：`NetworkImage`（封面，无需反打乱）、`ReaderImage`（阅读器图片：下载 → 解码 → 反打乱 → LRU，失败可重试）
+- 图片类：`NetworkImage`（封面，无需反打乱）、`ReaderImage`（阅读器图片：下载 → 解码 → 反打乱，失败可重试）、`ReaderImageCache`（像素 LRU、并发队列与预取）
 - 设置类：`SettingItem` / `SettingSwitch` / `SettingSelect` / `SettingCheckItem` / `SettingInfoItem` / `SettingCommon`
 
 ## 核心模块深度解析
@@ -232,7 +232,7 @@ URL → Network.getBytes(http 栈) → 魔数嗅探(looksLikeImage)
 - **分段数 `getSegmentationNum`**：`aid < scrambleId → 0`；`< 268850 → 10`；否则 `md5(aid + 文件名去扩展名)` 的**末字符取 ASCII 码**，`< 421926 → ord % 10 * 2 + 2`，否则 `ord % 8 * 2 + 2`。
 - **反打乱 `recombine`**：对齐 `decode_and_save` / `_segmentationPicture` / `stitch_img` —— 源图按 `floor(h / num)` 切段、末段附带 `h % num` 余数行；目标图从末段开始**整段逆序**贴合，**段内不旋转**；全量读像素后重建 PixelMap（显式 `srcPixelFormat: RGBA_8888`）。
 - **坑位**：`createPixelMap()` 默认 `editable: false`，不能对解码产物原地 `writePixels`，必须重建。
-- **缓存与 GIF**：`ReaderImage` 内置像素 LRU（12 张 / 96MB 预算，按 URL）；GIF 跳过反打乱直接显示。
+- **缓存与 GIF**：`ReaderImageCache` 像素 LRU（12 张 / 96MB 预算，按 URL）；GIF 跳过反打乱直接显示。
 
 ### 3. ReaderPage —— 阅读器
 

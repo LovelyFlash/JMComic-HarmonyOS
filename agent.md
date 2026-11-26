@@ -60,7 +60,8 @@ ohos/entry/src/main/ets/
 │   ├── model/             -- Comic, Chapter, ReaderParam
 │   └── preferences/Settings.ets -- 键值存储
 ├── components/
-│   ├── ReaderImage.ets    -- 阅读器图片（下载→解码→反打乱→LRU 缓存，失败可重试）
+│   ├── ReaderImage.ets    -- 阅读器图片组件（下载→解码→反打乱，失败可重试）
+│   ├── ReaderImageCache.ets -- 阅读器像素 LRU、并发队列与预取
 │   ├── NetworkImage.ets   -- 普通网络图片（封面等，无需反打乱）
 │   ├── SearchBar.ets      -- 统一搜索栏（按钮态/输入态 + 系统材质 + 可选排序下拉，首页/搜索入口/搜索结果页共用）
 │   └── SettingItem/SettingSwitch/SettingSelect/SettingCommon/SettingCheckItem/SettingInfoItem
@@ -206,7 +207,7 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 - **分段数 getSegmentationNum**: `aid < scrambleId → 0`；`< 268850 → 10`；否则 md5(`aid+文件名去扩展名`) 的**末字符取 ASCII 码（ord）**，`< 421926 → ord%10*2+2`，否则 `ord%8*2+2`
 - **反打乱 recombine**: 对齐 `decode_and_save` / `_segmentationPicture` / `stitch_img`——源图按 `floor(h/num)` 切段，末段附带 `h%num` 余数行；目标图从末段开始**整段逆序**贴合，**段内不旋转**；全量 `readAllPixelsToBuffer` 后 `createPixelMapFromPixels` 重建（显式 `srcPixelFormat: RGBA_8888`）
 - **注意**: `createPixelMap()` 默认 `editable: false`，`writePixels` 会失败 —— 不要对解码产物原地写像素，必须重建
-- **缓存**: ReaderImage 内置像素 LRU（12 张 / 96MB 预算，按 URL）
+- **缓存**: `ReaderImageCache` 像素 LRU（12 张 / 96MB 预算，按 URL）
 - **GIF**: 跳过反打乱直接 `Image(url)` 显示
 
 ## 阅读器工程要点（ReaderPage.ets + ReaderImage.ets）

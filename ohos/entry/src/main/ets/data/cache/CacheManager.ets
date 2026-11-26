@@ -9,7 +9,7 @@ import { DetailCache } from './DetailCache';
 import { ImageCache, ImageCacheKind } from './ImageCache';
 import { DownloadManager } from '../download/DownloadManager';
 import { Network } from '../../common/Network';
-import { ReaderImageCache } from '../../components/ReaderImage';
+import { ReaderImageCache } from '../../components/ReaderImageCache';
 import { Settings } from '../preferences/Settings';
 import { CACHE_GEAR_CAPS, SettingsKeys } from '../../common/Constants';
 import { Logger } from '../../common/Logger';
