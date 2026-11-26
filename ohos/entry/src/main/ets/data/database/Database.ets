@@ -43,6 +43,17 @@ const SQL_CREATE_IMAGE_CACHE = `CREATE TABLE IF NOT EXISTS image_cache (
   key TEXT PRIMARY KEY, url TEXT NOT NULL, comicId TEXT DEFAULT '',
   kind INTEGER DEFAULT 0, bytes INTEGER DEFAULT 0, updateTime INTEGER DEFAULT 0)`;
 
+/** 热查询索引：历史/下载/缓存表数据量增长后避免全表扫描 */
+const SQL_CREATE_INDEXES: string[] = [
+  'CREATE INDEX IF NOT EXISTS idx_history_source_read ON history(source, readTime)',
+  'CREATE INDEX IF NOT EXISTS idx_downloads_source_time ON downloads(source, downloadTime)',
+  'CREATE INDEX IF NOT EXISTS idx_chapters_comic_order ON download_chapters(comicId, sortOrder)',
+  'CREATE INDEX IF NOT EXISTS idx_chapters_update ON download_chapters(updateTime)',
+  'CREATE INDEX IF NOT EXISTS idx_comic_cache_update ON comic_cache(updateTime)',
+  'CREATE INDEX IF NOT EXISTS idx_image_cache_kind_update ON image_cache(kind, updateTime)',
+  'CREATE INDEX IF NOT EXISTS idx_image_cache_comic ON image_cache(comicId)'
+];
+
 export enum ChapterDlStatus {
   QUEUED = 0, RUNNING = 1, PAUSED = 2, DONE = 3, FAILED = 4,
   /** 仅内存态：已取消（行已删除，runner 观察后不再写库），不落盘 */
@@ -67,6 +78,14 @@ export class Database {
       await Database.migrateComicCacheRelated();
       await Database.migrateHistoryAuthor();
       await Database.store.executeSql(SQL_CREATE_IMAGE_CACHE);
+      for (let i: number = 0; i < SQL_CREATE_INDEXES.length; i++) {
+        try {
+          await Database.store.executeSql(SQL_CREATE_INDEXES[i]);
+        } catch (e) {
+          // 索引失败不阻断启动（旧库/异常列），仅降级为全表扫描
+          Logger.warn(TAG, `create index failed: ${Logger.describe(e)}`);
+        }
+      }
       Logger.info(TAG, 'Database initialized');
     } catch (e) {
       Logger.error(TAG, `Database init failed: ${Logger.describe(e)}`);
