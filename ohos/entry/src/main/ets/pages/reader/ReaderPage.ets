@@ -1545,6 +1545,15 @@ export struct ReaderPage {
         }
         // 底部继续上拉
         if (offset > 0 && this.stripAtEndFlag) {
+          // 下一章已经追加时不能继续按“边界拉动”处理，否则列表会被 translate 顶住、
+          // 用户看到下方有内容却无法下滑。currentIndex 仍停在旧末尾，放行让 List 正常滚动。
+          if (this.currentIndex < this.stripTotalCount() - 1) {
+            this.stripAtEndFlag = false;
+            this.stripEdgePull = 0;
+            this.stripEdgeDirection = 0;
+            this.stripEdgeReady = false;
+            return new ScrollFrameOffset(offset);
+          }
           if (!this.stripTouchActive) {
             return new ScrollFrameOffset(0);
           }
