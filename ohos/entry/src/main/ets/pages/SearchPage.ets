@@ -32,6 +32,8 @@ export struct SearchPage {
   /** LazyForEach 数据源必须固定实例；刷新只走 replaceAll/clearData/addAll */
   private dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
   @State itemCount: number = 0
+  /** 请求世代号：新搜索/排序后，迟到的旧响应直接丢弃 */
+  private requestSeq: number = 0
   @State loading: boolean = false
   @State loadingMore: boolean = false
   @State error: string = ''
@@ -122,7 +124,9 @@ export struct SearchPage {
     if (this.keyword.length === 0) {
       return;
     }
+    const seq: number = ++this.requestSeq;
     this.loading = true;
+    this.loadingMore = false;
     this.error = '';
     this.title = Translations.t('search_results');
     this.dataSource.clearData();
@@ -134,6 +138,9 @@ export struct SearchPage {
     if (/^\d+$/.test(this.keyword)) {
       try {
         const comic: Comic = await JmApi.getComicInfo(this.keyword);
+        if (seq !== this.requestSeq) {
+          return;
+        }
         if (comic.id.length > 0 && comic.title.length > 0 && comic.title !== '未知') {
           this.loading = false;
           const param: Record<string, Object> = {
@@ -147,15 +154,22 @@ export struct SearchPage {
       }
     }
     try {
-      await this.loadPage(1, true);
+      await this.loadPage(1, true, seq);
     } catch (e) {
-      this.error = String(e);
+      if (seq === this.requestSeq) {
+        this.error = String(e);
+      }
     }
-    this.loading = false;
+    if (seq === this.requestSeq) {
+      this.loading = false;
+    }
   }
 
-  async loadPage(page: number, replace: boolean): Promise<void> {
+  async loadPage(page: number, replace: boolean, seq: number): Promise<void> {
     const result = await JmApi.search(this.keyword, page, this.sort);
+    if (seq !== this.requestSeq) {
+      return;
+    }
     this.maxPage = result.maxPage > 0 ? result.maxPage : page;
     this.currentPage = page;
     if (replace) {
@@ -170,13 +184,18 @@ export struct SearchPage {
   async loadMore(): Promise<void> {
     if (this.loadingMore || this.loading) return;
     if (this.currentPage >= this.maxPage) return;
+    const seq: number = this.requestSeq;
     this.loadingMore = true;
     try {
-      await this.loadPage(this.currentPage + 1, false);
+      await this.loadPage(this.currentPage + 1, false, seq);
     } catch (e) {
-      this.error = String(e);
+      if (seq === this.requestSeq) {
+        this.error = String(e);
+      }
     }
-    this.loadingMore = false;
+    if (seq === this.requestSeq) {
+      this.loadingMore = false;
+    }
   }
 
   @Builder
@@ -287,6 +306,9 @@ export struct SearchPage {
               onTextChange: (value: string) => { this.keyword = value; },
               onSubmit: () => { this.doSearch(); },
               onClear: () => {
+                this.requestSeq++;
+                this.loading = false;
+                this.loadingMore = false;
                 this.keyword = '';
                 this.title = Translations.t('search');
                 this.dataSource.clearData();
