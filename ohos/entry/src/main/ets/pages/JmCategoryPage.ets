@@ -30,6 +30,8 @@ export struct JmCategoryPage {
   @State sort: string = 'mr'
   /** LazyForEach 数据源必须固定实例；刷新只走 replaceAll/addAll/clearData */
   private dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
+  /** 请求世代号：切换排序后，迟到的旧响应直接丢弃 */
+  private requestSeq: number = 0
   @State loading: boolean = true
   @State loadingMore: boolean = false
   @State error: string = ''
@@ -66,12 +68,17 @@ export struct JmCategoryPage {
   }
 
   async loadPage(page: number, replace: boolean): Promise<void> {
+    const seq: number = replace ? ++this.requestSeq : this.requestSeq;
     if (replace) {
       this.loading = true;
+      this.loadingMore = false;
       this.error = '';
     }
     try {
       const result = await JmApi.getCategoryComics(this.slug, this.sort, page);
+      if (seq !== this.requestSeq) {
+        return;
+      }
       this.maxPage = result.maxPage > 0 ? result.maxPage : page;
       this.currentPage = page;
       if (replace) {
@@ -80,26 +87,30 @@ export struct JmCategoryPage {
         this.dataSource.addAll(result.comics);
       }
     } catch (e) {
-      if (replace) {
+      if (seq === this.requestSeq && replace) {
         this.error = String(e);
         this.dataSource.clearData();
       }
-    }
-    if (replace) {
-      this.loading = false;
+    } finally {
+      if (seq === this.requestSeq && replace) {
+        this.loading = false;
+      }
     }
   }
 
   async loadMore(): Promise<void> {
     if (this.loadingMore || this.loading) return;
     if (this.currentPage >= this.maxPage) return;
+    const seq: number = this.requestSeq;
     this.loadingMore = true;
     try {
       await this.loadPage(this.currentPage + 1, false);
     } catch (e) {
       // 忽略加载更多错误
     }
-    this.loadingMore = false;
+    if (seq === this.requestSeq) {
+      this.loadingMore = false;
+    }
   }
 
   private changeSort(key: string): void {
