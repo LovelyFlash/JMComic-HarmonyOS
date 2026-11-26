@@ -51,8 +51,8 @@ export class CacheManager {
   static async statCache(): Promise<number> {
     let bytes: number = await ImageCache.totalBytes();
     bytes += await Database.comicCacheBytes();
-    bytes += CacheManager.walkBytes(CacheManager.pathOf(`${DOWNLOAD_ROOT}/${DETAIL_SUBDIR}`));
-    bytes += CacheManager.statTempBytes();
+    bytes += await CacheManager.walkBytes(CacheManager.pathOf(`${DOWNLOAD_ROOT}/${DETAIL_SUBDIR}`));
+    bytes += await CacheManager.statTempBytes();
     return bytes;
   }
 
@@ -69,15 +69,15 @@ export class CacheManager {
         continue;
       }
       try {
-        if (!fs.accessSync(root)) {
+        if (!await fs.access(root)) {
           continue;
         }
-        const names: string[] = fs.listFileSync(root);
+        const names: string[] = await fs.listFile(root);
         for (let i = 0; i < names.length; i++) {
           if (names[i] === DETAIL_SUBDIR) {
             continue;
           }
-          total += CacheManager.walkBytes(`${root}/${names[i]}`);
+          total += await CacheManager.walkBytes(`${root}/${names[i]}`);
         }
       } catch (e) {
         Logger.warn(TAG, `statDownloads failed on ${root}: ${Logger.describe(e)}`);
@@ -96,13 +96,13 @@ export class CacheManager {
     await Database.clearComicCache();
     const detailDir: string = CacheManager.pathOf(`${DOWNLOAD_ROOT}/${DETAIL_SUBDIR}`);
     try {
-      if (detailDir.length > 0 && fs.accessSync(detailDir)) {
-        fs.rmdirSync(detailDir);
+      if (detailDir.length > 0 && await fs.access(detailDir)) {
+        await fs.rmdir(detailDir);
       }
     } catch (e) {
       Logger.warn(TAG, `remove detail dir failed: ${Logger.describe(e)}`);
     }
-    CacheManager.clearTemp();
+    await CacheManager.clearTemp();
     Network.clearCache();
     ReaderImageCache.clearAll();
     Logger.info(TAG, 'cache cleared (img+db+cover+temp+memory)');
@@ -167,18 +167,18 @@ export class CacheManager {
   }
 
   /** cacheDir 下 jm_*.img 临时文件总量（写入中的图不应计入，量小忽略不计） */
-  private static statTempBytes(): number {
+  private static async statTempBytes(): Promise<number> {
     if (CacheManager.ctx === null) {
       return 0;
     }
     const cacheDir: string = CacheManager.ctx.cacheDir;
     let total: number = 0;
     try {
-      const names: string[] = fs.listFileSync(cacheDir);
+      const names: string[] = await fs.listFile(cacheDir);
       for (let i = 0; i < names.length; i++) {
         const name: string = names[i];
         if (name.startsWith('jm_') && name.endsWith('.img')) {
-          const stat: fs.Stat = fs.statSync(`${cacheDir}/${name}`);
+          const stat: fs.Stat = await fs.stat(`${cacheDir}/${name}`);
           if (stat.isFile()) {
             total += stat.size;
           }
@@ -190,18 +190,18 @@ export class CacheManager {
     return total;
   }
 
-  private static clearTemp(): void {
+  private static async clearTemp(): Promise<void> {
     if (CacheManager.ctx === null) {
       return;
     }
     const cacheDir: string = CacheManager.ctx.cacheDir;
     try {
-      const names: string[] = fs.listFileSync(cacheDir);
+      const names: string[] = await fs.listFile(cacheDir);
       for (let i = 0; i < names.length; i++) {
         const name: string = names[i];
         if (name.startsWith('jm_') && name.endsWith('.img')) {
           try {
-            fs.unlinkSync(`${cacheDir}/${name}`);
+            await fs.unlink(`${cacheDir}/${name}`);
           } catch (e) {
             Logger.warn(TAG, `remove temp failed: ${name} ${Logger.describe(e)}`);
           }
@@ -213,22 +213,22 @@ export class CacheManager {
   }
 
   /** 递归统计目录字节数（不存在返回 0） */
-  private static walkBytes(path: string): number {
+  private static async walkBytes(path: string): Promise<number> {
     if (path.length === 0) {
       return 0;
     }
     let total: number = 0;
     try {
-      if (!fs.accessSync(path)) {
+      if (!await fs.access(path)) {
         return 0;
       }
-      const names: string[] = fs.listFileSync(path);
+      const names: string[] = await fs.listFile(path);
       for (let i = 0; i < names.length; i++) {
         const child: string = `${path}/${names[i]}`;
         try {
-          const stat: fs.Stat = fs.statSync(child);
+          const stat: fs.Stat = await fs.stat(child);
           if (stat.isDirectory()) {
-            total += CacheManager.walkBytes(child);
+            total += await CacheManager.walkBytes(child);
           } else if (stat.isFile()) {
             total += stat.size;
           }

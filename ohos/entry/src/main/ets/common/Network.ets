@@ -301,23 +301,31 @@ export class Network {
         }
         finish(null);
       }, DOWNLOAD_TIMEOUT_MS);
-      task!.on('complete', () => {
+      task!.on('complete', async () => {
         try {
-          const stat: fs.Stat = fs.statSync(filePath);
+          const stat: fs.Stat = await fs.stat(filePath);
           const buf: ArrayBuffer = new ArrayBuffer(stat.size);
-          const file: fs.File = fs.openSync(filePath, fs.OpenMode.READ_ONLY);
-          fs.readSync(file.fd, buf);
-          fs.closeSync(file);
+          const file: fs.File = await fs.open(filePath, fs.OpenMode.READ_ONLY);
+          let read: number = 0;
           try {
-            fs.unlinkSync(filePath);
+            read = await fs.read(file.fd, buf);
+          } finally {
+            await fs.close(file);
+          }
+          try {
+            await fs.unlink(filePath);
           } catch (e) {
             Logger.debug(TAG, `unlink temp file failed: ${Logger.describe(e)}`);
           }
-          finish(new Uint8Array(buf));
+          if (read <= 0) {
+            finish(null);
+          } else {
+            finish(new Uint8Array(buf, 0, read));
+          }
         } catch (e) {
           Logger.error(TAG, `read downloaded file failed: ${Logger.describe(e)}`);
           try {
-            fs.unlinkSync(filePath);
+            await fs.unlink(filePath);
           } catch (e2) {
             Logger.debug(TAG, `unlink temp file failed: ${String(e2)}`);
           }
