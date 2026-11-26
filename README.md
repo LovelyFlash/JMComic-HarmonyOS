@@ -197,7 +197,7 @@ JMComic-HarmonyOS/
 | `Translations.ets` | 中英文案（`Translations.t(key)`） |
 | `ReadingConfig.ets` | 阅读配置（模式 / 翻页 / 缩放等） |
 | `NavUtil.ets` | 路由跳转工具（push / pushSilent / back） |
-| `ArrayDataSource.ets` | `IDataource` 实现：`replaceAll`（整体替换）/ `addAll`（批量追加，onDatasetChange）/ `clearData` |
+| `ArrayDataSource.ets` | `IDataource` 实现：`replaceAll`（整体替换）/ `addAll`（逐索引批量追加）/ `clearData` |
 | `Changelog.ets` | 应用内更新日志数据（`ReleaseNote` 倒序，关于页展示） |
 | `ToastUtil.ets` | Toast 统一封装（`UIContext.getPromptAction().showToast`） |
 

@@ -47,7 +47,7 @@ ohos/entry/src/main/ets/
 │   ├── NavUtil.ets        -- 导航工具
 │   ├── Changelog.ets      -- 应用内更新日志数据（ReleaseNote 倒序，关于页展示）
 │   ├── ToastUtil.ets      -- Toast 统一封装（UIContext.getPromptAction）
-│   └── ArrayDataSource.ets-- LazyForEach 数据源（批量追加 onDatasetChange）
+│   └── ArrayDataSource.ets-- LazyForEach 数据源（逐索引 onDataAdd 追加）
 ├── data/
 │   ├── api/JmApi.ets      -- 禁漫 API 客户端（token/data 加解密对照 jm_toolkit.py）
 │   ├── api/ImgLineSpeedTest.ets -- 图片线路测速与自动切换（并发探测最快图床，启动/兜底/手动三触发）
