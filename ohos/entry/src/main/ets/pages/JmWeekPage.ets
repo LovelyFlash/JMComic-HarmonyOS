@@ -30,6 +30,8 @@ export struct JmWeekPage {
   /** LazyForEach 数据源必须固定实例；刷新只走 replaceAll/clearData */
   private dataSource: ArrayDataSource<Comic> = new ArrayDataSource<Comic>()
   @State itemCount: number = 0
+  /** 请求世代号：快速切换期数/类型时，迟到的旧响应直接丢弃 */
+  private requestSeq: number = 0
   @State catLoading: boolean = true
   @State catError: string = ''
   @State loading: boolean = false
@@ -147,18 +149,27 @@ export struct JmWeekPage {
   }
 
   private async loadComics(): Promise<void> {
+    const seq: number = ++this.requestSeq;
     this.loading = true;
     this.error = '';
     try {
       const list: Comic[] = await JmApi.getWeekComics(this.currentId, this.currentType);
+      if (seq !== this.requestSeq) {
+        return;
+      }
       this.dataSource.replaceAll(list);
       this.itemCount = list.length;
     } catch (e) {
-      this.error = String(e);
-      this.dataSource.clearData();
-      this.itemCount = 0;
+      if (seq === this.requestSeq) {
+        this.error = String(e);
+        this.dataSource.clearData();
+        this.itemCount = 0;
+      }
+    } finally {
+      if (seq === this.requestSeq) {
+        this.loading = false;
+      }
     }
-    this.loading = false;
   }
 
   /** 期数选择：作为 .title 自定义标题的一部分，位于标题文字右侧 */
