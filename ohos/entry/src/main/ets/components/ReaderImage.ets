@@ -16,6 +16,11 @@ export class ReaderImageCache {
   private static maps: Map<string, image.PixelMap> = new Map();
   private static order: string[] = [];
   private static readonly CAP: number = 12;
+  /** 单张页面像素字节数：用于字节预算淘汰，避免长图 × 12 张把内存打爆 */
+  private static sizes: Map<string, number> = new Map();
+  private static totalBytes: number = 0;
+  /** 阅读器像素缓存总预算（RGBA，含长图；按最近使用从旧到新淘汰） */
+  private static readonly BYTE_CAP: number = 96 * 1024 * 1024;
   /** URL → 宽高比(w/h)：像素被淘汰后占位仍按真实比例预留高度，消除连续滚动回读跳变 */
   private static ratios: Map<string, number> = new Map();
   private static ratioOrder: string[] = [];
@@ -48,19 +53,35 @@ export class ReaderImageCache {
     return pm;
   }
 
-  static put(url: string, pm: image.PixelMap): void {
+  static put(url: string, pm: image.PixelMap, bytes: number = 0): void {
     if (ReaderImageCache.maps.has(url)) {
       const idx: number = ReaderImageCache.order.indexOf(url);
       if (idx >= 0) {
         ReaderImageCache.order.splice(idx, 1);
       }
+      const oldBytes: number | undefined = ReaderImageCache.sizes.get(url);
+      if (oldBytes !== undefined) {
+        ReaderImageCache.totalBytes -= oldBytes;
+      }
     }
+    const pixelBytes: number = bytes > 0 ? bytes : 0;
     ReaderImageCache.maps.set(url, pm);
+    ReaderImageCache.sizes.set(url, pixelBytes);
+    ReaderImageCache.totalBytes += pixelBytes;
     ReaderImageCache.order.push(url);
-    while (ReaderImageCache.order.length > ReaderImageCache.CAP) {
+    while (ReaderImageCache.order.length > ReaderImageCache.CAP ||
+      ReaderImageCache.totalBytes > ReaderImageCache.BYTE_CAP) {
       const evict: string = ReaderImageCache.order[0];
       ReaderImageCache.order.splice(0, 1);
       ReaderImageCache.maps.delete(evict);
+      const evictBytes: number | undefined = ReaderImageCache.sizes.get(evict);
+      if (evictBytes !== undefined) {
+        ReaderImageCache.totalBytes -= evictBytes;
+        ReaderImageCache.sizes.delete(evict);
+      }
+      if (ReaderImageCache.order.length === 0) {
+        break;
+      }
     }
   }
 
@@ -94,6 +115,8 @@ export class ReaderImageCache {
       ReaderImageCache.pixelQuality = quality;
       ReaderImageCache.maps.clear();
       ReaderImageCache.order = [];
+      ReaderImageCache.sizes.clear();
+      ReaderImageCache.totalBytes = 0;
     }
   }
 
@@ -101,6 +124,8 @@ export class ReaderImageCache {
   static clearAll(): void {
     ReaderImageCache.maps.clear();
     ReaderImageCache.order = [];
+    ReaderImageCache.sizes.clear();
+    ReaderImageCache.totalBytes = 0;
   }
 
   /** 先按质量失效像素缓存，再取缓存像素（质量变化时旧像素整体清空） */
@@ -145,6 +170,7 @@ export class ReaderImageCache {
       Logger.debug(TAG, `start ${isBg ? 'B' : 'P'} wait=${waitMs}ms run=${ReaderImageCache.running}` +
         `/bg=${ReaderImageCache.runningBg} ${key}`);
       let finished: boolean = false;
+      let timedOut: boolean = false;
       let timer: number = -1;
       const done = (pm: image.PixelMap | null): void => {
         if (finished) {
@@ -167,10 +193,15 @@ export class ReaderImageCache {
       };
       timer = setTimeout(() => {
         Logger.warn(TAG, `load watchdog timeout (${ReaderImageCache.TASK_TIMEOUT}ms): ${url}`);
+        timedOut = true;
         done(null);
       }, ReaderImageCache.TASK_TIMEOUT);
       ReaderImageCache.doLoad(url, quality, ui).then(
         (pm: image.PixelMap | null) => {
+          // 看门狗已失败收尾：底层迟到的 PixelMap 不再有调用方，必须主动释放
+          if (timedOut && pm !== null) {
+            pm.release();
+          }
           done(pm);
         },
         (e: Object) => {
@@ -310,16 +341,18 @@ export class ReaderImageCache {
 
   /** 收尾：记宽高比 + 质量竞态检查 + 入像素缓存（失败/竞态丢弃并释放像素） */
   private static async settle(url: string, quality: number, pm: image.PixelMap): Promise<image.PixelMap | null> {
+    let pixelBytes: number = 0;
     try {
       const info: image.ImageInfo = await pm.getImageInfo();
       if (info.size.width > 0 && info.size.height > 0) {
         ReaderImageCache.setRatio(url, info.size.width / info.size.height);
+        pixelBytes = info.size.width * info.size.height * 4;
       }
     } catch (e) {
       Logger.warn(TAG, `getImageInfo failed: ${Logger.describe(e)}`);
     }
     if (ReaderImageCache.pixelQuality === quality) {
-      ReaderImageCache.put(url, pm);
+      ReaderImageCache.put(url, pm, pixelBytes);
       return pm;
     }
     pm.release();
