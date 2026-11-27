@@ -6,7 +6,7 @@
 单漫画源（JM），包名 `com.jmcomic.harmony`，无第三方依赖。
 
 **当前状态**：
-- master = **v1.2.0**（versionCode 21，2026-11-27，已发布）；GitHub Release 为 `releases/tag/v1.2.0`
+- master = **v1.2.1**（versionCode 22，2026-11-27，已发布）；GitHub Release 为 `releases/tag/v1.2.1`；本补丁修复连续滚动模式放大后无法横向平移
 - 版本三处需同步：`AppScope/app.json5`（versionCode/versionName）、`Constants.APP_VERSION`（关于页/设置页动态显示）、`Changelog.ets`（应用内更新日志，倒序新增条目）
 - `feature/compat-sdk20` 分支：`compatibleSdkVersion` 降至 `6.0.0(20)` + 新 API 版本守卫与低版本降级（0 编译兼容告警，真机冒烟通过），**已推送、暂未合并且暂不发版**
 - `feature/v1.2-optimization` 分支：v1.2.0 优化内容（P0 修复、性能/异步 I/O、i18n、CI、单测、JmCrypto/ReaderImageCache 拆分、systemMaterial 清理），已真机回归并合并 master（可保留作后续对照）

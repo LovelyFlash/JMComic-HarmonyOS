@@ -46,7 +46,7 @@ export class ApiConstants {
   static readonly JM_PACKAGE_NAME = 'com.example.app';
 
   // App
-  static readonly APP_VERSION = '1.2.0';
+  static readonly APP_VERSION = '1.2.1';
   static readonly APP_NAME = 'JMComic';
 }
 
