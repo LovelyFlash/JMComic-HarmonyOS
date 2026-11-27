@@ -130,8 +130,14 @@ export struct ReaderPage {
   private stripScroller: Scroller = new Scroller();
   /** 连续模式缩放值（@State 驱动 List.scale；双指缩放时逐帧更新，List 仅更新变换属性） */
   @State stripZoom: number = 1.0;
+  /** 连续模式放大后的横向平移（纵向仍交给 List 原生滚动，避免破坏跨章连续阅读） */
+  @State stripPanX: number = 0;
   /** 连续模式双指缩放的基准值 */
   private stripPinchBase: number = 1.0;
+  /** 连续模式横向平移的起点 */
+  private stripPanBaseX: number = 0;
+  /** 阅读器视口宽度（vp），用于限制放大后的横向平移范围 */
+  private readerWidth: number = 0;
   /** 连续模式是否处于缩放态 */
   @State stripZoomed: boolean = false;
   /** 连续模式数据源（LazyForEach：replaceAll→onDataReloaded 切章刷新，List cachedCount 预建屏外节点） */
@@ -810,6 +816,7 @@ export struct ReaderPage {
     this.getUIContext().animateTo({ duration: 150, curve: Curve.FastOutSlowIn }, () => {
       this.stripZoom = 1.0;
       this.stripZoomed = false;
+      this.stripPanX = 0;
     });
   }
 
@@ -818,7 +825,22 @@ export struct ReaderPage {
     this.getUIContext().animateTo({ duration: 200, curve: Curve.FastOutSlowIn }, () => {
       this.stripZoom = target;
       this.stripZoomed = zoomed;
+      this.stripPanX = 0;
     });
+  }
+
+  /** 连续模式横向平移上限：缩放围绕中心，左右各可移动 (缩放后宽度 - 视口宽度) / 2 */
+  private stripPanLimit(): number {
+    if (this.readerWidth <= 0 || this.stripZoom <= 1.0) {
+      return 0;
+    }
+    return this.readerWidth * (this.stripZoom - 1.0) / 2;
+  }
+
+  /** 缩放变化后把已有横向平移夹回合法范围 */
+  private clampStripPan(): void {
+    const limit: number = this.stripPanLimit();
+    this.stripPanX = Math.max(-limit, Math.min(limit, this.stripPanX));
   }
 
   private resetZoom(): void {
@@ -1642,8 +1664,33 @@ export struct ReaderPage {
     .width('100%').height('100%')
     .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     .clip(false)
-    // 边界拉动时整体位移整个漫画列表（类似下拉刷新），而不是只移动提示组件
+    // 放大后单指横向拖动：与 List 纵向滚动并行识别，横向平移、纵向继续连续翻页
+    .parallelGesture(
+      PanGesture({ fingers: 1, direction: PanDirection.Horizontal, distance: 5 })
+        .onActionStart(() => {
+          if (!this.stripZoomed || this.multiTouch) {
+            return;
+          }
+          this.stripPanBaseX = this.stripPanX;
+        })
+        .onActionUpdate((event: GestureEvent) => {
+          if (!this.stripZoomed || this.multiTouch) {
+            return;
+          }
+          const limit: number = this.stripPanLimit();
+          const next: number = this.stripPanBaseX + event.offsetX;
+          this.stripPanX = Math.max(-limit, Math.min(limit, next));
+        })
+        .onActionEnd(() => {
+          if (!this.stripZoomed) {
+            this.stripPanX = 0;
+          }
+        })
+    )
+    // 边界拉动时整体位移整个漫画列表（类似下拉刷新），而不是只移动提示组件；
+    // 放大后叠加横向平移，纵向仍由 List 滚动，二者互不抢占
     .translate({
+      x: this.stripPanX,
       y: this.stripEdgeDirection < 0 ? this.stripEdgePull :
         (this.stripEdgeDirection > 0 ? -this.stripEdgePull : 0)
     })
@@ -1731,38 +1778,41 @@ export struct ReaderPage {
         }
       })
       .priorityGesture(
-        PinchGesture({ fingers: 2 })
-          .onActionStart(() => {
-            if (!this.pinchZoom) {
-              return;
-            }
-            this.multiTouch = true;
-            this.stripPinchBase = this.stripZoom;
-          })
-          .onActionUpdate((event: GestureEvent) => {
-            if (!this.pinchZoom) {
-              return;
-            }
-            this.stripZoom = Math.min(MAX_ZOOM, Math.max(1.0, this.stripPinchBase * event.scale));
-            const zoomed: boolean = this.stripZoom > 1.0;
-            if (this.stripZoomed !== zoomed) {
-              this.stripZoomed = zoomed;
-            }
-          })
-          .onActionEnd(() => {
-            if (!this.pinchZoom) {
-              return;
-            }
-            this.multiTouch = false;
-            if (this.stripZoom < ZOOM_RESET_THRESHOLD) {
-              this.resetStripZoom();
-            } else if (this.stripZoom > 1.0 && !this.stripZoomed) {
-              this.stripZoomed = true;
-            }
-          })
-          .onActionCancel(() => {
-            this.multiTouch = false;
-          })
+        GestureGroup(GestureMode.Parallel,
+          PinchGesture({ fingers: 2 })
+            .onActionStart(() => {
+              if (!this.pinchZoom) {
+                return;
+              }
+              this.multiTouch = true;
+              this.stripPinchBase = this.stripZoom;
+            })
+            .onActionUpdate((event: GestureEvent) => {
+              if (!this.pinchZoom) {
+                return;
+              }
+              this.stripZoom = Math.min(MAX_ZOOM, Math.max(1.0, this.stripPinchBase * event.scale));
+              const zoomed: boolean = this.stripZoom > 1.0;
+              if (this.stripZoomed !== zoomed) {
+                this.stripZoomed = zoomed;
+              }
+              this.clampStripPan();
+            })
+            .onActionEnd(() => {
+              if (!this.pinchZoom) {
+                return;
+              }
+              this.multiTouch = false;
+              if (this.stripZoom < ZOOM_RESET_THRESHOLD) {
+                this.resetStripZoom();
+              } else if (this.stripZoom > 1.0 && !this.stripZoomed) {
+                this.stripZoomed = true;
+              }
+            })
+            .onActionCancel(() => {
+              this.multiTouch = false;
+            })
+        )
       )
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
     } else {
@@ -2486,6 +2536,14 @@ export struct ReaderPage {
       .backgroundColor($r('app.color.reader_bg'))
       .expandSafeArea([SafeAreaType.SYSTEM],[SafeAreaEdge.BOTTOM,SafeAreaEdge.TOP])
       .clip(false)
+      // 记录视口宽度：连续模式放大后据此限制横向平移范围（旋转/分屏时同步更新）
+      .onAreaChange((_old: Area, area: Area) => {
+        const w: number = Number.parseFloat(area.width.toString());
+        if (w > 0) {
+          this.readerWidth = w;
+          this.clampStripPan();
+        }
+      })
       .bindSheet($$this.showSheet, this.sheetContent(), {
         // 平板横屏窗口宽 ≥840vp 时默认非底部样式，detents 不生效 → 显式底部样式（与详情页一致）
         preferType: SheetType.BOTTOM,

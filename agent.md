@@ -285,7 +285,7 @@ URL → Network.getBytes(http栈) → 魔数嗅探(looksLikeImage)
 - **切章命中**：`loadChapter` 优先读取 `preloadPages`；命中时直接使用页列表，省去网络/本地页列表读取。翻页模式下一章已预载时直接切章，不再显示过渡页。
 - **连续模式无缝滚动**：`stripSegments: StripSegment[]` 记录已拼接章节（order / 全局起始 index / pages）。接近列表末尾 `totalCount - last <= 3` 时自动 `appendNextStripChapter()`，用 `stripSource.addAll` 追加下一章；`currentIndex` 为全局索引，`images` 保持当前章页列表，`localPageIndex()` 负责章内页码与进度落盘；跨段时更新 `currentChapterOrder` 并预载下一章。
 - **边界拉动**：只有手指按住（`stripTouchActive`）时才累计 `stripEdgePull`；惯性滑动不累计，滚动停止时只回弹。拉动位移直接 `translate` 到整个 List；达到阈值后继续拉动使用 0.4 阻尼，最高 320vp；松手（`settleStripEdgePull`）才判断切章，切章也先播放 180ms 回弹，`stripEdgeSettling` 期间忽略边缘滚动避免抢帧。
-- **滚动条**：List 自带滚动条，滑动时显示，`onScrollStop` 后 300ms 隐藏；颜色 `#888888`、宽度 4vp。连续模式已取消外层 Scroll，缩放用 List `.scale`，放大后仍可纵向连续翻页。
+- **滚动条**：List 自带滚动条，滑动时显示，`onScrollStop` 后 300ms 隐藏；颜色 `#888888`、宽度 4vp。连续模式已取消外层 Scroll，缩放用 List `.scale`；放大后纵向仍由 List 原生滚动，横向平移由外层 Stack `.translate(x)` + 单指横向 `PanGesture` 实现，范围限制为 `±视口宽 × (zoom - 1) / 2`，避免拖出空白。
 
 ## 常见问题
 
